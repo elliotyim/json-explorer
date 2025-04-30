@@ -1,9 +1,14 @@
-interface JSONResult {
+interface JSONItem {
   name: string
   value: unknown
   path: string
   parentPath: string
   type: 'array' | 'object' | 'value'
-  visible?: boolean
-  open?: boolean
+  children?: JSONItem[]
+  isOpen?: boolean
+}
+
+interface CustomData {
+  fileType: string
+  fileSize: string
 }
