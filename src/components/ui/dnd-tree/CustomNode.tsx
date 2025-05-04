@@ -15,7 +15,7 @@ interface Props {
 }
 
 export const CustomNode: React.FC<Props> = (props) => {
-  const { text, data, droppable } = props.node
+  const { text, droppable } = props.node
   const indent = props.depth * 24
 
   const handleToggle = (e: React.MouseEvent) => {
@@ -49,10 +49,10 @@ export const CustomNode: React.FC<Props> = (props) => {
         )}
       </div>
       <div>
-        <TypeIcon droppable={droppable || false} fileType={data?.fileType} />
+        <TypeIcon node={props.node} isOpen={props.isOpen} />
       </div>
       <div className={styles.labelGridItem}>
-        <span>{`${text}`}</span>
+        <span>{text}</span>
       </div>
     </div>
   )

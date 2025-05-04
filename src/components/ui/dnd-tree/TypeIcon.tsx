@@ -1,24 +1,25 @@
+import { NodeModel } from '@minoru/react-dnd-treeview'
 import React from 'react'
-import { FaFile, FaFileImage, FaFolder, FaRectangleList } from 'react-icons/fa6'
+import {
+  FaFolder,
+  FaFolderOpen,
+  FaKey,
+  FaRegFolder,
+  FaRegFolderOpen,
+} from 'react-icons/fa6'
 
 interface Props {
-  droppable: boolean
-  fileType?: string
+  node: NodeModel<CustomData>
+  isOpen?: boolean
 }
 
-export const TypeIcon: React.FC<Props> = (props) => {
-  if (props.droppable) {
-    return <FaFolder />
-  }
-
-  switch (props.fileType) {
-    case 'image':
-      return <FaFileImage />
-    case 'csv':
-      return <FaRectangleList />
-    case 'text':
-      return <FaFile />
+export const TypeIcon: React.FC<Props> = ({ node, isOpen = false }) => {
+  switch (node.data?.type) {
+    case 'array':
+      return isOpen ? <FaRegFolderOpen /> : <FaRegFolder />
+    case 'object':
+      return isOpen ? <FaFolderOpen /> : <FaFolder />
     default:
-      return null
+      return <FaKey />
   }
 }
