@@ -4,7 +4,7 @@ export class Deque<T = unknown> {
   private right: number = 1
   private length: number = 0
 
-  constructor(initialData?: []) {
+  constructor(initialData?: T[]) {
     if (initialData?.length) {
       for (const data of initialData) this.append(data)
     }
