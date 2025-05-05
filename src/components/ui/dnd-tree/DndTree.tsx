@@ -23,7 +23,7 @@ interface Props {
 
 export const DndTree = ({ data, onDrop, onClickItem }: Props) => {
   const [selectedItem, setSelectedItem] = useState<number | string | null>(null)
-  const [treeData, setTreeData] = useState<NodeModel<CustomData>[]>(data)
+  const [treeData, setTreeData] = useState<NodeModel<CustomData>[]>([])
 
   useEffect(() => setTreeData(data), [data])
 

@@ -1,25 +1,29 @@
 import { DndTree } from '@/components/ui/dnd-tree/DndTree'
+import { cn } from '@/lib/utils'
 import { JSONUtil } from '@/utils/json'
 import { DropOptions, NodeModel } from '@minoru/react-dnd-treeview'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface Props {
-  json: Record<string, unknown> | unknown[]
+  json: Record<string, unknown> | unknown[] | undefined
+  errorMessage: string | null
   onItemDrop: (newJson: Record<string, unknown> | unknown[]) => void
 }
 
 const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   json,
+  errorMessage,
   onItemDrop,
   ...props
 }) => {
-  const [data, setData] = useState<NodeModel<CustomData>[]>(
-    JSONUtil.flatten({ input: json }),
-  )
+  const [data, setData] = useState<NodeModel<CustomData>[]>([])
+
+  useEffect(() => setData(JSONUtil.flatten({ input: json })), [json])
 
   const handleDrop = useCallback(
     (_: NodeModel<CustomData>[], options: DropOptions<CustomData>) => {
-      if (options.dragSource === undefined) return
+      if (options.dragSource === undefined || json === undefined) return
+
       JSONUtil.move(
         json,
         options.dropTargetId as string,
@@ -38,11 +42,14 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props}>
-      <DndTree
-        data={data}
-        onDrop={handleDrop}
-        onClickItem={(node) => console.log(node)}
-      />
+      <span className={cn(errorMessage ? null : 'hidden')}>{errorMessage}</span>
+      <div className={cn(errorMessage ? 'hidden' : null)}>
+        <DndTree
+          data={data}
+          onDrop={handleDrop}
+          onClickItem={(node) => console.log(node)}
+        />
+      </div>
     </div>
   )
 }
