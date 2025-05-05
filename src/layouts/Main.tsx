@@ -63,7 +63,11 @@ const Main = () => {
           onItemDrop={handleDrop}
           errorMessage={errorMessage}
         />
-        <MainContent className="w-7/12 border-x border-slate-300 bg-green-300" />
+        <MainContent
+          className="w-7/12 border-x border-slate-300 bg-green-300"
+          json={json}
+          selectedItemId={selectedItemId}
+        />
         <RightNav
           className="flex h-full w-3/12 flex-col overflow-auto bg-[#1e1e1e]"
           json={json}

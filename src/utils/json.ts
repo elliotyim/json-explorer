@@ -5,6 +5,7 @@ interface FlattenProps {
   name?: string
   parentPath?: string
   obj?: unknown
+  depth?: number
 }
 
 interface SplitProps {
@@ -25,6 +26,20 @@ export class JSONUtil {
     } else {
       return path.match(/[^.[\]]+|\[\d+\]/g) ?? []
     }
+  }
+
+  private static getParentPath(path: string): string {
+    const splitPaths = this.getSplitPaths({ path, removeArrayBracket: false })
+    if (splitPaths.length === 1) return path
+
+    let parentPath = ''
+    for (const splitPath of splitPaths.slice(0, -1)) {
+      if (splitPath.endsWith(']')) parentPath += splitPath
+      else if (parentPath) parentPath += `.${splitPath}`
+      else parentPath = splitPath
+    }
+
+    return parentPath
   }
 
   private static getFolder(
@@ -90,6 +105,7 @@ export class JSONUtil {
       delete (parent as Record<string, unknown>)[sourceIndex]
     }
   }
+
   static getTrailingPaths(path: string): string[] {
     const result: string[] = []
     const paths = this.getSplitPaths({ path, removeArrayBracket: false })
@@ -123,6 +139,7 @@ export class JSONUtil {
     name,
     parentPath = 'root',
     obj = input,
+    depth = Number.MAX_SAFE_INTEGER,
   }: FlattenProps): NodeModel<CustomData>[] {
     const result: NodeModel<CustomData>[] = []
 
@@ -133,8 +150,17 @@ export class JSONUtil {
         const folder = this.getFolder(name, value, path, parentPath)
 
         if (folder) result.push(folder)
+
+        if (depth === 0) return result
+
         result.push(
-          ...this.flatten({ name, input: value, parentPath: path, obj }),
+          ...this.flatten({
+            name,
+            input: value,
+            parentPath: path,
+            obj,
+            depth: depth - 1,
+          }),
         )
       })
     } else if (typeof input === 'object' && input !== null) {
@@ -143,8 +169,17 @@ export class JSONUtil {
         const folder = this.getFolder(name, value, path, parentPath)
 
         if (folder) result.push(folder)
+
+        if (depth === 0) return result
+
         result.push(
-          ...this.flatten({ name, input: value, parentPath: path, obj }),
+          ...this.flatten({
+            name,
+            input: value,
+            parentPath: path,
+            obj,
+            depth: depth - 1,
+          }),
         )
       }
     } else {
@@ -152,7 +187,7 @@ export class JSONUtil {
       name = name ?? `${value}`
 
       const path = parentPath
-      parentPath = path.slice(0, path.lastIndexOf(name)).replace(/[.[]$/, '')
+      parentPath = this.getParentPath(path)
 
       const payload: NodeModel<CustomData> = {
         id: path,
