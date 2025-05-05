@@ -1,8 +1,10 @@
+import { JSONUtil } from '@/utils/json'
 import {
   DropOptions,
   MultiBackend,
   NodeModel,
   Tree,
+  TreeMethods,
   getBackendOptions,
 } from '@minoru/react-dnd-treeview'
 import { useEffect, useState } from 'react'
@@ -14,15 +16,22 @@ import { Placeholder } from './Placeholder'
 
 interface Props {
   data: NodeModel<CustomData>[]
+  selectedId: string
+  treeRef?: React.RefObject<TreeMethods | null>
   onDrop: (
     tree: NodeModel<CustomData>[],
     options: DropOptions<CustomData>,
   ) => void
-  onClickItem?: (node: NodeModel) => void
+  onClickItem?: (node: NodeModel<CustomData>) => void
 }
 
-export const DndTree = ({ data, onDrop, onClickItem }: Props) => {
-  const [selectedItem, setSelectedItem] = useState<number | string | null>(null)
+export const DndTree = ({
+  data,
+  treeRef,
+  selectedId,
+  onDrop,
+  onClickItem,
+}: Props) => {
   const [treeData, setTreeData] = useState<NodeModel<CustomData>[]>([])
 
   useEffect(() => setTreeData(data), [data])
@@ -31,6 +40,7 @@ export const DndTree = ({ data, onDrop, onClickItem }: Props) => {
     <DndProvider backend={MultiBackend} options={getBackendOptions()}>
       <div className={styles.app}>
         <Tree
+          ref={treeRef}
           tree={treeData}
           rootId={'root'}
           classes={{
@@ -42,7 +52,6 @@ export const DndTree = ({ data, onDrop, onClickItem }: Props) => {
           sort={false}
           insertDroppableFirst={false}
           dropTargetOffset={10}
-          enableAnimateExpand={true}
           onDrop={onDrop}
           canDrop={(_, { dragSource, dropTargetId }) => {
             if (dragSource?.parent === dropTargetId) return true
@@ -52,11 +61,13 @@ export const DndTree = ({ data, onDrop, onClickItem }: Props) => {
               node={node}
               depth={depth}
               isOpen={isOpen}
-              selected={selectedItem === node.id}
+              selected={selectedId === node.id}
               onToggle={onToggle}
               onClickItem={(node) => {
-                setSelectedItem(node.id)
-                if (onClickItem) onClickItem(node)
+                const paths = JSONUtil.getTrailingPaths(node.id as string)
+                treeRef?.current?.open(paths)
+
+                if (onClickItem) onClickItem(node as NodeModel<CustomData>)
               }}
             />
           )}

@@ -13,7 +13,7 @@ interface SplitProps {
 }
 
 export class JSONUtil {
-  private static getSplitPath({
+  private static getSplitPaths({
     path,
     removeArrayBracket = true,
   }: SplitProps): string[] {
@@ -25,18 +25,6 @@ export class JSONUtil {
     } else {
       return path.match(/[^.[\]]+|\[\d+\]/g) ?? []
     }
-  }
-
-  private static getByPath(obj: unknown, path: string): unknown {
-    const splitPaths = this.getSplitPath({ path })
-    if (splitPaths.length === 1 && splitPaths[0] === 'root') return obj
-
-    return splitPaths.slice(1).reduce((acc, key) => {
-      if (acc !== null && typeof acc === 'object') {
-        return (acc as Record<string, unknown>)[key]
-      }
-      return undefined
-    }, obj)
   }
 
   private static getFolder(
@@ -101,6 +89,33 @@ export class JSONUtil {
       const sourceIndex = sourceIndexes[sourceIndexes.length - 1]
       delete (parent as Record<string, unknown>)[sourceIndex]
     }
+  }
+  static getTrailingPaths(path: string): string[] {
+    const result: string[] = []
+    const paths = this.getSplitPaths({ path, removeArrayBracket: false })
+
+    paths.reduce((acc, val) => {
+      if (!acc) return val
+      else if (val.startsWith('[')) acc += val
+      else acc = `${acc}.${val}`
+
+      result.push(acc)
+      return acc
+    }, '')
+
+    return result
+  }
+
+  static getByPath(obj: unknown, path: string): unknown {
+    const splitPaths = this.getSplitPaths({ path })
+    if (splitPaths.length === 1 && splitPaths[0] === 'root') return obj
+
+    return splitPaths.slice(1).reduce((acc, key) => {
+      if (acc !== null && typeof acc === 'object') {
+        return (acc as Record<string, unknown>)[key]
+      }
+      return undefined
+    }, obj)
   }
 
   static flatten({
