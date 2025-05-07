@@ -145,13 +145,13 @@ export class JSONUtil {
 
     if (Array.isArray(input)) {
       input.forEach((value, i) => {
+        if (depth === 0) return result
+
         const name = `${i}`
         const path = `${parentPath}[${i}]`
         const folder = this.getFolder(name, value, path, parentPath)
 
         if (folder) result.push(folder)
-
-        if (depth === 0) return result
 
         result.push(
           ...this.flatten({
@@ -165,12 +165,12 @@ export class JSONUtil {
       })
     } else if (typeof input === 'object' && input !== null) {
       for (const [name, value] of Object.entries(input)) {
+        if (depth === 0) return result
+
         const path = `${parentPath}.${name}`
         const folder = this.getFolder(name, value, path, parentPath)
 
         if (folder) result.push(folder)
-
-        if (depth === 0) return result
 
         result.push(
           ...this.flatten({
