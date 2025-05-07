@@ -1,4 +1,4 @@
-import { DndTree } from '@/components/ui/dnd-tree/DndTree'
+import { DndTree } from '@/components/dnd-tree/DndTree'
 import { cn } from '@/lib/utils'
 import { JSONUtil } from '@/utils/json'
 import { DropOptions, NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'

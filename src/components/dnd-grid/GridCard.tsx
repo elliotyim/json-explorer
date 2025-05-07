@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/card'
-import { TypeIcon } from '../ui/dnd-tree/TypeIcon'
+import { TypeIcon } from '../dnd-tree/TypeIcon'
 
 interface Props {
   item: NodeModel<CustomData>

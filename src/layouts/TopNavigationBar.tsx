@@ -1,4 +1,4 @@
-import { TypeIcon } from '@/components/ui/dnd-tree/TypeIcon'
+import { TypeIcon } from '@/components/dnd-tree/TypeIcon'
 import { JSONUtil } from '@/utils/json'
 import { NodeModel } from '@minoru/react-dnd-treeview'
 import { useMemo } from 'react'
@@ -28,7 +28,6 @@ const TopNavigationBar: React.FC<
   }, [selectedItem, selectedItemId])
 
   const displayCurrent = (path: string) => {
-    if (!path) return 'root'
     const splitPath = JSONUtil.getSplitPaths({ path })
     return splitPath[splitPath.length - 1]
   }

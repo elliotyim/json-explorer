@@ -15,7 +15,7 @@ const Main = () => {
     Record<string, unknown> | unknown[] | undefined
   >(fixture)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [selectedItemId, setSelectedItemId] = useState<string | undefined>()
+  const [selectedItemId, setSelectedItemId] = useState<string>('root')
   const [selectedItem, setSelectedItem] = useState<
     Record<string, unknown> | unknown[] | undefined
   >()
@@ -24,7 +24,7 @@ const Main = () => {
 
   useEffect(() => {
     let item
-    if (!selectedItemId) item = json
+    if (selectedItemId === 'root') item = json
     else item = JSONUtil.getByPath(json, selectedItemId)
     setSelectedItem(item as Record<string, unknown>)
   }, [json, selectedItemId])
@@ -63,18 +63,18 @@ const Main = () => {
       <TopNavigationBar
         className="bg-slate-100 px-5 py-2"
         selectedItem={selectedItem}
-        selectedItemId={selectedItemId as string}
+        selectedItemId={selectedItemId}
       />
       <AddressBar
         className="flex items-center gap-4 border px-4 py-2"
-        currentPath={selectedItemId ?? ''}
+        currentPath={selectedItemId}
         onInputSubmit={handleOnInputSubmit}
       />
       <div className="flex w-full flex-1 overflow-auto">
         <LeftNav
           className="w-2/12 overflow-y-auto"
           json={json}
-          selectedId={selectedItemId as string}
+          selectedId={selectedItemId}
           treeRef={treeRef}
           onClickItem={handleMenuClick}
           onItemDrop={handleDrop}
@@ -84,7 +84,7 @@ const Main = () => {
           className="h-full w-7/12 overflow-auto border-x"
           json={json}
           selectedItem={selectedItem}
-          selectedItemId={selectedItemId as string}
+          selectedItemId={selectedItemId}
         />
         <RightNav
           className="flex h-full w-3/12 flex-col overflow-auto"
