@@ -1,5 +1,5 @@
 import { json as jsonLang } from '@codemirror/lang-json'
-import { vscodeDark } from '@uiw/codemirror-theme-vscode'
+import { vscodeLight } from '@uiw/codemirror-theme-vscode'
 import CodeMirror from '@uiw/react-codemirror'
 import { useEffect, useState } from 'react'
 
@@ -29,7 +29,7 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         className="h-full"
         value={value}
         height="100%"
-        theme={vscodeDark}
+        theme={vscodeLight}
         extensions={[jsonLang()]}
         onChange={onChange}
       />

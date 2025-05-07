@@ -14,7 +14,7 @@ interface SplitProps {
 }
 
 export class JSONUtil {
-  private static getSplitPaths({
+  static getSplitPaths({
     path,
     removeArrayBracket = true,
   }: SplitProps): string[] {

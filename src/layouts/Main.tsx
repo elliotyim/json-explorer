@@ -2,12 +2,13 @@ import fixture from '@/fixtures/sample.json'
 import LeftNav from '@/layouts/LeftNav'
 import MainContent from '@/layouts/MainContent'
 import RightNav from '@/layouts/RightNav'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'
 import { useDebouncedCallback } from 'use-debounce'
-import MenuBar from './MenuBar'
+import AddressBar from './AddressBar'
 import { JSONUtil } from '@/utils/json'
+import TopNavigationBar from './TopNavigationBar'
 
 const Main = () => {
   const [json, setJson] = useState<
@@ -15,7 +16,18 @@ const Main = () => {
   >(fixture)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>()
+  const [selectedItem, setSelectedItem] = useState<
+    Record<string, unknown> | unknown[] | undefined
+  >()
+
   const treeRef = useRef<TreeMethods>(null)
+
+  useEffect(() => {
+    let item
+    if (!selectedItemId) item = json
+    else item = JSONUtil.getByPath(json, selectedItemId)
+    setSelectedItem(item as Record<string, unknown>)
+  }, [json, selectedItemId])
 
   const handleOnInputSubmit = (currentPath: string) => {
     const paths = JSONUtil.getTrailingPaths(currentPath)
@@ -48,7 +60,12 @@ const Main = () => {
 
   return (
     <div className="flex h-screen w-full flex-col">
-      <MenuBar
+      <TopNavigationBar
+        className="bg-slate-100 px-5 py-2"
+        selectedItem={selectedItem}
+        selectedItemId={selectedItemId as string}
+      />
+      <AddressBar
         className="flex items-center gap-4 border px-4 py-2"
         currentPath={selectedItemId ?? ''}
         onInputSubmit={handleOnInputSubmit}
@@ -64,9 +81,10 @@ const Main = () => {
           errorMessage={errorMessage}
         />
         <MainContent
-          className="w-7/12 border-x border-slate-300 bg-green-300"
+          className="h-full w-7/12 overflow-auto border-x border-slate-300"
           json={json}
-          selectedItemId={selectedItemId}
+          selectedItem={selectedItem}
+          selectedItemId={selectedItemId as string}
         />
         <RightNav
           className="flex h-full w-3/12 flex-col overflow-auto bg-[#1e1e1e]"
