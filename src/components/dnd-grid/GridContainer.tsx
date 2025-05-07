@@ -16,7 +16,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div
-      className="relative z-0 h-full gap-4 border border-slate-200 p-4"
+      className="relative z-0 h-full gap-4 p-4"
       onPointerDown={(e) => {
         if (e.button !== 0) return
 
@@ -55,7 +55,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           <GridCard
             key={item.id}
             item={item}
-            className="h-[150px] w-[150px] select-none"
+            className="h-[150px] w-[150px] cursor-pointer select-none"
           />
         ))}
         {selectionRect && (

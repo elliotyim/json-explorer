@@ -81,13 +81,13 @@ const Main = () => {
           errorMessage={errorMessage}
         />
         <MainContent
-          className="h-full w-7/12 overflow-auto border-x border-slate-300"
+          className="h-full w-7/12 overflow-auto border-x"
           json={json}
           selectedItem={selectedItem}
           selectedItemId={selectedItemId as string}
         />
         <RightNav
-          className="flex h-full w-3/12 flex-col overflow-auto bg-[#1e1e1e]"
+          className="flex h-full w-3/12 flex-col overflow-auto"
           json={json}
           onValueChange={(value) => debouncedValueChange(value)}
         />
