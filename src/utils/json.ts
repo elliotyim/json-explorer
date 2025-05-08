@@ -144,9 +144,9 @@ export class JSONUtil {
     const result: NodeModel<CustomData>[] = []
 
     if (Array.isArray(input)) {
-      input.forEach((value, i) => {
-        if (depth === 0) return result
+      if (depth === 0) return result
 
+      input.forEach((value, i) => {
         const name = `${i}`
         const path = `${parentPath}[${i}]`
         const folder = this.getFolder(name, value, path, parentPath)
@@ -164,9 +164,9 @@ export class JSONUtil {
         )
       })
     } else if (typeof input === 'object' && input !== null) {
-      for (const [name, value] of Object.entries(input)) {
-        if (depth === 0) return result
+      if (depth === 0) return result
 
+      for (const [name, value] of Object.entries(input)) {
         const path = `${parentPath}.${name}`
         const folder = this.getFolder(name, value, path, parentPath)
 
