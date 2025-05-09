@@ -26,6 +26,19 @@ export class DOMVector {
     )
   }
 
+  clamp(vector: DOMRect): DOMVector {
+    return new DOMVector(
+      this.x,
+      this.y,
+      Math.min(vector.width - this.x, this.magnitudeX),
+      Math.min(vector.height - this.y, this.magnitudeY),
+    )
+  }
+
+  toTerminalPoint(): DOMPoint {
+    return new DOMPoint(this.x + this.magnitudeX, this.y + this.magnitudeY)
+  }
+
   toDOMRect(): DOMRect {
     return new DOMRect(
       Math.min(this.x, this.x + this.magnitudeX),
