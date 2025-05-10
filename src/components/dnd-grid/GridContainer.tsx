@@ -1,8 +1,8 @@
-import { NodeModel } from '@minoru/react-dnd-treeview'
-import GridCard from './GridCard'
-import { useEffect, useRef, useState } from 'react'
-import { DOMVector } from '@/utils/dom'
 import { cn } from '@/lib/utils'
+import { DOMUtil, DOMVector } from '@/utils/dom'
+import { NodeModel } from '@minoru/react-dnd-treeview'
+import { useEffect, useRef, useState } from 'react'
+import GridCard from './GridCard'
 
 interface Props {
   items: NodeModel<CustomData>[]
@@ -18,7 +18,10 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   )
   const [dragVector, setDragVector] = useState<DOMVector | null>(null)
   const [scrollVector, setScrollVector] = useState<DOMVector | null>(null)
+
   const [isDragging, setIsDragging] = useState(false)
+  const [pushedKeys, setPushedKeys] = useState<Record<string, boolean>>({})
+
   const selectionRect =
     dragVector && scrollVector && containerRef.current && isDragging
       ? dragVector
@@ -34,16 +37,18 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           .toDOMRect()
       : null
 
-  const intersect = (rect1: DOMRect, rect2: DOMRect) => {
-    if (rect1.right < rect2.left || rect2.right < rect1.left) return false
-    if (rect1.bottom < rect2.top || rect2.bottom < rect1.top) return false
-    return true
+  const selectItemDiv = (
+    div: HTMLElement,
+    prev: Record<string, boolean> = {},
+  ) => {
+    const id = div.dataset.item
+    if (id && typeof id === 'string') setSelectedItems({ ...prev, [id]: true })
   }
 
-  const updateSelectedItems = (
+  const getSelctedItems = (
     dragVector: DOMVector,
     scrollVector: DOMVector,
-  ) => {
+  ): Record<string, boolean> => {
     const next: Record<string, boolean> = {}
     const containerRect = containerRef.current?.getBoundingClientRect()
 
@@ -56,27 +61,20 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         return
       }
 
-      const itemRect = el.getBoundingClientRect()
-      const x = itemRect.x - containerRect.x + containerRef.current.scrollLeft
-      const y = itemRect.y - containerRect.y + containerRef.current.scrollTop
-      const translatedItemRect = new DOMRect(
-        x,
-        y,
-        itemRect.width,
-        itemRect.height,
+      const selectedArea = dragVector.add(scrollVector).toDOMRect()
+      const childRect = DOMUtil.generateChildRect(
+        containerRect,
+        el,
+        containerRef.current.scrollLeft,
+        containerRef.current.scrollTop,
       )
+      if (!DOMUtil.intersect(selectedArea, childRect)) return
 
-      if (
-        !intersect(dragVector.add(scrollVector).toDOMRect(), translatedItemRect)
-      )
-        return
-
-      if (el.dataset.item && typeof el.dataset.item === 'string') {
-        next[el.dataset.item] = true
-      }
+      const itemId = el.dataset.item
+      if (itemId && typeof itemId === 'string') next[itemId] = true
     })
 
-    setSelectedItems(next)
+    return next
   }
 
   useEffect(() => {
@@ -132,47 +130,39 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
         const containerRect = e.currentTarget.getBoundingClientRect()
 
-        setDragVector(
-          new DOMVector(
-            e.clientX - containerRect.x,
-            e.clientY - containerRect.y,
-            0,
-            0,
-          ),
-        )
+        const x = e.clientX - containerRect.x
+        const y = e.clientY - containerRect.y
+        setDragVector(new DOMVector(x, y, 0, 0))
 
-        setScrollVector(
-          new DOMVector(
-            e.currentTarget.scrollLeft,
-            e.currentTarget.scrollTop,
-            0,
-            0,
-          ),
-        )
+        const scrollX = e.currentTarget.scrollLeft
+        const scrollY = e.currentTarget.scrollTop
+        setScrollVector(new DOMVector(scrollX, scrollY, 0, 0))
       }}
       onPointerMove={(e) => {
         if (dragVector == null || scrollVector == null) return
 
         const containerRect = e.currentTarget.getBoundingClientRect()
 
-        const nextDragVector = new DOMVector(
-          dragVector.x,
-          dragVector.y,
-          e.clientX - containerRect.x - dragVector.x,
-          e.clientY - containerRect.y - dragVector.y,
-        )
+        const prevX = dragVector.x
+        const prevY = dragVector.y
+        const x = e.clientX - containerRect.x
+        const y = e.clientY - containerRect.y
+        const nextDragVector = new DOMVector(prevX, prevY, x - prevX, y - prevY)
 
         if (!isDragging && nextDragVector.getDiagonalLength() < 10) return
-        setIsDragging(true)
 
         containerRef.current?.focus()
 
+        setIsDragging(true)
         setDragVector(nextDragVector)
-        updateSelectedItems(nextDragVector, scrollVector)
+
+        const prev = pushedKeys['Control'] ? selectedItems : {}
+        const next = getSelctedItems(nextDragVector, scrollVector)
+        setSelectedItems({ ...prev, ...next })
       }}
       onPointerUp={() => {
         if (!isDragging) {
-          setSelectedItems({})
+          if (!pushedKeys['Control']) setSelectedItems({})
           setDragVector(null)
         } else {
           setDragVector(null)
@@ -193,7 +183,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         )
 
         setScrollVector(nextScrollVector)
-        updateSelectedItems(dragVector, nextScrollVector)
+        getSelctedItems(dragVector, nextScrollVector)
       }}
       tabIndex={-1}
       onKeyDown={(e) => {
@@ -202,7 +192,13 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           setSelectedItems({})
           setDragVector(null)
           setScrollVector(null)
+        } else if (!pushedKeys[e.key]) {
+          setPushedKeys((prev) => ({ ...prev, [e.key]: true }))
         }
+      }}
+      onKeyUp={(e) => {
+        delete pushedKeys[e.key]
+        setPushedKeys({ ...pushedKeys })
       }}
       {...props}
     >
@@ -218,7 +214,17 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
               ? 'bg-black text-white'
               : 'bg-white text-black',
           )}
-          onClick={() => console.log(item.id)}
+          onClick={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+            const id = e.currentTarget.dataset.item
+            const prev = pushedKeys['Control'] ? selectedItems : {}
+
+            if (id && typeof id === 'string' && prev[id]) {
+              delete prev[id]
+              setSelectedItems({ ...prev })
+            } else {
+              selectItemDiv(e.currentTarget, prev)
+            }
+          }}
         />
       ))}
       {selectionRect && (

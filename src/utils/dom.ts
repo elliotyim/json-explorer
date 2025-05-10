@@ -48,3 +48,59 @@ export class DOMVector {
     )
   }
 }
+
+export class DOMUtil {
+  static intersect(rect1: DOMRect, rect2: DOMRect): boolean {
+    if (rect1.right < rect2.left || rect2.right < rect1.left) return false
+    if (rect1.bottom < rect2.top || rect2.bottom < rect1.top) return false
+    return true
+  }
+
+  static intersectWithPos(x: number, y: number, rect: DOMRect) {
+    if (
+      rect.x < x &&
+      x < rect.x + rect.width &&
+      rect.y < y &&
+      y < rect.y + rect.height
+    ) {
+      return true
+    }
+    return false
+  }
+
+  static generateChildRect(
+    containerRect: DOMRect,
+    childDiv: HTMLElement,
+    childOffsetX: number = 0,
+    childOffsetY: number = 0,
+  ): DOMRect {
+    const itemRect = childDiv.getBoundingClientRect()
+    const x = itemRect.x - containerRect.x + childOffsetX
+    const y = itemRect.y - containerRect.y + childOffsetY
+    const translatedItemRect = new DOMRect(
+      x,
+      y,
+      itemRect.width,
+      itemRect.height,
+    )
+
+    return translatedItemRect
+  }
+
+  static getDivOnMouse(
+    pointerX: number,
+    pointerY: number,
+    containerDiv: HTMLElement,
+  ): HTMLElement | null {
+    const containerRect = containerDiv.getBoundingClientRect()
+
+    for (const childNode of containerDiv.childNodes) {
+      const childDiv = childNode as HTMLElement
+      const childRect = this.generateChildRect(containerRect, childDiv)
+
+      if (this.intersectWithPos(pointerX, pointerY, childRect)) return childDiv
+    }
+
+    return null
+  }
+}
