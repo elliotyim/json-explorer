@@ -43,6 +43,23 @@ const Main = () => {
     setJson(newJson)
   }
 
+  const handleItemMove = (
+    source: HTMLElement,
+    target: HTMLElement,
+    relativeIndex?: number,
+  ) => {
+    const from = source.dataset.item as string
+    const to = target.dataset.item as string
+
+    JSONUtil.move({
+      obj: json,
+      from,
+      to,
+      relativeIndex,
+    })
+    setJson(structuredClone(json))
+  }
+
   const debouncedValueChange = useDebouncedCallback((value) => {
     if (!value) return
 
@@ -85,6 +102,7 @@ const Main = () => {
           json={json}
           selectedItem={selectedItem}
           selectedItemId={selectedItemId}
+          onItemMove={handleItemMove}
         />
         <RightNav
           className="flex h-full w-3/12 flex-col overflow-auto"

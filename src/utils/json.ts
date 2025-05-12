@@ -13,6 +13,13 @@ interface SplitProps {
   removeArrayBracket?: boolean
 }
 
+interface MoveProps {
+  obj: unknown
+  from: string
+  to: string
+  relativeIndex?: number
+}
+
 export class JSONUtil {
   static getSplitPaths({
     path,
@@ -72,13 +79,11 @@ export class JSONUtil {
 
   private static set(
     parent: unknown,
-    source: NodeModel<CustomData>,
     destination: unknown,
+    key: string,
+    value: unknown,
     relativeIndex: number = -1,
   ) {
-    const key = source.text
-    const value = source.data?.value
-
     if (Array.isArray(destination)) {
       if (
         typeof parent === 'object' &&
@@ -203,37 +208,34 @@ export class JSONUtil {
     return result
   }
 
-  static move(
-    obj: unknown,
-    to: string,
-    source: NodeModel<CustomData>,
-    relativeIndex: number = -1,
-  ): void {
-    const sourceId = source.id as string
-    const parentPath = source.parent as string
-
-    const parent = this.getByPath(obj, parentPath)
+  static move({ obj, from, to, relativeIndex = -1 }: MoveProps): void {
+    const parentPath = this.getParentPath(from)
+    const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
     const destination = this.getByPath(obj, to)
+    const splitChildPaths = this.getSplitPaths({ path: from })
+
+    const key = splitChildPaths[splitChildPaths.length - 1]
+    const value = parent[key]
 
     if (Array.isArray(parent)) {
       if (Array.isArray(destination)) {
-        const sourceIndex = this.getLastIndex(sourceId)
+        const sourceIndex = this.getLastIndex(from)
 
         if (parent === destination && sourceIndex >= relativeIndex) {
           if (sourceIndex > relativeIndex) {
-            this.remove(parent, sourceId)
-            this.set(parent, source, destination, relativeIndex)
+            this.remove(parent, from)
+            this.set(parent, destination, key, value, relativeIndex)
           }
           return
         }
       }
 
-      this.set(parent, source, destination, relativeIndex)
-      this.remove(parent, sourceId)
+      this.set(parent, destination, key, value, relativeIndex)
+      this.remove(parent, from)
     } else {
       if (parent !== destination) {
-        this.set(parent, source, destination, relativeIndex)
-        this.remove(parent, sourceId)
+        this.set(parent, destination, key, value, relativeIndex)
+        this.remove(parent, from)
       }
     }
   }

@@ -58,10 +58,10 @@ export class DOMUtil {
 
   static intersectWithPos(x: number, y: number, rect: DOMRect) {
     if (
-      rect.x < x &&
-      x < rect.x + rect.width &&
-      rect.y < y &&
-      y < rect.y + rect.height
+      rect.x <= x &&
+      x <= rect.x + rect.width &&
+      rect.y <= y &&
+      y <= rect.y + rect.height
     ) {
       return true
     }
@@ -87,7 +87,7 @@ export class DOMUtil {
     return translatedItemRect
   }
 
-  static getDivOnMouse(
+  static getDivOnPointer(
     pointerX: number,
     pointerY: number,
     containerDiv: HTMLElement,

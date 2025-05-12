@@ -7,12 +7,18 @@ interface Props {
   json: Record<string, unknown> | unknown[] | undefined
   selectedItem: Record<string, unknown> | unknown[] | undefined
   selectedItemId: string
+  onItemMove?: (
+    source: HTMLElement,
+    target: HTMLElement,
+    relativeIndex?: number,
+  ) => void
 }
 
 const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   json,
   selectedItem,
   selectedItemId,
+  onItemMove,
   ...props
 }) => {
   const [displayItems, setDisplayItems] = useState<NodeModel<CustomData>[]>([])
@@ -31,7 +37,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props}>
-      <GridContainer items={displayItems} />
+      <GridContainer items={displayItems} onItemMove={onItemMove} />
     </div>
   )
 }

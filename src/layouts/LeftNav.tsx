@@ -30,12 +30,12 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     (_: NodeModel<CustomData>[], options: DropOptions<CustomData>) => {
       if (options.dragSource === undefined || json === undefined) return
 
-      JSONUtil.move(
-        json,
-        options.dropTargetId as string,
-        options.dragSource,
-        options.relativeIndex,
-      )
+      JSONUtil.move({
+        obj: json,
+        from: options.dragSource.id as string,
+        to: options.dropTargetId as string,
+        relativeIndex: options.relativeIndex,
+      })
 
       const newJson = structuredClone(json)
       const newData = JSONUtil.flatten({ input: newJson })
