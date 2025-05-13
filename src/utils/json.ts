@@ -77,6 +77,12 @@ export class JSONUtil {
     return parseInt(match[match.length - 1][1], 10)
   }
 
+  private static getType(obj: unknown): CustomData['type'] {
+    if (Array.isArray(obj)) return 'array'
+    else if (typeof obj === 'object' && obj !== null) return 'object'
+    else return 'value'
+  }
+
   private static set(
     parent: unknown,
     destination: unknown,
@@ -85,18 +91,19 @@ export class JSONUtil {
     relativeIndex: number = -1,
   ) {
     if (Array.isArray(destination)) {
-      if (
-        typeof parent === 'object' &&
-        parent !== null &&
-        !Array.isArray(parent)
-      ) {
+      if (relativeIndex === -1) {
+        const parentType = this.getType(parent)
+        if (parentType === 'object') destination.push({ [key]: value })
+        else destination.push(value)
+      } else if (this.getType(parent) === 'object') {
         destination.splice(relativeIndex, 0, { [key]: value })
       } else {
         destination.splice(relativeIndex, 0, value)
       }
     } else {
       const target = destination as Record<string, unknown>
-      target[key] = value
+      if (target[key] === undefined) target[key] = value
+      else target[`${key}_copy`] = value
     }
   }
 

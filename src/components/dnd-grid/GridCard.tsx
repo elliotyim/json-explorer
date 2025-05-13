@@ -96,13 +96,15 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       const targetY = clientOffset.y - containerRect.y
       const target = DOMUtil.getDivOnPointer(targetX, targetY, containerDiv)
 
-      const relativeIndex = +(source?.dataset.index ?? -1)
+      let relativeIndex
+      if (target?.dataset.type === 'array') relativeIndex = -1
+      else relativeIndex = +(source?.dataset.index ?? -1)
 
       const targetType = target?.dataset.type
 
       if (targetType !== 'object' && targetType !== 'array') return
 
-      if (!source || !target) return
+      if (!source || !target || source === target) return
       if (onItemMove) onItemMove(source, target, relativeIndex)
     },
   })

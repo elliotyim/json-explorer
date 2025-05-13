@@ -12,6 +12,7 @@ interface Props {
     target: HTMLElement,
     relativeIndex?: number,
   ) => void
+  onItemEnter?: (itemId: string) => void
 }
 
 const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
@@ -19,6 +20,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   selectedItem,
   selectedItemId,
   onItemMove,
+  onItemEnter,
   ...props
 }) => {
   const [displayItems, setDisplayItems] = useState<NodeModel<CustomData>[]>([])
@@ -37,7 +39,12 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props}>
-      <GridContainer items={displayItems} onItemMove={onItemMove} />
+      <GridContainer
+        items={displayItems}
+        selectedItemId={selectedItemId}
+        onItemMove={onItemMove}
+        onItemEnter={onItemEnter}
+      />
     </div>
   )
 }

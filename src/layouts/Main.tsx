@@ -60,6 +60,12 @@ const Main = () => {
     setJson(structuredClone(json))
   }
 
+  const handleItemEnter = (itemId: string) => {
+    const paths = JSONUtil.getTrailingPaths(itemId)
+    treeRef.current?.open(paths)
+    setSelectedItemId(itemId)
+  }
+
   const debouncedValueChange = useDebouncedCallback((value) => {
     if (!value) return
 
@@ -103,6 +109,7 @@ const Main = () => {
           selectedItem={selectedItem}
           selectedItemId={selectedItemId}
           onItemMove={handleItemMove}
+          onItemEnter={handleItemEnter}
         />
         <RightNav
           className="flex h-full w-3/12 flex-col overflow-auto"
