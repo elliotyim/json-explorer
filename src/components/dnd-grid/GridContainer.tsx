@@ -11,6 +11,7 @@ interface Props {
   onItemMove?: (
     source: HTMLElement,
     target: HTMLElement,
+    selectedNodes: NodeModel<CustomData>[],
     relativeIndex?: number,
   ) => void
   onItemEnter?: (itemId: string) => void
@@ -78,6 +79,21 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     })
 
     return next
+  }
+
+  const handleItemMove = (
+    source: HTMLElement,
+    target: HTMLElement,
+    relativeIndex?: number,
+  ) => {
+    if (onItemMove) {
+      const selectedNodes = items.filter(
+        (item) => selectedItems[item.id] || extraItems[item.id],
+      )
+      onItemMove(source, target, selectedNodes, relativeIndex)
+      setSelectedItems({})
+      setExtraItems({})
+    }
   }
 
   useEffect(() => {
@@ -157,11 +173,12 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           const containerDiv = containerRef.current
 
           const itemUnderPointer = DOMUtil.getDivOnPointer(x, y, containerDiv)
-          const id = itemUnderPointer?.dataset.item
+          const itemId = itemUnderPointer?.dataset.item
 
-          if (itemUnderPointer != null && id != null) {
-            const newItem = { [id]: true }
-            setExtraItems((prev) => ({ ...prev, ...newItem }))
+          if (itemUnderPointer != null && itemId != null) {
+            const newItem = { [itemId]: true }
+            if (e.ctrlKey) setExtraItems((prev) => ({ ...prev, ...newItem }))
+            else setExtraItems({ ...newItem })
             return
           }
 
@@ -211,17 +228,28 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             const itemUnderPointer = DOMUtil.getDivOnPointer(x, y, containerDiv)
             const itemId = itemUnderPointer?.dataset.item
 
-            if (itemUnderPointer != null && itemId != null) {
-              if (e.ctrlKey) {
+            if (itemUnderPointer && itemId != null) {
+              const newItem = { [itemId]: true }
+
+              if (draggingItemId == null) {
                 if (selectedItems[itemId]) {
-                  delete selectedItems[itemId]
-                  delete extraItems[itemId]
-                  setSelectedItems({ ...selectedItems })
+                  if (e.ctrlKey) {
+                    delete extraItems[itemId]
+                    delete selectedItems[itemId]
+                    setExtraItems({ ...extraItems })
+                    setSelectedItems({ ...selectedItems })
+                  } else {
+                    setExtraItems({})
+                    setSelectedItems(newItem)
+                  }
+                } else if (!e.ctrlKey) {
+                  setExtraItems({})
+                  setSelectedItems(newItem)
                 }
               }
             } else if (!e.ctrlKey) {
-              setSelectedItems({})
               setExtraItems({})
+              setSelectedItems({})
             }
 
             setDragVector(null)
@@ -280,7 +308,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             index={index}
             data-item={item.id}
             data-item-type={item.data?.type}
-            onItemMove={onItemMove}
+            onItemMove={handleItemMove}
             setDraggingItemId={setDraggingItemId}
             className={cn(
               'h-[150px] w-[150px] cursor-pointer select-none',

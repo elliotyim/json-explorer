@@ -4,7 +4,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { useEffect, useState } from 'react'
 
 interface Props {
-  json: Record<string, unknown> | unknown[] | undefined
+  json: Record<string, unknown> | unknown[]
   onValueChange: (value: string) => void
 }
 

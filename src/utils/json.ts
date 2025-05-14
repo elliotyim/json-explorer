@@ -13,10 +13,11 @@ interface SplitProps {
   removeArrayBracket?: boolean
 }
 
-interface MoveProps {
+interface CopyProps {
   obj: unknown
   from: string
   to: string
+  removeOriginal?: boolean
   relativeIndex?: number
 }
 
@@ -107,7 +108,7 @@ export class JSONUtil {
     }
   }
 
-  private static remove(parent: unknown, sourceId: string) {
+  static remove(parent: unknown, sourceId: string) {
     if (Array.isArray(parent)) {
       const sourceIndex = this.getLastIndex(sourceId)
       return parent.splice(sourceIndex, 1)
@@ -215,7 +216,13 @@ export class JSONUtil {
     return result
   }
 
-  static move({ obj, from, to, relativeIndex = -1 }: MoveProps): void {
+  static copy({
+    obj,
+    from,
+    to,
+    relativeIndex = -1,
+    removeOriginal = false,
+  }: CopyProps): void {
     const parentPath = this.getParentPath(from)
     const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
     const destination = this.getByPath(obj, to)
@@ -230,7 +237,7 @@ export class JSONUtil {
 
         if (parent === destination && sourceIndex >= relativeIndex) {
           if (sourceIndex > relativeIndex) {
-            this.remove(parent, from)
+            if (removeOriginal) this.remove(parent, from)
             this.set(parent, destination, key, value, relativeIndex)
           }
           return
@@ -238,11 +245,11 @@ export class JSONUtil {
       }
 
       this.set(parent, destination, key, value, relativeIndex)
-      this.remove(parent, from)
+      if (removeOriginal) this.remove(parent, from)
     } else {
       if (parent !== destination) {
         this.set(parent, destination, key, value, relativeIndex)
-        this.remove(parent, from)
+        if (removeOriginal) this.remove(parent, from)
       }
     }
   }

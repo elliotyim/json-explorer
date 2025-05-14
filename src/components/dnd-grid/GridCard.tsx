@@ -10,8 +10,8 @@ import {
   CardTitle,
 } from '../ui/card'
 
-import { Identifier } from 'dnd-core'
 import { DOMUtil } from '@/utils/dom'
+import { Identifier } from 'dnd-core'
 
 interface Props {
   item: NodeModel<CustomData>

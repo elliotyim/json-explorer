@@ -1,19 +1,18 @@
 import fixture from '@/fixtures/sample.json'
+
 import LeftNav from '@/layouts/LeftNav'
 import MainContent from '@/layouts/MainContent'
 import RightNav from '@/layouts/RightNav'
 import { useEffect, useRef, useState } from 'react'
 
+import { JSONUtil } from '@/utils/json'
 import { NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'
 import { useDebouncedCallback } from 'use-debounce'
 import AddressBar from './AddressBar'
-import { JSONUtil } from '@/utils/json'
 import TopNavigationBar from './TopNavigationBar'
 
 const Main = () => {
-  const [json, setJson] = useState<
-    Record<string, unknown> | unknown[] | undefined
-  >(fixture)
+  const [json, setJson] = useState<Record<string, unknown> | unknown[]>(fixture)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedItemId, setSelectedItemId] = useState<string>('root')
   const [selectedItem, setSelectedItem] = useState<
@@ -46,17 +45,32 @@ const Main = () => {
   const handleItemMove = (
     source: HTMLElement,
     target: HTMLElement,
+    selectedNodes: NodeModel<CustomData>[],
     relativeIndex?: number,
   ) => {
-    const from = source.dataset.item as string
-    const to = target.dataset.item as string
+    const sourceId = source.dataset.item as string
+    const targetId = target.dataset.item as string
 
-    JSONUtil.move({
-      obj: json,
-      from,
-      to,
-      relativeIndex,
+    const wrongTarget = selectedNodes.filter(
+      (node) => node.id !== sourceId && node.id === targetId,
+    ).length
+
+    if (wrongTarget) return
+
+    selectedNodes.forEach((node) => {
+      JSONUtil.copy({
+        obj: json,
+        from: node.id as string,
+        to: targetId,
+        relativeIndex,
+      })
     })
+
+    selectedNodes.reverse().forEach((node) => {
+      const parent = JSONUtil.getByPath(json, node.parent as string)
+      JSONUtil.remove(parent, node.id as string)
+    })
+
     setJson(structuredClone(json))
   }
 

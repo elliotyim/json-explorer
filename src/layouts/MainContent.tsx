@@ -4,12 +4,13 @@ import { NodeModel } from '@minoru/react-dnd-treeview'
 import { useEffect, useState } from 'react'
 
 interface Props {
-  json: Record<string, unknown> | unknown[] | undefined
+  json: Record<string, unknown> | unknown[]
   selectedItem: Record<string, unknown> | unknown[] | undefined
   selectedItemId: string
   onItemMove?: (
     source: HTMLElement,
     target: HTMLElement,
+    selectedNodes: NodeModel<CustomData>[],
     relativeIndex?: number,
   ) => void
   onItemEnter?: (itemId: string) => void

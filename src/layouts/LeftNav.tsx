@@ -5,7 +5,7 @@ import { DropOptions, NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'
 import { useCallback, useEffect, useState } from 'react'
 
 interface Props {
-  json: Record<string, unknown> | unknown[] | undefined
+  json: Record<string, unknown> | unknown[]
   errorMessage: string | null
   selectedId: string
   treeRef?: React.RefObject<TreeMethods | null>
@@ -34,10 +34,11 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       if (options.dropTarget?.data?.type === 'array') relativeIndex = -1
       else relativeIndex = options.relativeIndex
 
-      JSONUtil.move({
+      JSONUtil.copy({
         obj: json,
         from: options.dragSource.id as string,
         to: options.dropTargetId as string,
+        removeOriginal: true,
         relativeIndex,
       })
 
