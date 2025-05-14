@@ -1,5 +1,5 @@
 import { NodeModel } from '@minoru/react-dnd-treeview'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDrag, useDrop, XYCoord } from 'react-dnd'
 import { TypeIcon } from '../dnd-tree/TypeIcon'
 import {
@@ -21,6 +21,7 @@ interface Props {
     target: HTMLElement,
     relativeIndex?: number,
   ) => void
+  setDraggingItemId?: (id: string | null) => void
 }
 
 interface DragItem extends NodeModel<CustomData> {
@@ -34,6 +35,7 @@ const ItemTypes = {
 const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   item,
   index,
+  setDraggingItemId,
   onItemMove,
   ...props
 }) => {
@@ -48,6 +50,9 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     type: ItemTypes.CARD,
     item: () => ({ ...item, index }),
     collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+    end(_, monitor) {
+      if (monitor.didDrop() && setDraggingItemId) setDraggingItemId(null)
+    },
   }))
 
   const [{ handlerId }, drop] = useDrop<
@@ -110,6 +115,10 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   })
 
   drag(drop(ref))
+
+  useEffect(() => {
+    if (isDragging && setDraggingItemId) setDraggingItemId(`${item.id}`)
+  }, [isDragging, item.id, setDraggingItemId])
 
   return (
     <Card

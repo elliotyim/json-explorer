@@ -33,7 +33,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const [dragVector, setDragVector] = useState<DOMVector | null>(null)
   const [scrollVector, setScrollVector] = useState<DOMVector | null>(null)
 
-  const [isItemDragging, setIsItemDragging] = useState<boolean>(false)
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
   const [isAreaDragging, setIsAreaDragging] = useState<boolean>(false)
   const [pushedKeys, setPushedKeys] = useState<Record<string, boolean>>({})
 
@@ -157,12 +157,11 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           const containerDiv = containerRef.current
 
           const itemUnderPointer = DOMUtil.getDivOnPointer(x, y, containerDiv)
-          const itemId = itemUnderPointer?.dataset.item
+          const id = itemUnderPointer?.dataset.item
 
-          if (itemUnderPointer != null && itemId != null) {
-            const newItem = { [itemId]: true }
-            if (e.ctrlKey) setExtraItems((prev) => ({ ...prev, ...newItem }))
-            else setSelectedItems(newItem)
+          if (itemUnderPointer != null && id != null) {
+            const newItem = { [id]: true }
+            setExtraItems((prev) => ({ ...prev, ...newItem }))
             return
           }
 
@@ -198,7 +197,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           const selectedArea = nextDragVector.add(scrollVector).toDOMRect()
           const items = getSelctedItems(selectedArea)
 
-          if (e.ctrlKey) setExtraItems((prev) => ({ ...prev, ...items }))
+          if (e.ctrlKey) setExtraItems(items)
           else setSelectedItems(items)
         }}
         onPointerUp={(e) => {
@@ -282,6 +281,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             data-item={item.id}
             data-item-type={item.data?.type}
             onItemMove={onItemMove}
+            setDraggingItemId={setDraggingItemId}
             className={cn(
               'h-[150px] w-[150px] cursor-pointer select-none',
               selectedItems[item.id] || extraItems[item.id]
