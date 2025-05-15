@@ -30,16 +30,15 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     (_: NodeModel<CustomData>[], options: DropOptions<CustomData>) => {
       if (options.dragSource === undefined || json === undefined) return
 
-      let relativeIndex
-      if (options.dropTarget?.data?.type === 'array') relativeIndex = -1
-      else relativeIndex = options.relativeIndex
+      let targetIndex
+      if (options.dropTarget?.data?.type !== 'array') targetIndex = -1
+      else targetIndex = options.relativeIndex ? options.relativeIndex : -1
 
-      JSONUtil.copy({
+      JSONUtil.move({
         obj: json,
         from: options.dragSource.id as string,
         to: options.dropTargetId as string,
-        removeOriginal: true,
-        relativeIndex,
+        targetIndex,
       })
 
       const newJson = structuredClone(json)
@@ -54,12 +53,12 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   return (
     <div {...props}>
       <span className={cn(errorMessage ? null : 'hidden')}>{errorMessage}</span>
-      <div className={cn(errorMessage ? 'hidden' : null)}>
+      <div className={cn('h-full', errorMessage ? 'hidden' : null)}>
         <DndTree
           data={data}
           selectedId={selectedId}
           treeRef={treeRef}
-          onDrop={handleDrop}
+          onItemDrop={handleDrop}
           onClickItem={onClickItem}
         />
       </div>

@@ -42,11 +42,42 @@ const Main = () => {
     setJson(newJson)
   }
 
+  const handleItemRelocation = (
+    targetIndex: number,
+    selectedNodes: { index: number; item: NodeModel<CustomData> }[],
+  ) => {
+    if (!selectedNodes.length) return
+
+    const parentPath = selectedNodes?.[0]?.item.parent
+    if (!parentPath || typeof parentPath !== 'string') return
+
+    const parent = JSONUtil.getByPath(json, parentPath) as unknown[]
+    const toBeChanged = new Set(selectedNodes.map((node) => node.index))
+    const result = []
+
+    for (const [index, value] of parent.entries()) {
+      if (index === targetIndex) {
+        selectedNodes.forEach((node) => result.push(node.item.data?.value))
+      }
+      if (!toBeChanged.has(index)) {
+        result.push(value)
+      }
+    }
+
+    if (targetIndex === parent.length) {
+      selectedNodes.forEach((node) => result.push(node.item.data?.value))
+    }
+
+    JSONUtil.set({ obj: json, keyPath: parentPath, value: result })
+
+    setJson({ ...json })
+  }
+
   const handleItemMove = (
     source: HTMLElement,
     target: HTMLElement,
     selectedNodes: NodeModel<CustomData>[],
-    relativeIndex?: number,
+    targetIndex?: number,
   ) => {
     const sourceId = source.dataset.item as string
     const targetId = target.dataset.item as string
@@ -62,7 +93,7 @@ const Main = () => {
         obj: json,
         from: node.id as string,
         to: targetId,
-        relativeIndex,
+        targetIndex,
       })
     })
 
@@ -109,7 +140,7 @@ const Main = () => {
       />
       <div className="flex w-full flex-1 overflow-auto">
         <LeftNav
-          className="w-2/12 overflow-y-auto"
+          className="h-full w-2/12 overflow-y-auto"
           json={json}
           selectedId={selectedItemId}
           treeRef={treeRef}
@@ -122,6 +153,7 @@ const Main = () => {
           json={json}
           selectedItem={selectedItem}
           selectedItemId={selectedItemId}
+          onItemRelocation={handleItemRelocation}
           onItemMove={handleItemMove}
           onItemEnter={handleItemEnter}
         />

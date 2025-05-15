@@ -4,22 +4,33 @@ import { DndProvider, NodeModel } from '@minoru/react-dnd-treeview'
 import { useEffect, useRef, useState } from 'react'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import GridCard from './GridCard'
+import { JSONUtil } from '@/utils/json'
 
 interface Props {
+  json: Record<string, unknown> | unknown[]
   items: NodeModel<CustomData>[]
   selectedItemId: string
+  onItemRelocation?: (
+    targetIndex: number,
+    selectedNodes: {
+      index: number
+      item: NodeModel<CustomData>
+    }[],
+  ) => void
   onItemMove?: (
     source: HTMLElement,
     target: HTMLElement,
     selectedNodes: NodeModel<CustomData>[],
-    relativeIndex?: number,
+    targetIndex?: number,
   ) => void
   onItemEnter?: (itemId: string) => void
 }
 
 const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
+  json,
   items,
   selectedItemId,
+  onItemRelocation,
   onItemMove,
   onItemEnter,
   ...props
@@ -81,16 +92,38 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     return next
   }
 
+  const itemType = (itemId: string) => {
+    const item = JSONUtil.getByPath(json, itemId)
+
+    if (Array.isArray(item)) return 'array'
+    else if (typeof item === 'object' && item !== null) return 'object'
+    return 'value'
+  }
+
+  const handleItemRelocation = (targetIndex: number) => {
+    if (onItemRelocation) {
+      const selectedNodes = []
+      for (const [index, item] of items.entries()) {
+        if (selectedItems[item.id] || extraItems[item.id]) {
+          selectedNodes.push({ index, item })
+        }
+      }
+      onItemRelocation(targetIndex, selectedNodes)
+      setSelectedItems({})
+      setExtraItems({})
+    }
+  }
+
   const handleItemMove = (
     source: HTMLElement,
     target: HTMLElement,
-    relativeIndex?: number,
+    targetIndex?: number,
   ) => {
     if (onItemMove) {
       const selectedNodes = items.filter(
         (item) => selectedItems[item.id] || extraItems[item.id],
       )
-      onItemMove(source, target, selectedNodes, relativeIndex)
+      onItemMove(source, target, selectedNodes, targetIndex)
       setSelectedItems({})
       setExtraItems({})
     }
@@ -149,7 +182,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     <DndProvider backend={HTML5Backend}>
       <div
         ref={containerRef}
-        className="relative z-0 grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 overflow-auto p-4"
+        className="relative z-0 grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] content-start justify-items-center gap-4 overflow-auto p-4"
         onClick={(e) => {
           if (e.detail === 2) {
             const containerRect = e.currentTarget.getBoundingClientRect()
@@ -306,9 +339,11 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             key={item.id}
             item={item}
             index={index}
+            parentType={itemType(item.parent as string)}
             data-item={item.id}
             data-item-type={item.data?.type}
             onItemMove={handleItemMove}
+            onItemRelocation={handleItemRelocation}
             setDraggingItemId={setDraggingItemId}
             className={cn(
               'h-[150px] w-[150px] cursor-pointer select-none',

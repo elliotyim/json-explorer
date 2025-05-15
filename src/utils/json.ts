@@ -13,12 +13,21 @@ interface SplitProps {
   removeArrayBracket?: boolean
 }
 
-interface CopyProps {
+interface MoveProps {
   obj: unknown
   from: string
   to: string
+  targetIndex?: number
+}
+
+interface CopyProps extends MoveProps {
   removeOriginal?: boolean
-  relativeIndex?: number
+}
+
+interface SetProps {
+  obj: Record<string, unknown> | unknown[]
+  keyPath: string
+  value: unknown
 }
 
 export class JSONUtil {
@@ -36,7 +45,7 @@ export class JSONUtil {
     }
   }
 
-  private static getParentPath(path: string): string {
+  static getParentPath(path: string): string {
     const splitPaths = this.getSplitPaths({ path, removeArrayBracket: false })
     if (splitPaths.length === 1) return path
 
@@ -78,28 +87,28 @@ export class JSONUtil {
     return parseInt(match[match.length - 1][1], 10)
   }
 
-  private static getType(obj: unknown): CustomData['type'] {
+  static getType(obj: unknown): CustomData['type'] {
     if (Array.isArray(obj)) return 'array'
     else if (typeof obj === 'object' && obj !== null) return 'object'
     else return 'value'
   }
 
-  private static set(
+  private static add(
     parent: unknown,
     destination: unknown,
     key: string,
     value: unknown,
-    relativeIndex: number = -1,
+    targetIndex: number = -1,
   ) {
     if (Array.isArray(destination)) {
-      if (relativeIndex === -1) {
+      if (targetIndex === -1) {
         const parentType = this.getType(parent)
         if (parentType === 'object') destination.push({ [key]: value })
         else destination.push(value)
       } else if (this.getType(parent) === 'object') {
-        destination.splice(relativeIndex, 0, { [key]: value })
+        destination.splice(targetIndex, 0, { [key]: value })
       } else {
-        destination.splice(relativeIndex, 0, value)
+        destination.splice(targetIndex, 0, value)
       }
     } else {
       const target = destination as Record<string, unknown>
@@ -220,37 +229,54 @@ export class JSONUtil {
     obj,
     from,
     to,
-    relativeIndex = -1,
+    targetIndex = -1,
     removeOriginal = false,
   }: CopyProps): void {
     const parentPath = this.getParentPath(from)
     const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
-    const destination = this.getByPath(obj, to)
-    const splitChildPaths = this.getSplitPaths({ path: from })
+    const destination = parentPath === to ? parent : this.getByPath(obj, to)
 
-    const key = splitChildPaths[splitChildPaths.length - 1]
+    const splitSourcePaths = this.getSplitPaths({ path: from })
+
+    const key = splitSourcePaths[splitSourcePaths.length - 1]
     const value = parent[key]
 
     if (Array.isArray(parent)) {
       if (Array.isArray(destination)) {
         const sourceIndex = this.getLastIndex(from)
 
-        if (parent === destination && sourceIndex >= relativeIndex) {
-          if (sourceIndex > relativeIndex) {
+        if (parent === destination && sourceIndex >= targetIndex) {
+          if (sourceIndex > targetIndex) {
             if (removeOriginal) this.remove(parent, from)
-            this.set(parent, destination, key, value, relativeIndex)
+            this.add(parent, destination, key, value, targetIndex)
           }
           return
         }
       }
 
-      this.set(parent, destination, key, value, relativeIndex)
+      this.add(parent, destination, key, value, targetIndex)
       if (removeOriginal) this.remove(parent, from)
     } else {
       if (parent !== destination) {
-        this.set(parent, destination, key, value, relativeIndex)
+        this.add(parent, destination, key, value, targetIndex)
         if (removeOriginal) this.remove(parent, from)
       }
     }
+  }
+
+  static move({ obj, from, to, targetIndex = -1 }: MoveProps): void {
+    this.copy({ obj, from, to, targetIndex, removeOriginal: true })
+  }
+
+  static set({ obj, keyPath, value }: SetProps): void {
+    const keyPaths = this.getSplitPaths({ path: keyPath })
+
+    let target = obj as Record<string, unknown>
+    for (const key of keyPaths.slice(1, -1)) {
+      target = target[key] as Record<string, unknown>
+    }
+
+    const lastKey = keyPaths[keyPaths.length - 1]
+    target[lastKey] = value
   }
 }

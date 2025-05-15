@@ -1,5 +1,5 @@
 import { NodeModel } from '@minoru/react-dnd-treeview'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDrag, useDrop, XYCoord } from 'react-dnd'
 import { TypeIcon } from '../dnd-tree/TypeIcon'
 import {
@@ -16,10 +16,12 @@ import { Identifier } from 'dnd-core'
 interface Props {
   item: NodeModel<CustomData>
   index: number
+  parentType: CustomData['type']
+  onItemRelocation?: (targetIndex: number) => void
   onItemMove?: (
     source: HTMLElement,
     target: HTMLElement,
-    relativeIndex?: number,
+    targetIndex?: number,
   ) => void
   setDraggingItemId?: (id: string | null) => void
 }
@@ -35,11 +37,19 @@ const ItemTypes = {
 const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   item,
   index,
+  parentType,
   setDraggingItemId,
+  onItemRelocation,
   onItemMove,
   ...props
 }) => {
   const ref = useRef<HTMLDivElement>(null)
+  const timer = useRef<NodeJS.Timeout>(null)
+
+  const [isHovering, setIsHovering] = useState<boolean>(false)
+  const [onRight, setOnRight] = useState<boolean>(false)
+  const [onLeft, setOnLeft] = useState<boolean>(false)
+
   const truncate = (title: string) => {
     const len = 9
     if (title.length > len) return title.substring(0, len) + '..'
@@ -65,6 +75,15 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     hover(item: DragItem, monitor) {
       if (!ref.current) return
 
+      setIsHovering(true)
+      if (timer.current) {
+        clearTimeout(timer.current)
+        timer.current = null
+      }
+      timer.current = setTimeout(() => {
+        setIsHovering(false)
+      }, 100)
+
       const dragIndex = item.index
       const hoverIndex = index
 
@@ -79,15 +98,30 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
       const hoverClientX = (clientOffset as XYCoord).x - hoverBoundingRect.left
 
+      const width = hoverBoundingRect.width
+      const offset = 30
+
+      if (parentType === 'array') {
+        if (hoverClientX < 0 || hoverClientX > width) {
+          if (onLeft) setOnLeft(false)
+          if (onRight) setOnRight(false)
+        } else if (hoverClientX < offset) {
+          if (!onLeft) setOnLeft(true)
+        } else if (offset <= hoverClientX && hoverClientX < width - offset) {
+          if (onLeft) setOnLeft(false)
+          if (onRight) setOnRight(false)
+        } else if (width - offset <= hoverClientX) {
+          if (!onRight) setOnRight(true)
+        }
+      }
+
       if (dragIndex < hoverIndex && hoverClientX < hoverMiddleX) return
       if (dragIndex > hoverIndex && hoverClientX > hoverMiddleX) return
-
-      console.log(dragIndex, hoverIndex)
     },
-    drop(item, monitor) {
+    drop(_, monitor) {
       const containerDiv = ref.current?.parentElement
-      const clientOffset = monitor.getClientOffset()
       const sourceOffset = monitor.getInitialSourceClientOffset()
+      const clientOffset = monitor.getClientOffset()
 
       if (!containerDiv || !sourceOffset || !clientOffset) return
 
@@ -101,33 +135,52 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       const targetY = clientOffset.y - containerRect.y
       const target = DOMUtil.getDivOnPointer(targetX, targetY, containerDiv)
 
-      let relativeIndex
-      if (target?.dataset.type === 'array') relativeIndex = -1
-      else relativeIndex = +(source?.dataset.index ?? -1)
-
       const targetType = target?.dataset.type
 
-      if (targetType !== 'object' && targetType !== 'array') return
+      setOnLeft(false)
+      setOnRight(false)
 
+      if (parentType === 'array' && (onLeft || onRight)) {
+        let targetIndex = +(target?.dataset.index ?? -1)
+        if (onRight && targetIndex != null) targetIndex++
+
+        if (onItemRelocation) onItemRelocation(targetIndex)
+        return
+      }
+      if (targetType !== 'object' && targetType !== 'array') return
       if (!source || !target || source === target) return
-      if (onItemMove) onItemMove(source, target, relativeIndex)
+
+      if (onItemMove) onItemMove(source, target)
     },
   })
-
-  drag(drop(ref))
 
   useEffect(() => {
     if (isDragging && setDraggingItemId) setDraggingItemId(`${item.id}`)
   }, [isDragging, item.id, setDraggingItemId])
 
+  useEffect(() => {
+    if (!isHovering && (onLeft || onRight)) {
+      setOnLeft(false)
+      setOnRight(false)
+    }
+  }, [isHovering, onLeft, onRight])
+
+  drag(drop(ref))
+
   return (
     <Card
       ref={ref}
-      {...props}
       data-index={index}
       data-type={item.data?.type}
       data-handler-id={handlerId}
-      style={{ opacity: isDragging ? 0.2 : 1 }}
+      style={{
+        opacity: isDragging ? 0.2 : 1,
+        borderLeftColor: onLeft ? 'red' : undefined,
+        borderLeftWidth: onLeft ? '3px' : undefined,
+        borderRightColor: onRight ? 'red' : undefined,
+        borderRightWidth: onRight ? '3px' : undefined,
+      }}
+      {...props}
     >
       <CardHeader>
         <CardTitle>

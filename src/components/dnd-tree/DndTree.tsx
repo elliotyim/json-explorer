@@ -18,20 +18,16 @@ interface Props {
   data: NodeModel<CustomData>[]
   selectedId: string
   treeRef?: React.RefObject<TreeMethods | null>
-  onDrop: (
+  onItemDrop: (
     tree: NodeModel<CustomData>[],
     options: DropOptions<CustomData>,
   ) => void
   onClickItem?: (node: NodeModel<CustomData>) => void
 }
 
-export const DndTree = ({
-  data,
-  treeRef,
-  selectedId,
-  onDrop,
-  onClickItem,
-}: Props) => {
+export const DndTree: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & Props
+> = ({ data, treeRef, selectedId, onItemDrop, onClickItem }) => {
   const [treeData, setTreeData] = useState<NodeModel<CustomData>[]>([])
 
   useEffect(() => setTreeData(data), [data])
@@ -52,7 +48,7 @@ export const DndTree = ({
           sort={false}
           insertDroppableFirst={false}
           dropTargetOffset={10}
-          onDrop={onDrop}
+          onDrop={onItemDrop}
           canDrop={(_, { dragSource, dropTargetId }) => {
             if (dragSource?.parent === dropTargetId) return true
           }}
