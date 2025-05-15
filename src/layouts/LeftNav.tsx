@@ -1,18 +1,24 @@
-import { DndTree } from '@/components/ui/dnd-tree/DndTree'
+import { DndTree } from '@/components/dnd-tree/DndTree'
 import { cn } from '@/lib/utils'
 import { JSONUtil } from '@/utils/json'
-import { DropOptions, NodeModel } from '@minoru/react-dnd-treeview'
+import { DropOptions, NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'
 import { useCallback, useEffect, useState } from 'react'
 
 interface Props {
-  json: Record<string, unknown> | unknown[] | undefined
+  json: Record<string, unknown> | unknown[]
   errorMessage: string | null
-  onItemDrop: (newJson: Record<string, unknown> | unknown[]) => void
+  selectedId: string
+  treeRef?: React.RefObject<TreeMethods | null>
+  onClickItem?: ((node: NodeModel<CustomData>) => void) | undefined
+  onItemDrop?: (newJson: Record<string, unknown> | unknown[]) => void
 }
 
 const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   json,
   errorMessage,
+  selectedId,
+  treeRef,
+  onClickItem,
   onItemDrop,
   ...props
 }) => {
@@ -24,17 +30,21 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     (_: NodeModel<CustomData>[], options: DropOptions<CustomData>) => {
       if (options.dragSource === undefined || json === undefined) return
 
-      JSONUtil.move(
-        json,
-        options.dropTargetId as string,
-        options.dragSource,
-        options.relativeIndex,
-      )
+      let targetIndex
+      if (options.dropTarget?.data?.type !== 'array') targetIndex = -1
+      else targetIndex = options.relativeIndex ? options.relativeIndex : -1
+
+      JSONUtil.move({
+        obj: json,
+        from: options.dragSource.id as string,
+        to: options.dropTargetId as string,
+        targetIndex,
+      })
 
       const newJson = structuredClone(json)
       const newData = JSONUtil.flatten({ input: newJson })
 
-      onItemDrop(newJson)
+      if (onItemDrop) onItemDrop(newJson)
       setData(newData)
     },
     [json, onItemDrop],
@@ -43,11 +53,13 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   return (
     <div {...props}>
       <span className={cn(errorMessage ? null : 'hidden')}>{errorMessage}</span>
-      <div className={cn(errorMessage ? 'hidden' : null)}>
+      <div className={cn('h-full', errorMessage ? 'hidden' : null)}>
         <DndTree
           data={data}
-          onDrop={handleDrop}
-          onClickItem={(node) => console.log(node)}
+          selectedId={selectedId}
+          treeRef={treeRef}
+          onItemDrop={handleDrop}
+          onClickItem={onClickItem}
         />
       </div>
     </div>

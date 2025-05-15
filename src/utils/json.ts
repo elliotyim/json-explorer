@@ -5,6 +5,7 @@ interface FlattenProps {
   name?: string
   parentPath?: string
   obj?: unknown
+  depth?: number
 }
 
 interface SplitProps {
@@ -12,8 +13,25 @@ interface SplitProps {
   removeArrayBracket?: boolean
 }
 
+interface MoveProps {
+  obj: unknown
+  from: string
+  to: string
+  targetIndex?: number
+}
+
+interface CopyProps extends MoveProps {
+  removeOriginal?: boolean
+}
+
+interface SetProps {
+  obj: Record<string, unknown> | unknown[]
+  keyPath: string
+  value: unknown
+}
+
 export class JSONUtil {
-  private static getSplitPath({
+  static getSplitPaths({
     path,
     removeArrayBracket = true,
   }: SplitProps): string[] {
@@ -27,16 +45,18 @@ export class JSONUtil {
     }
   }
 
-  private static getByPath(obj: unknown, path: string): unknown {
-    const splitPaths = this.getSplitPath({ path })
-    if (splitPaths.length === 1 && splitPaths[0] === 'root') return obj
+  static getParentPath(path: string): string {
+    const splitPaths = this.getSplitPaths({ path, removeArrayBracket: false })
+    if (splitPaths.length === 1) return path
 
-    return splitPaths.slice(1).reduce((acc, key) => {
-      if (acc !== null && typeof acc === 'object') {
-        return (acc as Record<string, unknown>)[key]
-      }
-      return undefined
-    }, obj)
+    let parentPath = ''
+    for (const splitPath of splitPaths.slice(0, -1)) {
+      if (splitPath.endsWith(']')) parentPath += splitPath
+      else if (parentPath) parentPath += `.${splitPath}`
+      else parentPath = splitPath
+    }
+
+    return parentPath
   }
 
   private static getFolder(
@@ -67,32 +87,37 @@ export class JSONUtil {
     return parseInt(match[match.length - 1][1], 10)
   }
 
-  private static set(
-    parent: unknown,
-    source: NodeModel<CustomData>,
-    destination: unknown,
-    relativeIndex: number = -1,
-  ) {
-    const key = source.text
-    const value = source.data?.value
+  static getType(obj: unknown): CustomData['type'] {
+    if (Array.isArray(obj)) return 'array'
+    else if (typeof obj === 'object' && obj !== null) return 'object'
+    else return 'value'
+  }
 
+  private static add(
+    parent: unknown,
+    destination: unknown,
+    key: string,
+    value: unknown,
+    targetIndex: number = -1,
+  ) {
     if (Array.isArray(destination)) {
-      if (
-        typeof parent === 'object' &&
-        parent !== null &&
-        !Array.isArray(parent)
-      ) {
-        destination.splice(relativeIndex, 0, { [key]: value })
+      if (targetIndex === -1) {
+        const parentType = this.getType(parent)
+        if (parentType === 'object') destination.push({ [key]: value })
+        else destination.push(value)
+      } else if (this.getType(parent) === 'object') {
+        destination.splice(targetIndex, 0, { [key]: value })
       } else {
-        destination.splice(relativeIndex, 0, value)
+        destination.splice(targetIndex, 0, value)
       }
     } else {
       const target = destination as Record<string, unknown>
-      target[key] = value
+      if (target[key] === undefined) target[key] = value
+      else target[`${key}_copy`] = value
     }
   }
 
-  private static remove(parent: unknown, sourceId: string) {
+  static remove(parent: unknown, sourceId: string) {
     if (Array.isArray(parent)) {
       const sourceIndex = this.getLastIndex(sourceId)
       return parent.splice(sourceIndex, 1)
@@ -103,33 +128,80 @@ export class JSONUtil {
     }
   }
 
+  static getTrailingPaths(path: string): string[] {
+    const result: string[] = []
+    const paths = this.getSplitPaths({ path, removeArrayBracket: false })
+
+    paths.reduce((acc, val) => {
+      if (!acc) return val
+      else if (val.startsWith('[')) acc += val
+      else acc = `${acc}.${val}`
+
+      result.push(acc)
+      return acc
+    }, '')
+
+    return result
+  }
+
+  static getByPath(obj: unknown, path: string): unknown {
+    const splitPaths = this.getSplitPaths({ path })
+    if (splitPaths.length === 1 && splitPaths[0] === 'root') return obj
+
+    return splitPaths.slice(1).reduce((acc, key) => {
+      if (acc !== null && typeof acc === 'object') {
+        return (acc as Record<string, unknown>)[key]
+      }
+      return undefined
+    }, obj)
+  }
+
   static flatten({
     input,
     name,
     parentPath = 'root',
     obj = input,
+    depth = Number.MAX_SAFE_INTEGER,
   }: FlattenProps): NodeModel<CustomData>[] {
     const result: NodeModel<CustomData>[] = []
 
     if (Array.isArray(input)) {
+      if (depth === 0) return result
+
       input.forEach((value, i) => {
         const name = `${i}`
         const path = `${parentPath}[${i}]`
         const folder = this.getFolder(name, value, path, parentPath)
 
         if (folder) result.push(folder)
+
         result.push(
-          ...this.flatten({ name, input: value, parentPath: path, obj }),
+          ...this.flatten({
+            name,
+            input: value,
+            parentPath: path,
+            obj,
+            depth: depth - 1,
+          }),
         )
       })
     } else if (typeof input === 'object' && input !== null) {
+      if (depth === 0) return result
+
       for (const [name, value] of Object.entries(input)) {
         const path = `${parentPath}.${name}`
         const folder = this.getFolder(name, value, path, parentPath)
 
         if (folder) result.push(folder)
+
         result.push(
-          ...this.flatten({ name, input: value, parentPath: path, obj }),
+          ...this.flatten({
+            name,
+            input: value,
+            parentPath: path,
+            obj,
+            depth: depth - 1,
+          }),
         )
       }
     } else {
@@ -137,7 +209,7 @@ export class JSONUtil {
       name = name ?? `${value}`
 
       const path = parentPath
-      parentPath = path.slice(0, path.lastIndexOf(name)).replace(/[.[]$/, '')
+      parentPath = this.getParentPath(path)
 
       const payload: NodeModel<CustomData> = {
         id: path,
@@ -153,38 +225,58 @@ export class JSONUtil {
     return result
   }
 
-  static move(
-    obj: unknown,
-    to: string,
-    source: NodeModel<CustomData>,
-    relativeIndex: number = -1,
-  ): void {
-    const sourceId = source.id as string
-    const parentPath = source.parent as string
+  static copy({
+    obj,
+    from,
+    to,
+    targetIndex = -1,
+    removeOriginal = false,
+  }: CopyProps): void {
+    const parentPath = this.getParentPath(from)
+    const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
+    const destination = parentPath === to ? parent : this.getByPath(obj, to)
 
-    const parent = this.getByPath(obj, parentPath)
-    const destination = this.getByPath(obj, to)
+    const splitSourcePaths = this.getSplitPaths({ path: from })
+
+    const key = splitSourcePaths[splitSourcePaths.length - 1]
+    const value = parent[key]
 
     if (Array.isArray(parent)) {
       if (Array.isArray(destination)) {
-        const sourceIndex = this.getLastIndex(sourceId)
+        const sourceIndex = this.getLastIndex(from)
 
-        if (parent === destination && sourceIndex >= relativeIndex) {
-          if (sourceIndex > relativeIndex) {
-            this.remove(parent, sourceId)
-            this.set(parent, source, destination, relativeIndex)
+        if (parent === destination && sourceIndex >= targetIndex) {
+          if (sourceIndex > targetIndex) {
+            if (removeOriginal) this.remove(parent, from)
+            this.add(parent, destination, key, value, targetIndex)
           }
           return
         }
       }
 
-      this.set(parent, source, destination, relativeIndex)
-      this.remove(parent, sourceId)
+      this.add(parent, destination, key, value, targetIndex)
+      if (removeOriginal) this.remove(parent, from)
     } else {
       if (parent !== destination) {
-        this.set(parent, source, destination, relativeIndex)
-        this.remove(parent, sourceId)
+        this.add(parent, destination, key, value, targetIndex)
+        if (removeOriginal) this.remove(parent, from)
       }
     }
+  }
+
+  static move({ obj, from, to, targetIndex = -1 }: MoveProps): void {
+    this.copy({ obj, from, to, targetIndex, removeOriginal: true })
+  }
+
+  static set({ obj, keyPath, value }: SetProps): void {
+    const keyPaths = this.getSplitPaths({ path: keyPath })
+
+    let target = obj as Record<string, unknown>
+    for (const key of keyPaths.slice(1, -1)) {
+      target = target[key] as Record<string, unknown>
+    }
+
+    const lastKey = keyPaths[keyPaths.length - 1]
+    target[lastKey] = value
   }
 }

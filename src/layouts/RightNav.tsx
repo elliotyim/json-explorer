@@ -1,10 +1,10 @@
 import { json as jsonLang } from '@codemirror/lang-json'
-import { vscodeDark } from '@uiw/codemirror-theme-vscode'
+import { vscodeLight } from '@uiw/codemirror-theme-vscode'
 import CodeMirror from '@uiw/react-codemirror'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Props {
-  json: Record<string, unknown> | unknown[] | undefined
+  json: Record<string, unknown> | unknown[]
   onValueChange: (value: string) => void
 }
 
@@ -13,11 +13,15 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   onValueChange,
   ...props
 }) => {
-  const [value, setValue] = useState(JSON.stringify(json, null, 2))
+  const [value, setValue] = useState<string>('')
   const onChange = (value: string) => {
     setValue(value)
     onValueChange(value)
   }
+
+  useEffect(() => {
+    setValue(JSON.stringify(json, null, 2))
+  }, [json])
 
   return (
     <div {...props}>
@@ -25,7 +29,7 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         className="h-full"
         value={value}
         height="100%"
-        theme={vscodeDark}
+        theme={vscodeLight}
         extensions={[jsonLang()]}
         onChange={onChange}
       />
