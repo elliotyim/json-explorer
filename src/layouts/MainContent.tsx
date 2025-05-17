@@ -54,8 +54,46 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { setIsItemEditing } = useItemEditingStore()
   const { setRightNavTab } = useRightNavTabStore()
 
+  const handleItemCopy = () => {
+    const ids = Object.keys(selectedItemIds)
+    if (!ids.length) return
+
+    const result = ids.map((id) => {
+      const target = JSONUtil.inspect({ obj: json, path: id })
+      return { [target.text]: target.data?.value }
+    })
+
+    sessionStorage.setItem('copyPaste', JSON.stringify(result))
+  }
+
+  const handleItemPaste = async () => {
+    const jsonString = sessionStorage.getItem('copyPaste')
+    if (jsonString != null) {
+      const target = JSONUtil.getByPath(json, selectedItemId)
+      const sources = JSON.parse(jsonString)
+
+      if (Array.isArray(target)) {
+        for (const source of sources) {
+          Object.values(source).forEach((val) => target.push(val))
+        }
+      } else {
+        for (const source of sources) {
+          for (const [key, value] of Object.entries(source)) {
+            const typedTarget = target as Record<string, unknown>
+            if (typedTarget[key]) typedTarget[`${key}_copy`] = value
+            else typedTarget[key] = value
+          }
+        }
+      }
+
+      JSONUtil.set({ obj: json, keyPath: selectedItemId, value: target })
+      setJson(structuredClone(json))
+    }
+  }
+
   const handleItemEdit = () => {
-    if (Object.keys(selectedItemIds).length === 1) {
+    const ids = Object.keys(selectedItemIds)
+    if (ids.length === 1) {
       setRightNavTab(TAB.PROPERTIES)
       const timer = setTimeout(() => {
         setIsItemEditing(true)
@@ -106,8 +144,16 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           />
         </ContextMenuTrigger>
         <ContextMenuContent className="w-64">
-          <ContextMenuItem inset>Copy</ContextMenuItem>
-          <ContextMenuItem inset disabled>
+          <ContextMenuItem inset onSelect={handleItemCopy}>
+            Copy
+          </ContextMenuItem>
+          <ContextMenuItem
+            inset
+            disabled={
+              sessionStorage.getItem('copyPaste') == null ? true : false
+            }
+            onSelect={handleItemPaste}
+          >
             Paste
           </ContextMenuItem>
           <ContextMenuItem inset>Cut</ContextMenuItem>

@@ -100,6 +100,27 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     else return 'Complex'
   }
 
+  const renderPreview = () => {
+    const ids = Object.keys(selectedItemIds)
+    if (ids.length === 1) {
+      return JSON.stringify(singleItem?.data?.value, null, 2)
+    } else if (ids.length > 1) {
+      const parentPath = JSONUtil.getParentPath(ids[0])
+      const parent = JSONUtil.getByPath(json, parentPath)
+
+      const sortedIds =
+        JSONUtil.getType(parent) === 'array'
+          ? JSONUtil.sortIndexPaths(ids)
+          : ids
+      const result = sortedIds.map(
+        (id) => JSONUtil.inspect({ obj: json, path: id }).data?.value,
+      )
+
+      return JSON.stringify(result, null, 2)
+    }
+    return null
+  }
+
   useEffect(() => {
     if (singleItem) {
       setItemKey(singleItem.text)
@@ -148,7 +169,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
           ) : (
             <>
               <pre className="h-full overflow-auto rounded-lg border border-slate-200 p-4">
-                {JSON.stringify(singleItem?.data?.value, null, 2)}
+                {renderPreview()}
               </pre>
               <div className="flex w-full gap-2">
                 <Button

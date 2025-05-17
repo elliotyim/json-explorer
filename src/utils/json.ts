@@ -291,6 +291,10 @@ export class JSONUtil {
 
   static set({ obj, keyPath, value }: SetProps): void {
     const keyPaths = this.getSplitPaths({ path: keyPath })
+    if (keyPaths.length === 1 && keyPaths[0] === 'root') {
+      obj = value as Record<string, unknown>
+      return
+    }
 
     let target = obj as Record<string, unknown>
     for (const key of keyPaths.slice(1, -1)) {
@@ -319,5 +323,9 @@ export class JSONUtil {
     }
 
     return payload
+  }
+
+  static sortIndexPaths(paths: string[]): string[] {
+    return paths.sort((a, b) => this.getLastIndex(a) - this.getLastIndex(b))
   }
 }
