@@ -56,12 +56,21 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   const handleSubmit = () => {
     if (singleItem == null || editedValue == null) return
 
-    const originalId = singleItem.id as string
-    const newId = `${originalId.split('.').slice(0, -1).join('.')}.${itemKey}`
     const parent = JSONUtil.getByPath(json, singleItem.parent as string)
     const value = JSON.parse(editedValue)
 
-    JSONUtil.set({ obj: json, keyPath: itemKey, value })
+    const originalId = singleItem.id as string
+
+    let newId
+    if (Array.isArray(parent)) {
+      newId = JSONUtil.replaceLastKey(originalId, `[${itemKey}]`)
+    } else {
+      newId = JSONUtil.replaceLastKey(originalId, `${itemKey}`)
+    }
+
+    console.log(originalId, newId)
+
+    JSONUtil.set({ obj: json, keyPath: newId, value })
     if (originalId !== newId) JSONUtil.remove(parent, originalId)
 
     setJson(structuredClone(json))

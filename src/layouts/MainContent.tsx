@@ -86,6 +86,40 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     setSelectedItemIds({})
   }
 
+  const handleItemCreate = (type: CustomData['type']) => {
+    const itemSpec = JSONUtil.inspect({ obj: json, path: selectedItemId })
+    const currentItem = JSONUtil.getByPath(json, selectedItemId) as Record<
+      string,
+      unknown
+    >
+
+    let value
+    if (type === 'array') value = []
+    else if (type === 'object') value = {}
+    else value = null
+
+    let newItemPath
+    if (Array.isArray(currentItem)) {
+      newItemPath = `${itemSpec.id}[${currentItem.length}]`
+      currentItem.push(value)
+    } else {
+      const key = `new${type}`
+      newItemPath = `${itemSpec.id}.${key}`
+      currentItem[key] = value
+    }
+
+    JSONUtil.set({ obj: json, keyPath: selectedItemId, value: currentItem })
+    setJson(structuredClone(json))
+
+    setRightNavTab(TAB.PROPERTIES)
+    setSelectedItemIds({ [newItemPath]: true })
+
+    const timer = setTimeout(() => {
+      setIsItemEditing(true)
+      clearTimeout(timer)
+    }, 100)
+  }
+
   const showProperties = () => {
     setRightNavTab(TAB.PROPERTIES)
   }
@@ -150,10 +184,16 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           <ContextMenuSub>
             <ContextMenuSubTrigger inset>New</ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-48">
-              <ContextMenuItem>Array</ContextMenuItem>
-              <ContextMenuItem>Object</ContextMenuItem>
+              <ContextMenuItem onSelect={() => handleItemCreate('array')}>
+                Array
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={() => handleItemCreate('object')}>
+                Object
+              </ContextMenuItem>
               <ContextMenuSeparator />
-              <ContextMenuItem>Value</ContextMenuItem>
+              <ContextMenuItem onSelect={() => handleItemCreate('value')}>
+                Value
+              </ContextMenuItem>
             </ContextMenuSubContent>
           </ContextMenuSub>
           <ContextMenuSeparator />

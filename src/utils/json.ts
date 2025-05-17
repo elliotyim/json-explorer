@@ -311,7 +311,7 @@ export class JSONUtil {
 
     const lastKey = this.getLastKey(path)
 
-    const value = parent[lastKey]
+    const value = lastKey === 'root' ? obj : parent[lastKey]
     const type = this.getType(value)
 
     const payload: NodeModel<CustomData> = {
@@ -397,5 +397,12 @@ export class JSONUtil {
     const resultJSON = this.deleteItems(obj, ids)
 
     return resultJSON
+  }
+
+  static replaceLastKey(path: string, replacer: string): string {
+    const splitPaths = this.getSplitPaths({ path, removeArrayBracket: false })
+    const lastIndex = path.lastIndexOf(splitPaths.at(-1)!)
+    const newPath = path.substring(0, lastIndex)
+    return `${newPath}${replacer}`
   }
 }
