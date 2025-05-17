@@ -107,7 +107,6 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       <ContextMenu>
         <ContextMenuTrigger>
           <GridContainer
-            json={json}
             items={displayItems}
             selectedItemId={selectedItemId}
             onItemRelocation={onItemRelocation}

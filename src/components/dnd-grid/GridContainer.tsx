@@ -8,9 +8,9 @@ import { DndProvider, NodeModel } from '@minoru/react-dnd-treeview'
 import { useEffect, useRef, useState } from 'react'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import GridCard from './GridCard'
+import { useJsonStore } from '@/store/json'
 
 interface Props {
-  json: Record<string, unknown> | unknown[]
   items: NodeModel<CustomData>[]
   selectedItemId: string
   onItemRelocation?: (
@@ -30,7 +30,6 @@ interface Props {
 }
 
 const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
-  json,
   items,
   selectedItemId,
   onItemRelocation,
@@ -42,6 +41,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   const { setRightNavTab } = useRightNavTabStore()
 
+  const { json, setJson } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
   const { extraItemIds, setExtraItemIds } = useExtraItemIdsStore()
 
@@ -336,6 +336,31 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         }}
         tabIndex={-1}
         onKeyDown={(e) => {
+          if (e.ctrlKey) {
+            if (e.key === 'a') {
+              e.preventDefault()
+
+              if (Object.keys(selectedItemIds).length !== items.length) {
+                const allSelectedItems: Record<string, boolean> = {}
+                items.forEach((item) => (allSelectedItems[item.id] = true))
+
+                setSelectedItemIds(allSelectedItems)
+              }
+            } else if (e.key === 'c') {
+              JSONUtil.copyItems(json, Object.keys(selectedItemIds))
+            } else if (e.key === 'v') {
+              const result = JSONUtil.pastItems(json, selectedItemId)
+              setJson(result)
+            } else if (e.key === 'x') {
+              const result = JSONUtil.cutItems(
+                json,
+                Object.keys(selectedItemIds),
+              )
+              setJson(result)
+              setSelectedItemIds({})
+            }
+          }
+
           if (e.key === 'Escape') {
             e.preventDefault()
             setSelectedItemIds({})
