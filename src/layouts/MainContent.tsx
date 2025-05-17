@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/context-menu'
 import { TAB } from '@/constants/tab'
 import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
+import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
 import { NodeModel } from '@minoru/react-dnd-treeview'
@@ -48,11 +49,12 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 }) => {
   const [displayItems, setDisplayItems] = useState<NodeModel<CustomData>[]>([])
 
-  const { selectedItemIds } = useSelectedItemIdsStore()
+  const { setJson } = useJsonStore()
+  const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
   const { setIsItemEditing } = useItemEditingStore()
   const { setRightNavTab } = useRightNavTabStore()
 
-  const handleItemEditing = () => {
+  const handleItemEdit = () => {
     if (Object.keys(selectedItemIds).length === 1) {
       setRightNavTab(TAB.PROPERTIES)
       const timer = setTimeout(() => {
@@ -60,6 +62,18 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         clearTimeout(timer)
       }, 100)
     }
+  }
+
+  const handleItemDelete = () => {
+    const ids = Object.keys(selectedItemIds)
+    if (!ids.length) return
+
+    const parentPath = JSONUtil.getParentPath(ids[0])
+    const parent = JSONUtil.getByPath(json, parentPath)
+
+    JSONUtil.removeAll(parent, ids)
+    setJson(structuredClone(json))
+    setSelectedItemIds({})
   }
 
   const handleItemProperties = () => {
@@ -99,10 +113,12 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           <ContextMenuItem inset>Cut</ContextMenuItem>
 
           <ContextMenuSeparator />
-          <ContextMenuItem inset onSelect={handleItemEditing}>
+          <ContextMenuItem inset onSelect={handleItemEdit}>
             Modify
           </ContextMenuItem>
-          <ContextMenuItem inset>Delete</ContextMenuItem>
+          <ContextMenuItem inset onSelect={handleItemDelete}>
+            Delete
+          </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuSub>
             <ContextMenuSubTrigger inset>New</ContextMenuSubTrigger>

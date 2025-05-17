@@ -133,9 +133,19 @@ export class JSONUtil {
       const sourceIndex = this.getLastIndex(sourceId)
       return parent.splice(sourceIndex, 1)
     } else if (typeof parent === 'object' && parent !== null) {
-      const sourceIndexes = sourceId.split('.')
-      const sourceIndex = sourceIndexes[sourceIndexes.length - 1]
-      delete (parent as Record<string, unknown>)[sourceIndex]
+      const lastKey = this.getLastKey(sourceId)
+      delete (parent as Record<string, unknown>)[lastKey]
+    }
+  }
+
+  static removeAll(parent: unknown, sourceIds: string[]) {
+    if (Array.isArray(parent)) {
+      const lastIndexes = sourceIds
+        .map((id) => this.getLastIndex(id))
+        .sort((a, b) => b - a)
+      lastIndexes.forEach((id) => this.remove(parent, `[${id}]`))
+    } else {
+      sourceIds.forEach((id) => this.remove(parent, id))
     }
   }
 
