@@ -1,7 +1,8 @@
-import { json as jsonLang } from '@codemirror/lang-json'
-import { vscodeLight } from '@uiw/codemirror-theme-vscode'
-import CodeMirror from '@uiw/react-codemirror'
-import { useEffect, useState } from 'react'
+import CodeEditor from '@/components/code-editor/CodeEditor'
+import Properties from '@/components/properties/Properties'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TAB } from '@/constants/tab'
+import { useRightNavTabStore } from '@/store/tab'
 
 interface Props {
   json: Record<string, unknown> | unknown[]
@@ -13,26 +14,34 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   onValueChange,
   ...props
 }) => {
-  const [value, setValue] = useState<string>('')
-  const onChange = (value: string) => {
-    setValue(value)
-    onValueChange(value)
-  }
-
-  useEffect(() => {
-    setValue(JSON.stringify(json, null, 2))
-  }, [json])
+  const { rightNavTab, setRightNavTab } = useRightNavTabStore()
 
   return (
     <div {...props}>
-      <CodeMirror
-        className="h-full"
-        value={value}
-        height="100%"
-        theme={vscodeLight}
-        extensions={[jsonLang()]}
-        onChange={onChange}
-      />
+      <Tabs
+        className="h-full p-2"
+        value={rightNavTab ?? TAB.JSON}
+        onValueChange={(val) => setRightNavTab(val)}
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value={TAB.JSON} className="cursor-pointer">
+            JSON
+          </TabsTrigger>
+          <TabsTrigger value={TAB.PROPERTIES} className="cursor-pointer">
+            Properties
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value={TAB.JSON} className="h-full overflow-auto">
+          <CodeEditor
+            jsonString={JSON.stringify(json, null, 2)}
+            onValueChange={onValueChange}
+            className="h-full"
+          />
+        </TabsContent>
+        <TabsContent value={TAB.PROPERTIES} className="h-full overflow-auto">
+          <Properties />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

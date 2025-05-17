@@ -30,6 +30,11 @@ interface SetProps {
   value: unknown
 }
 
+interface InspectProps {
+  obj: Record<string, unknown> | unknown[]
+  path: string
+}
+
 export class JSONUtil {
   static getSplitPaths({
     path,
@@ -80,6 +85,12 @@ export class JSONUtil {
     } else {
       return null
     }
+  }
+
+  private static getLastKey(path: string): string {
+    const lastKey = this.getSplitPaths({ path }).at(-1)
+    if (!lastKey) throw Error(`Invalid path provided: ${path}`)
+    return lastKey
   }
 
   private static getLastIndex(parh: string): number {
@@ -276,7 +287,27 @@ export class JSONUtil {
       target = target[key] as Record<string, unknown>
     }
 
-    const lastKey = keyPaths[keyPaths.length - 1]
+    const lastKey = this.getLastKey(keyPath)
     target[lastKey] = value
+  }
+
+  static inspect({ obj, path }: InspectProps): NodeModel<CustomData> {
+    const parentPath = this.getParentPath(path)
+    const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
+
+    const lastKey = this.getLastKey(path)
+
+    const value = parent[lastKey]
+    const type = this.getType(value)
+
+    const payload: NodeModel<CustomData> = {
+      id: path,
+      text: lastKey,
+      parent: parentPath,
+      data: { type, value },
+      droppable: type === 'value' ? false : true,
+    }
+
+    return payload
   }
 }

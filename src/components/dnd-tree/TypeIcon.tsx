@@ -10,16 +10,39 @@ import {
 
 interface Props {
   node: NodeModel<CustomData>
+  size?: number
   isOpen?: boolean
 }
 
-export const TypeIcon: React.FC<Props> = ({ node, isOpen = false }) => {
+export const TypeIcon: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & Props
+> = ({ node, size, isOpen = false, ...props }) => {
   switch (node.data?.type) {
     case 'array':
-      return isOpen ? <FaRegFolderOpen /> : <FaRegFolder />
+      return isOpen ? (
+        <div {...props}>
+          <FaRegFolderOpen size={size} />
+        </div>
+      ) : (
+        <div {...props}>
+          <FaRegFolder size={size} />
+        </div>
+      )
     case 'object':
-      return isOpen ? <FaFolderOpen /> : <FaFolder />
+      return isOpen ? (
+        <div {...props}>
+          <FaFolderOpen size={size} />
+        </div>
+      ) : (
+        <div {...props}>
+          <FaFolder size={size} />
+        </div>
+      )
     default:
-      return <FaKey />
+      return (
+        <div {...props}>
+          <FaKey size={size} />
+        </div>
+      )
   }
 }

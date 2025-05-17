@@ -1,4 +1,18 @@
 import GridContainer from '@/components/dnd-grid/GridContainer'
+
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import { TAB } from '@/constants/tab'
+import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
+import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
 import { NodeModel } from '@minoru/react-dnd-treeview'
 import { useEffect, useState } from 'react'
@@ -34,6 +48,24 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 }) => {
   const [displayItems, setDisplayItems] = useState<NodeModel<CustomData>[]>([])
 
+  const { selectedItemIds } = useSelectedItemIdsStore()
+  const { setIsItemEditing } = useItemEditingStore()
+  const { setRightNavTab } = useRightNavTabStore()
+
+  const handleItemEditing = () => {
+    if (Object.keys(selectedItemIds).length === 1) {
+      setRightNavTab(TAB.PROPERTIES)
+      const timer = setTimeout(() => {
+        setIsItemEditing(true)
+        clearTimeout(timer)
+      }, 100)
+    }
+  }
+
+  const handleItemProperties = () => {
+    setRightNavTab(TAB.PROPERTIES)
+  }
+
   useEffect(() => {
     if (!selectedItem) return
 
@@ -48,14 +80,45 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props}>
-      <GridContainer
-        json={json}
-        items={displayItems}
-        selectedItemId={selectedItemId}
-        onItemRelocation={onItemRelocation}
-        onItemMove={onItemMove}
-        onItemEnter={onItemEnter}
-      />
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <GridContainer
+            json={json}
+            items={displayItems}
+            selectedItemId={selectedItemId}
+            onItemRelocation={onItemRelocation}
+            onItemMove={onItemMove}
+            onItemEnter={onItemEnter}
+          />
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-64">
+          <ContextMenuItem inset>Copy</ContextMenuItem>
+          <ContextMenuItem inset disabled>
+            Paste
+          </ContextMenuItem>
+          <ContextMenuItem inset>Cut</ContextMenuItem>
+
+          <ContextMenuSeparator />
+          <ContextMenuItem inset onSelect={handleItemEditing}>
+            Modify
+          </ContextMenuItem>
+          <ContextMenuItem inset>Delete</ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuSub>
+            <ContextMenuSubTrigger inset>New</ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-48">
+              <ContextMenuItem>Array</ContextMenuItem>
+              <ContextMenuItem>Object</ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem>Value</ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+          <ContextMenuSeparator />
+          <ContextMenuItem inset onSelect={handleItemProperties}>
+            Properties
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   )
 }

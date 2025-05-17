@@ -102,14 +102,15 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       const offset = 30
 
       if (parentType === 'array') {
-        if (hoverClientX < 0 || hoverClientX > width) {
+        if (
+          hoverClientX < 0 ||
+          hoverClientX > width ||
+          (offset <= hoverClientX && hoverClientX < width - offset)
+        ) {
           if (onLeft) setOnLeft(false)
           if (onRight) setOnRight(false)
         } else if (hoverClientX < offset) {
           if (!onLeft) setOnLeft(true)
-        } else if (offset <= hoverClientX && hoverClientX < width - offset) {
-          if (onLeft) setOnLeft(false)
-          if (onRight) setOnRight(false)
         } else if (width - offset <= hoverClientX) {
           if (!onRight) setOnRight(true)
         }
