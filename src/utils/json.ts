@@ -328,4 +328,74 @@ export class JSONUtil {
   static sortIndexPaths(paths: string[]): string[] {
     return paths.sort((a, b) => this.getLastIndex(a) - this.getLastIndex(b))
   }
+
+  static copyItems(
+    obj: Record<string, unknown> | unknown[],
+    ids: string[],
+  ): void {
+    if (!ids.length) throw Error('ids should not be empty!')
+
+    const result = ids.map((id) => {
+      const target = this.inspect({ obj, path: id })
+      return { [target.text]: target.data?.value }
+    })
+
+    sessionStorage.setItem('copyPaste', JSON.stringify(result))
+  }
+
+  static pastItems(
+    obj: Record<string, unknown> | unknown[],
+    currentPath: string,
+  ): Record<string, unknown> | unknown[] {
+    const jsonString = sessionStorage.getItem('copyPaste')
+    const newJSON = structuredClone(obj)
+
+    if (jsonString == null) return {}
+
+    const target = this.getByPath(newJSON, currentPath)
+    const sources = JSON.parse(jsonString)
+
+    if (Array.isArray(target)) {
+      for (const source of sources) {
+        Object.values(source).forEach((val) => target.push(val))
+      }
+    } else {
+      for (const source of sources) {
+        for (const [key, value] of Object.entries(source)) {
+          const typedTarget = target as Record<string, unknown>
+          if (typedTarget[key]) typedTarget[`${key}_copy`] = value
+          else typedTarget[key] = value
+        }
+      }
+    }
+
+    this.set({ obj: newJSON, keyPath: currentPath, value: target })
+    return newJSON
+  }
+
+  static deleteItems(
+    obj: Record<string, unknown> | unknown[],
+    ids: string[],
+  ): Record<string, unknown> | unknown[] {
+    if (!ids.length) throw Error('ids should not be empty!')
+    const newJSON = structuredClone(obj)
+
+    const parentPath = this.getParentPath(ids[0])
+    const parent = this.getByPath(newJSON, parentPath)
+
+    this.removeAll(parent, ids)
+    return newJSON
+  }
+
+  static cutItems(
+    obj: Record<string, unknown> | unknown[],
+    ids: string[],
+  ): Record<string, unknown> | unknown[] {
+    if (!ids.length) throw Error('ids should not be empty!')
+
+    this.copyItems(obj, ids)
+    const resultJSON = this.deleteItems(obj, ids)
+
+    return resultJSON
+  }
 }

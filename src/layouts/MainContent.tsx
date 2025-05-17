@@ -54,64 +54,22 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { setIsItemEditing } = useItemEditingStore()
   const { setRightNavTab } = useRightNavTabStore()
 
-  const deleteItems = () => {
-    const ids = Object.keys(selectedItemIds)
-    if (!ids.length) return
+  const handleItemCopy = () => {
+    JSONUtil.copyItems(json, Object.keys(selectedItemIds))
+  }
 
-    const parentPath = JSONUtil.getParentPath(ids[0])
-    const parent = JSONUtil.getByPath(json, parentPath)
+  const handleItemPaste = async () => {
+    const result = JSONUtil.pastItems(json, selectedItemId)
+    setJson(result)
+  }
 
-    JSONUtil.removeAll(parent, ids)
-    setJson(structuredClone(json))
+  const handleItemCut = () => {
+    const result = JSONUtil.cutItems(json, Object.keys(selectedItemIds))
+    setJson(result)
     setSelectedItemIds({})
   }
 
-  const copyItems = () => {
-    const ids = Object.keys(selectedItemIds)
-    if (!ids.length) return
-
-    const result = ids.map((id) => {
-      const target = JSONUtil.inspect({ obj: json, path: id })
-      return { [target.text]: target.data?.value }
-    })
-
-    sessionStorage.setItem('copyPaste', JSON.stringify(result))
-  }
-
-  const pastItems = async () => {
-    const jsonString = sessionStorage.getItem('copyPaste')
-    if (jsonString != null) {
-      const target = JSONUtil.getByPath(json, selectedItemId)
-      const sources = JSON.parse(jsonString)
-
-      if (Array.isArray(target)) {
-        for (const source of sources) {
-          Object.values(source).forEach((val) => target.push(val))
-        }
-      } else {
-        for (const source of sources) {
-          for (const [key, value] of Object.entries(source)) {
-            const typedTarget = target as Record<string, unknown>
-            if (typedTarget[key]) typedTarget[`${key}_copy`] = value
-            else typedTarget[key] = value
-          }
-        }
-      }
-
-      JSONUtil.set({ obj: json, keyPath: selectedItemId, value: target })
-      setJson(structuredClone(json))
-    }
-  }
-
-  const cutItems = () => {
-    const ids = Object.keys(selectedItemIds)
-    if (!ids.length) return
-
-    copyItems()
-    deleteItems()
-  }
-
-  const editItem = () => {
+  const handleItemEdit = () => {
     const ids = Object.keys(selectedItemIds)
     if (ids.length === 1) {
       setRightNavTab(TAB.PROPERTIES)
@@ -120,6 +78,12 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         clearTimeout(timer)
       }, 100)
     }
+  }
+
+  const handleItemDelete = () => {
+    const result = JSONUtil.deleteItems(json, Object.keys(selectedItemIds))
+    setJson(result)
+    setSelectedItemIds({})
   }
 
   const showProperties = () => {
@@ -155,7 +119,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           <ContextMenuItem
             inset
             disabled={!Object.keys(selectedItemIds).length}
-            onSelect={copyItems}
+            onSelect={handleItemCopy}
           >
             Copy
           </ContextMenuItem>
@@ -164,23 +128,23 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             disabled={
               sessionStorage.getItem('copyPaste') == null ? true : false
             }
-            onSelect={pastItems}
+            onSelect={handleItemPaste}
           >
             Paste
           </ContextMenuItem>
           <ContextMenuItem
             inset
             disabled={!Object.keys(selectedItemIds).length}
-            onSelect={cutItems}
+            onSelect={handleItemCut}
           >
             Cut
           </ContextMenuItem>
 
           <ContextMenuSeparator />
-          <ContextMenuItem inset onSelect={editItem}>
+          <ContextMenuItem inset onSelect={handleItemEdit}>
             Modify
           </ContextMenuItem>
-          <ContextMenuItem inset onSelect={deleteItems}>
+          <ContextMenuItem inset onSelect={handleItemDelete}>
             Delete
           </ContextMenuItem>
           <ContextMenuSeparator />
