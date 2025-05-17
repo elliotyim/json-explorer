@@ -54,7 +54,19 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { setIsItemEditing } = useItemEditingStore()
   const { setRightNavTab } = useRightNavTabStore()
 
-  const handleItemCopy = () => {
+  const deleteItems = () => {
+    const ids = Object.keys(selectedItemIds)
+    if (!ids.length) return
+
+    const parentPath = JSONUtil.getParentPath(ids[0])
+    const parent = JSONUtil.getByPath(json, parentPath)
+
+    JSONUtil.removeAll(parent, ids)
+    setJson(structuredClone(json))
+    setSelectedItemIds({})
+  }
+
+  const copyItems = () => {
     const ids = Object.keys(selectedItemIds)
     if (!ids.length) return
 
@@ -66,7 +78,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     sessionStorage.setItem('copyPaste', JSON.stringify(result))
   }
 
-  const handleItemPaste = async () => {
+  const pastItems = async () => {
     const jsonString = sessionStorage.getItem('copyPaste')
     if (jsonString != null) {
       const target = JSONUtil.getByPath(json, selectedItemId)
@@ -91,7 +103,15 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     }
   }
 
-  const handleItemEdit = () => {
+  const cutItems = () => {
+    const ids = Object.keys(selectedItemIds)
+    if (!ids.length) return
+
+    copyItems()
+    deleteItems()
+  }
+
+  const editItem = () => {
     const ids = Object.keys(selectedItemIds)
     if (ids.length === 1) {
       setRightNavTab(TAB.PROPERTIES)
@@ -102,19 +122,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     }
   }
 
-  const handleItemDelete = () => {
-    const ids = Object.keys(selectedItemIds)
-    if (!ids.length) return
-
-    const parentPath = JSONUtil.getParentPath(ids[0])
-    const parent = JSONUtil.getByPath(json, parentPath)
-
-    JSONUtil.removeAll(parent, ids)
-    setJson(structuredClone(json))
-    setSelectedItemIds({})
-  }
-
-  const handleItemProperties = () => {
+  const showProperties = () => {
     setRightNavTab(TAB.PROPERTIES)
   }
 
@@ -144,7 +152,11 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           />
         </ContextMenuTrigger>
         <ContextMenuContent className="w-64">
-          <ContextMenuItem inset onSelect={handleItemCopy}>
+          <ContextMenuItem
+            inset
+            disabled={!Object.keys(selectedItemIds).length}
+            onSelect={copyItems}
+          >
             Copy
           </ContextMenuItem>
           <ContextMenuItem
@@ -152,17 +164,23 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             disabled={
               sessionStorage.getItem('copyPaste') == null ? true : false
             }
-            onSelect={handleItemPaste}
+            onSelect={pastItems}
           >
             Paste
           </ContextMenuItem>
-          <ContextMenuItem inset>Cut</ContextMenuItem>
+          <ContextMenuItem
+            inset
+            disabled={!Object.keys(selectedItemIds).length}
+            onSelect={cutItems}
+          >
+            Cut
+          </ContextMenuItem>
 
           <ContextMenuSeparator />
-          <ContextMenuItem inset onSelect={handleItemEdit}>
+          <ContextMenuItem inset onSelect={editItem}>
             Modify
           </ContextMenuItem>
-          <ContextMenuItem inset onSelect={handleItemDelete}>
+          <ContextMenuItem inset onSelect={deleteItems}>
             Delete
           </ContextMenuItem>
           <ContextMenuSeparator />
@@ -176,7 +194,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             </ContextMenuSubContent>
           </ContextMenuSub>
           <ContextMenuSeparator />
-          <ContextMenuItem inset onSelect={handleItemProperties}>
+          <ContextMenuItem inset onSelect={showProperties}>
             Properties
           </ContextMenuItem>
         </ContextMenuContent>

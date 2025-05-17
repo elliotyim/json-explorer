@@ -266,7 +266,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
               const containerDiv = containerRef.current
               const item = DOMUtil.getDivOnPointer(x, y, containerDiv)
               const itemId = item?.dataset.item as string
-              setSelectedItemIds({ [itemId]: true })
+              if (itemId != null) setSelectedItemIds({ [itemId]: true })
             }
             return
           }
