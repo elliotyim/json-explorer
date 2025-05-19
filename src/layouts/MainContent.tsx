@@ -123,8 +123,9 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   useEffect(() => {
     if (!currentItem.data) return
 
+    const input = JSONUtil.getByPath(json, currentItem.id)
     const data = JSONUtil.flatten({
-      input: currentItem.data,
+      input,
       parentPath: currentItem.id,
       depth: 1,
     })

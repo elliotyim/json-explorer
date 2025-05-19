@@ -123,3 +123,11 @@
 .cm-editor.cm-focused {
   outline: none !important;
 }
+
+.grid-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+}

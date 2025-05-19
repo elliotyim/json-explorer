@@ -120,7 +120,8 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       if (dragIndex > hoverIndex && hoverClientX > hoverMiddleX) return
     },
     drop(_, monitor) {
-      const containerDiv = ref.current?.parentElement
+      const targetCell = ref.current?.parentElement
+      const containerDiv = targetCell?.parentElement
       const sourceOffset = monitor.getInitialSourceClientOffset()
       const clientOffset = monitor.getClientOffset()
 
@@ -130,11 +131,21 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
       const sourceX = sourceOffset.x - containerRect.x
       const sourceY = sourceOffset.y - containerRect.y
-      const source = DOMUtil.getDivOnPointer(sourceX, sourceY, containerDiv)
+      const source = DOMUtil.getDivOnPointer(
+        sourceX,
+        sourceY,
+        containerDiv,
+        true,
+      )
 
       const targetX = clientOffset.x - containerRect.x
       const targetY = clientOffset.y - containerRect.y
-      const target = DOMUtil.getDivOnPointer(targetX, targetY, containerDiv)
+      const target = DOMUtil.getDivOnPointer(
+        targetX,
+        targetY,
+        containerDiv,
+        true,
+      )
 
       const targetType = target?.dataset.type
 

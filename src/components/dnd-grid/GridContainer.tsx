@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import GridCard from './GridCard'
 import { useJsonStore } from '@/store/json'
+import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
 
 interface Props {
   items: NodeModel<CustomData>[]
@@ -71,24 +72,29 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     const next: Record<string, boolean> = {}
     const containerRect = containerRef.current?.getBoundingClientRect()
 
-    containerRef.current?.childNodes.forEach((el) => {
+    const containerDiv =
+      containerRef.current?.firstElementChild?.firstElementChild
+        ?.firstElementChild
+
+    containerDiv?.childNodes.forEach((el) => {
+      const child = el.firstChild
       if (
         containerRect == null ||
         containerRef.current == null ||
-        !(el instanceof HTMLElement)
+        !(child instanceof HTMLElement)
       ) {
         return
       }
 
       const childRect = DOMUtil.generateChildRect(
         containerRect,
-        el,
+        child,
         containerRef.current.scrollLeft,
         containerRef.current.scrollTop,
       )
       if (!DOMUtil.intersect(selectedArea, childRect)) return
 
-      const itemId = el.dataset.item
+      const itemId = child.dataset.item
       if (itemId && typeof itemId === 'string') next[itemId] = true
     })
 
@@ -181,19 +187,76 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     }
   }, [dragVector, isAreaDragging])
 
+  const itemSize = 150
+  const gapSize = 16
+  const containerSize = itemSize + gapSize * 2
+
+  const columnCount = (width: number) =>
+    Math.floor(width / (itemSize + gapSize * 2))
+
+  const cellRenderer = ({
+    columnIndex,
+    rowIndex,
+    style,
+    parent,
+  }: GridCellProps) => {
+    const index = columnCount(parent.props.width) * rowIndex + columnIndex
+    const item = items[index]
+    if (!item) return null
+
+    return (
+      <div
+        key={item.id}
+        style={{
+          ...style,
+          width: containerSize,
+          height: containerSize,
+          padding: `${gapSize}px`,
+          boxSizing: 'border-box',
+        }}
+      >
+        <GridCard
+          item={item}
+          index={index}
+          parentType={itemType(item.parent as string)}
+          data-item={item.id}
+          data-item-type={item.data?.type}
+          onItemMove={handleItemMove}
+          onItemRelocation={handleItemRelocation}
+          setDraggingItemId={setDraggingItemId}
+          className={cn(
+            `h-[150px] w-[150px] cursor-pointer select-none`,
+            selectedItemIds[item.id] || extraItemIds[item.id]
+              ? 'bg-black text-white'
+              : 'bg-white text-black',
+          )}
+        />
+      </div>
+    )
+  }
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div
         ref={containerRef}
-        className="relative z-0 grid h-full grid-cols-[repeat(auto-fill,minmax(150px,1fr))] content-start justify-items-center gap-4 overflow-auto p-4"
+        className="h-full w-full"
         onClick={(e) => {
           if (e.detail === 2) {
             const containerRect = e.currentTarget.getBoundingClientRect()
             const x = e.clientX - containerRect.x
             const y = e.clientY - containerRect.y
-            const containerDiv = containerRef.current!
 
-            const itemUnderPointer = DOMUtil.getDivOnPointer(x, y, containerDiv)
+            const containerDiv = containerRef.current?.firstElementChild
+              ?.firstElementChild?.firstElementChild as HTMLElement
+
+            if (!containerDiv) return
+
+            const itemUnderPointer = DOMUtil.getDivOnPointer(
+              x,
+              y,
+              containerDiv,
+              true,
+            )
             const itemId = itemUnderPointer?.dataset.item
             const isValue = itemUnderPointer?.dataset.itemType === 'value'
 
@@ -210,9 +273,17 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
           const x = e.clientX - containerRect.x
           const y = e.clientY - containerRect.y
-          const containerDiv = containerRef.current
+          const containerDiv = containerRef.current?.firstElementChild
+            ?.firstElementChild?.firstElementChild as HTMLElement
 
-          const itemUnderPointer = DOMUtil.getDivOnPointer(x, y, containerDiv)
+          if (!containerDiv) return
+
+          const itemUnderPointer = DOMUtil.getDivOnPointer(
+            x,
+            y,
+            containerDiv,
+            true,
+          )
           const itemId = itemUnderPointer?.dataset.item
 
           if (itemUnderPointer != null && itemId != null) {
@@ -248,7 +319,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
           containerRef.current?.focus()
 
-          setIsAreaDragging(true)
+          if (!isAreaDragging) setIsAreaDragging(true) // TODO: Check here for maximum call
           setDragVector(nextDragVector)
 
           const selectedArea = nextDragVector.add(scrollVector).toDOMRect()
@@ -263,8 +334,12 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           if (e.button === 2) {
             if (!Object.keys(selectedItemIds).length) {
               const { x, y } = DOMUtil.getCurrentPoint(e)
-              const containerDiv = containerRef.current
-              const item = DOMUtil.getDivOnPointer(x, y, containerDiv)
+              const containerDiv = containerRef.current?.firstElementChild
+                ?.firstElementChild?.firstElementChild as HTMLElement
+
+              if (!containerDiv) return
+
+              const item = DOMUtil.getDivOnPointer(x, y, containerDiv, true)
               const itemId = item?.dataset.item as string
               if (itemId != null) setSelectedItemIds({ [itemId]: true })
             }
@@ -273,9 +348,18 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
           if (!isAreaDragging) {
             const { x, y } = DOMUtil.getCurrentPoint(e)
-            const containerDiv = containerRef.current
 
-            const itemUnderPointer = DOMUtil.getDivOnPointer(x, y, containerDiv)
+            const containerDiv = containerRef.current?.firstElementChild
+              ?.firstElementChild?.firstElementChild as HTMLElement
+
+            if (!containerDiv) return
+
+            const itemUnderPointer = DOMUtil.getDivOnPointer(
+              x,
+              y,
+              containerDiv,
+              true,
+            )
             const itemId = itemUnderPointer?.dataset.item
 
             if (itemUnderPointer && itemId != null) {
@@ -376,27 +460,20 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         }}
         {...props}
       >
-        {items.map((item, index) => {
-          return (
-            <GridCard
-              key={item.id}
-              item={item}
-              index={index}
-              parentType={itemType(item.parent as string)}
-              data-item={item.id}
-              data-item-type={item.data?.type}
-              onItemMove={handleItemMove}
-              onItemRelocation={handleItemRelocation}
-              setDraggingItemId={setDraggingItemId}
-              className={cn(
-                'h-[150px] w-[150px] cursor-pointer select-none',
-                selectedItemIds[item.id] || extraItemIds[item.id]
-                  ? 'bg-black text-white'
-                  : 'bg-white text-black',
-              )}
+        <AutoSizer>
+          {({ height, width }) => (
+            <Grid
+              width={width}
+              height={height}
+              columnWidth={itemSize + gapSize * 2}
+              rowHeight={itemSize + gapSize * 2}
+              rowCount={Math.ceil(items.length / columnCount(width))}
+              columnCount={columnCount(width)}
+              cellRenderer={cellRenderer}
+              containerStyle={{ width, maxWidth: width, minHeight: height }}
             />
-          )
-        })}
+          )}
+        </AutoSizer>
         {selectionRect && (
           <div
             className={'absolute border-2 border-black bg-black/30'}
