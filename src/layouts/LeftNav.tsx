@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react'
 interface Props {
   json: Record<string, unknown> | unknown[]
   errorMessage: string | null
-  selectedId: string
+  currentItemId: string
   treeRef?: React.RefObject<TreeMethods | null>
   onClickItem?: ((node: NodeModel<CustomData>) => void) | undefined
   onItemDrop?: (newJson: Record<string, unknown> | unknown[]) => void
@@ -16,7 +16,7 @@ interface Props {
 const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   json,
   errorMessage,
-  selectedId,
+  currentItemId,
   treeRef,
   onClickItem,
   onItemDrop,
@@ -56,7 +56,7 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       <div className={cn('h-full', errorMessage ? 'hidden' : null)}>
         <DndTree
           data={data}
-          selectedId={selectedId}
+          currentItemId={currentItemId}
           treeRef={treeRef}
           onItemDrop={handleDrop}
           onClickItem={onClickItem}

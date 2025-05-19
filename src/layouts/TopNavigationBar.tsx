@@ -4,28 +4,27 @@ import { NodeModel } from '@minoru/react-dnd-treeview'
 import { useMemo } from 'react'
 
 interface Props {
-  selectedItem: Record<string, unknown> | unknown[] | undefined
-  selectedItemId: string
+  currentItem: CurrentItem
 }
 
 const TopNavigationBar: React.FC<
   React.HTMLAttributes<HTMLDivElement> & Props
-> = ({ selectedItem, selectedItemId, ...props }) => {
+> = ({ currentItem, ...props }) => {
   const node = useMemo<NodeModel<CustomData>>(() => {
-    const id = selectedItemId
-    const value = selectedItem
+    const id = currentItem.id
+    const value = currentItem.data
     const payload: NodeModel<CustomData> = { id, parent: '', text: '' }
 
-    if (Array.isArray(selectedItem)) {
+    if (Array.isArray(currentItem)) {
       payload.data = { type: 'array', value }
-    } else if (typeof selectedItem === 'object' && selectedItem !== null) {
+    } else if (typeof currentItem === 'object' && currentItem !== null) {
       payload.data = { type: 'object', value }
     } else {
       payload.data = { type: 'value', value }
     }
 
     return payload
-  }, [selectedItem, selectedItemId])
+  }, [currentItem])
 
   const displayCurrent = (path: string) => {
     const splitPath = JSONUtil.getSplitPaths({ path })
@@ -36,7 +35,7 @@ const TopNavigationBar: React.FC<
     <div {...props}>
       <div className="flex min-h-[24px] items-center gap-4">
         <TypeIcon node={node} isOpen={false} />
-        <span>{displayCurrent(selectedItemId)}</span>
+        <span>{displayCurrent(currentItem.id)}</span>
       </div>
     </div>
   )

@@ -12,7 +12,7 @@ import { useJsonStore } from '@/store/json'
 
 interface Props {
   items: NodeModel<CustomData>[]
-  selectedItemId: string
+  currentItemId: string
   onItemRelocation?: (
     targetIndex: number,
     selectedNodes: {
@@ -31,7 +31,7 @@ interface Props {
 
 const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   items,
-  selectedItemId,
+  currentItemId,
   onItemRelocation,
   onItemMove,
   onItemEnter,
@@ -135,7 +135,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   useEffect(() => {
     setSelectedItemIds({})
     setExtraItemIds({})
-  }, [selectedItemId, setExtraItemIds, setSelectedItemIds])
+  }, [currentItemId, setExtraItemIds, setSelectedItemIds])
 
   useEffect(() => {
     if (!isAreaDragging) return
@@ -349,7 +349,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             } else if (e.key === 'c') {
               JSONUtil.copyItems(json, Object.keys(selectedItemIds))
             } else if (e.key === 'v') {
-              const result = JSONUtil.pastItems(json, selectedItemId)
+              const result = JSONUtil.pastItems(json, currentItemId)
               setJson(result)
             } else if (e.key === 'x') {
               const result = JSONUtil.cutItems(

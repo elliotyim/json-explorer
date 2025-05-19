@@ -3,38 +3,43 @@ import MainContent from '@/layouts/MainContent'
 import RightNav from '@/layouts/RightNav'
 import { useEffect, useRef, useState } from 'react'
 
+import { useBackHistoryStore } from '@/store/history'
+import { useCurrentItemStore } from '@/store/item'
+import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 import { NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'
 import { useDebouncedCallback } from 'use-debounce'
 import AddressBar from './AddressBar'
 import TopNavigationBar from './TopNavigationBar'
-import { useJsonStore } from '@/store/json'
 
 const Main = () => {
   const { json, setJson } = useJsonStore()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [selectedItemId, setSelectedItemId] = useState<string>('root')
-  const [selectedItem, setSelectedItem] = useState<
-    Record<string, unknown> | unknown[] | undefined
-  >()
+  const { currentItem, setCurrentItem } = useCurrentItemStore()
+
+  const { setBackHistories } = useBackHistoryStore()
 
   const treeRef = useRef<TreeMethods>(null)
 
   useEffect(() => {
-    let item
-    if (selectedItemId === 'root') item = json
-    else item = JSONUtil.getByPath(json, selectedItemId)
-    setSelectedItem(item as Record<string, unknown>)
-  }, [json, selectedItemId])
+    if (!currentItem.id) setCurrentItem({ id: 'root', data: json })
+  }, [currentItem.id, json, setCurrentItem])
 
   const handleOnInputSubmit = (currentPath: string) => {
-    const paths = JSONUtil.getTrailingPaths(currentPath)
+    const id = currentPath
+    const paths = JSONUtil.getTrailingPaths(id)
     treeRef.current?.open(paths)
-    setSelectedItemId(currentPath)
+
+    const data = JSONUtil.getByPath(json, id) as Record<string, unknown>
+    setCurrentItem({ id, data })
   }
 
   const handleMenuClick = (node: NodeModel<CustomData>) => {
-    setSelectedItemId(`${node.id}`)
+    const id = `${node.id}`
+    const data = JSONUtil.getByPath(json, id) as Record<string, unknown>
+    const parentPath = JSONUtil.getParentPath(id)
+    setCurrentItem({ id, data })
+    setBackHistories((prev) => [...prev, parentPath])
   }
 
   const handleDrop = (newJson: Record<string, unknown> | unknown[]) => {
@@ -112,7 +117,12 @@ const Main = () => {
   const handleItemEnter = (itemId: string) => {
     const paths = JSONUtil.getTrailingPaths(itemId)
     treeRef.current?.open(paths)
-    setSelectedItemId(itemId)
+
+    const data = JSONUtil.getByPath(json, itemId) as Record<string, unknown>
+    const parentPath = JSONUtil.getParentPath(itemId)
+
+    setCurrentItem({ id: itemId, data })
+    setBackHistories((prev) => [...prev, parentPath])
   }
 
   const debouncedValueChange = useDebouncedCallback((value) => {
@@ -134,19 +144,18 @@ const Main = () => {
     <div className="flex h-screen w-full flex-col">
       <TopNavigationBar
         className="bg-slate-100 px-5 py-2"
-        selectedItem={selectedItem}
-        selectedItemId={selectedItemId}
+        currentItem={currentItem}
       />
       <AddressBar
         className="flex items-center gap-4 border px-4 py-2"
-        currentPath={selectedItemId}
+        currentPath={currentItem.id}
         onInputSubmit={handleOnInputSubmit}
       />
       <div className="flex w-full flex-1 overflow-auto">
         <LeftNav
           className="h-full w-2/12 overflow-y-auto"
           json={json}
-          selectedId={selectedItemId}
+          currentItemId={currentItem.id}
           treeRef={treeRef}
           onClickItem={handleMenuClick}
           onItemDrop={handleDrop}
@@ -155,8 +164,7 @@ const Main = () => {
         <MainContent
           className="h-full w-7/12 overflow-auto border-x"
           json={json}
-          selectedItem={selectedItem}
-          selectedItemId={selectedItemId}
+          currentItem={currentItem}
           onItemRelocation={handleItemRelocation}
           onItemMove={handleItemMove}
           onItemEnter={handleItemEnter}

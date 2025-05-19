@@ -1,9 +1,10 @@
-import { NodeModel } from '@minoru/react-dnd-treeview'
 import { create } from 'zustand'
 
 interface CurrentItemState {
-  currentItem: NodeModel<CustomData> | null
-  setCurrentItem: (currentItem: NodeModel<CustomData> | null) => void
+  currentItem: CurrentItem
+  setCurrentItem: (
+    currentItem: CurrentItem | ((prev: CurrentItem) => CurrentItem),
+  ) => void
 }
 
 interface SelectedItemIdsState {
@@ -30,8 +31,13 @@ interface ItemEditState {
 }
 
 export const useCurrentItemStore = create<CurrentItemState>((set) => ({
-  currentItem: null,
-  setCurrentItem: (currentItem) => set(() => ({ currentItem })),
+  currentItem: { id: '', data: {} },
+  setCurrentItem: (updater) =>
+    set((prev) =>
+      typeof updater === 'function'
+        ? { currentItem: updater(prev.currentItem) }
+        : { currentItem: updater },
+    ),
 }))
 
 export const useSelectedItemIdsStore = create<SelectedItemIdsState>((set) => ({
