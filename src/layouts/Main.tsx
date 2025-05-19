@@ -1,5 +1,3 @@
-import fixture from '@/fixtures/sample.json'
-
 import LeftNav from '@/layouts/LeftNav'
 import MainContent from '@/layouts/MainContent'
 import RightNav from '@/layouts/RightNav'
@@ -10,9 +8,10 @@ import { NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'
 import { useDebouncedCallback } from 'use-debounce'
 import AddressBar from './AddressBar'
 import TopNavigationBar from './TopNavigationBar'
+import { useJsonStore } from '@/store/json'
 
 const Main = () => {
-  const [json, setJson] = useState<Record<string, unknown> | unknown[]>(fixture)
+  const { json, setJson } = useJsonStore()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedItemId, setSelectedItemId] = useState<string>('root')
   const [selectedItem, setSelectedItem] = useState<
@@ -53,24 +52,29 @@ const Main = () => {
 
     const parent = JSONUtil.getByPath(json, parentPath) as unknown[]
     const toBeChanged = new Set(selectedNodes.map((node) => node.index))
-    const result = []
+    const values = []
 
     for (const [index, value] of parent.entries()) {
       if (index === targetIndex) {
-        selectedNodes.forEach((node) => result.push(node.item.data?.value))
+        selectedNodes.forEach((node) => values.push(node.item.data?.value))
       }
       if (!toBeChanged.has(index)) {
-        result.push(value)
+        values.push(value)
       }
     }
 
     if (targetIndex === parent.length) {
-      selectedNodes.forEach((node) => result.push(node.item.data?.value))
+      selectedNodes.forEach((node) => values.push(node.item.data?.value))
     }
 
-    JSONUtil.set({ obj: json, keyPath: parentPath, value: result })
+    const result = JSONUtil.set({
+      obj: json,
+      keyPath: parentPath,
+      value: values,
+    })
 
-    setJson({ ...json })
+    const newJSON = Array.isArray(result) ? [...result] : { ...result }
+    setJson(newJSON)
   }
 
   const handleItemMove = (

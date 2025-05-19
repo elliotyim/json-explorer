@@ -103,4 +103,11 @@ export class DOMUtil {
 
     return null
   }
+
+  static getCurrentPoint(e: React.PointerEvent): { x: number; y: number } {
+    const containerRect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - containerRect.x
+    const y = e.clientY - containerRect.y
+    return { x, y }
+  }
 }

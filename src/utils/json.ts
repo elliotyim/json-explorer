@@ -30,6 +30,11 @@ interface SetProps {
   value: unknown
 }
 
+interface InspectProps {
+  obj: Record<string, unknown> | unknown[]
+  path: string
+}
+
 export class JSONUtil {
   static getSplitPaths({
     path,
@@ -82,6 +87,12 @@ export class JSONUtil {
     }
   }
 
+  private static getLastKey(path: string): string {
+    const lastKey = this.getSplitPaths({ path }).at(-1)
+    if (!lastKey) throw Error(`Invalid path provided: ${path}`)
+    return lastKey
+  }
+
   private static getLastIndex(parh: string): number {
     const match = Array.from(parh.matchAll(/\[(\d+)\]/g))
     return parseInt(match[match.length - 1][1], 10)
@@ -122,9 +133,19 @@ export class JSONUtil {
       const sourceIndex = this.getLastIndex(sourceId)
       return parent.splice(sourceIndex, 1)
     } else if (typeof parent === 'object' && parent !== null) {
-      const sourceIndexes = sourceId.split('.')
-      const sourceIndex = sourceIndexes[sourceIndexes.length - 1]
-      delete (parent as Record<string, unknown>)[sourceIndex]
+      const lastKey = this.getLastKey(sourceId)
+      delete (parent as Record<string, unknown>)[lastKey]
+    }
+  }
+
+  static removeAll(parent: unknown, sourceIds: string[]) {
+    if (Array.isArray(parent)) {
+      const lastIndexes = sourceIds
+        .map((id) => this.getLastIndex(id))
+        .sort((a, b) => b - a)
+      lastIndexes.forEach((id) => this.remove(parent, `[${id}]`))
+    } else {
+      sourceIds.forEach((id) => this.remove(parent, id))
     }
   }
 
@@ -268,15 +289,126 @@ export class JSONUtil {
     this.copy({ obj, from, to, targetIndex, removeOriginal: true })
   }
 
-  static set({ obj, keyPath, value }: SetProps): void {
+  static set({
+    obj,
+    keyPath,
+    value,
+  }: SetProps): Record<string, unknown> | unknown[] {
     const keyPaths = this.getSplitPaths({ path: keyPath })
+    if (keyPaths.length === 1 && keyPaths[0] === 'root') {
+      obj = value as Record<string, unknown>
+      return structuredClone(obj)
+    }
 
     let target = obj as Record<string, unknown>
     for (const key of keyPaths.slice(1, -1)) {
       target = target[key] as Record<string, unknown>
     }
 
-    const lastKey = keyPaths[keyPaths.length - 1]
+    const lastKey = this.getLastKey(keyPath)
     target[lastKey] = value
+
+    return structuredClone(obj)
+  }
+
+  static inspect({ obj, path }: InspectProps): NodeModel<CustomData> {
+    const parentPath = this.getParentPath(path)
+    const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
+
+    const lastKey = this.getLastKey(path)
+
+    const value = lastKey === 'root' ? obj : parent[lastKey]
+    const type = this.getType(value)
+
+    const payload: NodeModel<CustomData> = {
+      id: path,
+      text: lastKey,
+      parent: parentPath,
+      data: { type, value },
+      droppable: type === 'value' ? false : true,
+    }
+
+    return payload
+  }
+
+  static sortIndexPaths(paths: string[]): string[] {
+    return paths.sort((a, b) => this.getLastIndex(a) - this.getLastIndex(b))
+  }
+
+  static copyItems(
+    obj: Record<string, unknown> | unknown[],
+    ids: string[],
+  ): void {
+    if (!ids.length) throw Error('ids should not be empty!')
+
+    const result = ids.map((id) => {
+      const target = this.inspect({ obj, path: id })
+      return { [target.text]: target.data?.value }
+    })
+
+    sessionStorage.setItem('copyPaste', JSON.stringify(result))
+  }
+
+  static pastItems(
+    obj: Record<string, unknown> | unknown[],
+    currentPath: string,
+  ): Record<string, unknown> | unknown[] {
+    const jsonString = sessionStorage.getItem('copyPaste')
+    const newJSON = structuredClone(obj)
+
+    if (jsonString == null) return {}
+
+    const target = this.getByPath(newJSON, currentPath)
+    const sources = JSON.parse(jsonString)
+
+    if (Array.isArray(target)) {
+      for (const source of sources) {
+        Object.values(source).forEach((val) => target.push(val))
+      }
+    } else {
+      for (const source of sources) {
+        for (const [key, value] of Object.entries(source)) {
+          const typedTarget = target as Record<string, unknown>
+          if (typedTarget[key]) typedTarget[`${key}_copy`] = value
+          else typedTarget[key] = value
+        }
+      }
+    }
+
+    this.set({ obj: newJSON, keyPath: currentPath, value: target })
+    return newJSON
+  }
+
+  static deleteItems(
+    obj: Record<string, unknown> | unknown[],
+    ids: string[],
+  ): Record<string, unknown> | unknown[] {
+    if (!ids.length) throw Error('ids should not be empty!')
+    const newJSON = structuredClone(obj)
+
+    const parentPath = this.getParentPath(ids[0])
+    const parent = this.getByPath(newJSON, parentPath)
+
+    this.removeAll(parent, ids)
+    return newJSON
+  }
+
+  static cutItems(
+    obj: Record<string, unknown> | unknown[],
+    ids: string[],
+  ): Record<string, unknown> | unknown[] {
+    if (!ids.length) throw Error('ids should not be empty!')
+
+    this.copyItems(obj, ids)
+    const resultJSON = this.deleteItems(obj, ids)
+
+    return resultJSON
+  }
+
+  static replaceLastKey(path: string, replacer: string): string {
+    const splitPaths = this.getSplitPaths({ path, removeArrayBracket: false })
+    const lastIndex = path.lastIndexOf(splitPaths.at(-1)!)
+    const newPath = path.substring(0, lastIndex)
+    return `${newPath}${replacer}`
   }
 }
