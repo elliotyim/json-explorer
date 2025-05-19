@@ -16,7 +16,7 @@ import { Placeholder } from './Placeholder'
 
 interface Props {
   data: NodeModel<CustomData>[]
-  selectedId: string
+  currentItemId: string
   treeRef?: React.RefObject<TreeMethods | null>
   onItemDrop: (
     tree: NodeModel<CustomData>[],
@@ -27,7 +27,7 @@ interface Props {
 
 export const DndTree: React.FC<
   React.HTMLAttributes<HTMLDivElement> & Props
-> = ({ data, treeRef, selectedId, onItemDrop, onClickItem }) => {
+> = ({ data, treeRef, currentItemId, onItemDrop, onClickItem }) => {
   const [treeData, setTreeData] = useState<NodeModel<CustomData>[]>([])
 
   useEffect(() => setTreeData(data), [data])
@@ -57,7 +57,7 @@ export const DndTree: React.FC<
               node={node}
               depth={depth}
               isOpen={isOpen}
-              selected={selectedId === node.id}
+              selected={currentItemId === node.id}
               onToggle={onToggle}
               onClickItem={(node) => {
                 const paths = JSONUtil.getTrailingPaths(node.id as string)

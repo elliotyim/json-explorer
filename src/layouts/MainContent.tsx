@@ -20,8 +20,7 @@ import { useEffect, useState } from 'react'
 
 interface Props {
   json: Record<string, unknown> | unknown[]
-  selectedItem: Record<string, unknown> | unknown[] | undefined
-  selectedItemId: string
+  currentItem: CurrentItem
   onItemRelocation?: (
     targetIndex: number,
     selectedNodes: {
@@ -40,8 +39,7 @@ interface Props {
 
 const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   json,
-  selectedItem,
-  selectedItemId,
+  currentItem,
   onItemRelocation,
   onItemMove,
   onItemEnter,
@@ -59,7 +57,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   }
 
   const handleItemPaste = async () => {
-    const result = JSONUtil.pastItems(json, selectedItemId)
+    const result = JSONUtil.pastItems(json, currentItem.id)
     setJson(result)
   }
 
@@ -87,11 +85,9 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   }
 
   const handleItemCreate = (type: CustomData['type']) => {
-    const itemSpec = JSONUtil.inspect({ obj: json, path: selectedItemId })
-    const currentItem = JSONUtil.getByPath(json, selectedItemId) as Record<
-      string,
-      unknown
-    >
+    const id = currentItem.id
+    const itemSpec = JSONUtil.inspect({ obj: json, path: id })
+    const item = JSONUtil.getByPath(json, id) as Record<string, unknown>
 
     let value
     if (type === 'array') value = []
@@ -99,16 +95,16 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     else value = null
 
     let newItemPath
-    if (Array.isArray(currentItem)) {
-      newItemPath = `${itemSpec.id}[${currentItem.length}]`
-      currentItem.push(value)
+    if (Array.isArray(item)) {
+      newItemPath = `${itemSpec.id}[${item.length}]`
+      item.push(value)
     } else {
       const key = `new${type}`
       newItemPath = `${itemSpec.id}.${key}`
-      currentItem[key] = value
+      item[key] = value
     }
 
-    JSONUtil.set({ obj: json, keyPath: selectedItemId, value: currentItem })
+    JSONUtil.set({ obj: json, keyPath: id, value: item })
     setJson(structuredClone(json))
 
     setRightNavTab(TAB.PROPERTIES)
@@ -125,16 +121,16 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   }
 
   useEffect(() => {
-    if (!selectedItem) return
+    if (!currentItem.data) return
 
     const data = JSONUtil.flatten({
-      input: selectedItem,
-      parentPath: selectedItemId,
+      input: currentItem.data,
+      parentPath: currentItem.id,
       depth: 1,
     })
 
     setDisplayItems(data)
-  }, [json, selectedItem, selectedItemId])
+  }, [json, currentItem.id, currentItem.data])
 
   return (
     <div {...props}>
@@ -142,7 +138,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         <ContextMenuTrigger>
           <GridContainer
             items={displayItems}
-            selectedItemId={selectedItemId}
+            currentItemId={currentItem.id}
             onItemRelocation={onItemRelocation}
             onItemMove={onItemMove}
             onItemEnter={onItemEnter}
