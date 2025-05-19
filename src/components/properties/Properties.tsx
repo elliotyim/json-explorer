@@ -68,8 +68,6 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
       newId = JSONUtil.replaceLastKey(originalId, `${itemKey}`)
     }
 
-    console.log(originalId, newId)
-
     JSONUtil.set({ obj: json, keyPath: newId, value })
     if (originalId !== newId) JSONUtil.remove(parent, originalId)
 

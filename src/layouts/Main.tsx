@@ -52,24 +52,29 @@ const Main = () => {
 
     const parent = JSONUtil.getByPath(json, parentPath) as unknown[]
     const toBeChanged = new Set(selectedNodes.map((node) => node.index))
-    const result = []
+    const values = []
 
     for (const [index, value] of parent.entries()) {
       if (index === targetIndex) {
-        selectedNodes.forEach((node) => result.push(node.item.data?.value))
+        selectedNodes.forEach((node) => values.push(node.item.data?.value))
       }
       if (!toBeChanged.has(index)) {
-        result.push(value)
+        values.push(value)
       }
     }
 
     if (targetIndex === parent.length) {
-      selectedNodes.forEach((node) => result.push(node.item.data?.value))
+      selectedNodes.forEach((node) => values.push(node.item.data?.value))
     }
 
-    JSONUtil.set({ obj: json, keyPath: parentPath, value: result })
+    const result = JSONUtil.set({
+      obj: json,
+      keyPath: parentPath,
+      value: values,
+    })
 
-    setJson({ ...json })
+    const newJSON = Array.isArray(result) ? [...result] : { ...result }
+    setJson(newJSON)
   }
 
   const handleItemMove = (

@@ -289,11 +289,15 @@ export class JSONUtil {
     this.copy({ obj, from, to, targetIndex, removeOriginal: true })
   }
 
-  static set({ obj, keyPath, value }: SetProps): void {
+  static set({
+    obj,
+    keyPath,
+    value,
+  }: SetProps): Record<string, unknown> | unknown[] {
     const keyPaths = this.getSplitPaths({ path: keyPath })
     if (keyPaths.length === 1 && keyPaths[0] === 'root') {
       obj = value as Record<string, unknown>
-      return
+      return structuredClone(obj)
     }
 
     let target = obj as Record<string, unknown>
@@ -303,6 +307,8 @@ export class JSONUtil {
 
     const lastKey = this.getLastKey(keyPath)
     target[lastKey] = value
+
+    return structuredClone(obj)
   }
 
   static inspect({ obj, path }: InspectProps): NodeModel<CustomData> {
