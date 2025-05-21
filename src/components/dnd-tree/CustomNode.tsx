@@ -49,7 +49,7 @@ export const CustomNode: React.FC<Props> = (props) => {
         )}
       </div>
       <div>
-        <TypeIcon node={props.node} isOpen={props.isOpen} />
+        <TypeIcon type={props.node.data?.type} isOpen={props.isOpen} />
       </div>
       <div className={styles.labelGridItem}>
         <span>{text}</span>

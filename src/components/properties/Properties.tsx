@@ -10,12 +10,11 @@ import { cn } from '@/lib/utils'
 import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
+import { NodeModel } from '@minoru/react-dnd-treeview'
 import { useEffect, useMemo, useState } from 'react'
-import { FaQuestion } from 'react-icons/fa6'
 import CodeEditor from '../code-editor/CodeEditor'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { NodeModel } from '@minoru/react-dnd-treeview'
 
 const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
@@ -77,8 +76,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   }
 
   const renderIcon = () => {
-    if (singleItem) return <TypeIcon node={singleItem} isOpen={false} />
-    else return <FaQuestion />
+    return <TypeIcon type={singleItem?.data?.type} />
   }
 
   const renderTitle = () => {

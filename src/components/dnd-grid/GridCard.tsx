@@ -199,7 +199,7 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <TypeIcon node={item} isOpen={false} />
+                <TypeIcon type={item.data?.type} />
                 <span>{truncate(item.text)}</span>
               </div>
             </div>

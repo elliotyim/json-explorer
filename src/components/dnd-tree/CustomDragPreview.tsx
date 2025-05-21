@@ -13,7 +13,7 @@ export const CustomDragPreview: React.FC<Props> = (props) => {
   return (
     <div className={styles.root}>
       <div className={styles.icon}>
-        <TypeIcon node={item} isOpen={false} />
+        <TypeIcon type={item.data?.type} />
       </div>
       <div className={styles.label}>{item.text}</div>
     </div>

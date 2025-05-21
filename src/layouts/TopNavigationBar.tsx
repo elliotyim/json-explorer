@@ -34,7 +34,7 @@ const TopNavigationBar: React.FC<
   return (
     <div {...props}>
       <div className="flex min-h-[24px] items-center gap-4">
-        <TypeIcon node={node} isOpen={false} />
+        <TypeIcon type={node.data?.type} />
         <span>{displayCurrent(currentItem.id)}</span>
       </div>
     </div>
