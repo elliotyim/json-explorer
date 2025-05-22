@@ -92,13 +92,15 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       JSONUtil.copy({ obj: json, from: node.id, to: parentId }),
     )
 
+    let destination = parentId
     const reversed = [...sortedNodes].reverse()
+
     reversed.forEach((node) => {
       const parent = JSONUtil.getByPath(json, node.parent?.id ?? '')
 
       const lastKey = JSONUtil.getSplitPaths({ path: node.id }).at(-1)
       if (
-        parentId === node.parent?.id &&
+        destination === node.parent?.id &&
         lastKey != null &&
         +lastKey < targetIndex
       ) {
@@ -106,10 +108,13 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       }
 
       JSONUtil.remove(parent, node.id)
+      if (node.parent?.data.type === 'array') {
+        destination = JSONUtil.adjustArrayPath(node.id, destination)
+      }
     })
 
     if (parentNode?.data.type === 'array') {
-      const parentObj = JSONUtil.getByPath(json, parentId)
+      const parentObj = JSONUtil.getByPath(json, destination)
       if (!Array.isArray(parentObj)) return
 
       const start = parentObj.length - sortedNodes.length
@@ -117,21 +122,21 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         (node, i) => {
           const type = node.parent?.data.type === 'object' ? 'object' : 'value'
           const index = start + i
-          const id = `${parentId}[${start + i}]`
+          const id = `${destination}[${start + i}]`
           const name = type === 'object' ? node.data.name : `${index}`
-          const parentPath = parentId
+          const parentPath = destination
           const value = node.data.value
 
           const data = { id, name, parentPath, type: type as 'value', value }
-          const nodes = { index, data }
-          return nodes
+          const source = { index, data }
+          return source
         },
       )
       json = JSONUtil.relocate(json, targetIndex, selectedNodes) as unknown[]
     }
 
     setJson(structuredClone(json))
-    enterFolder(parentId)
+    enterFolder(destination)
   }
 
   useEffect(() => treeRef.current?.open('root'), [treeRef])

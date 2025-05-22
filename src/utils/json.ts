@@ -504,6 +504,8 @@ export class JSONUtil {
     const toBeChanged = new Set(selectedNodes.map((node) => node.index))
     const values = []
 
+    if (targetIndex === -1) targetIndex = parent.length
+
     for (const [index, value] of parent.entries()) {
       if (index === targetIndex) {
         selectedNodes.forEach((node) => {
@@ -529,5 +531,37 @@ export class JSONUtil {
 
     const newJSON = Array.isArray(result) ? [...result] : { ...result }
     return newJSON
+  }
+
+  static adjustArrayPath(from: string, to: string): string {
+    const splitFrom = this.getSplitPaths({
+      path: from,
+      removeArrayBracket: false,
+    })
+    const splitTo = this.getSplitPaths({ path: to, removeArrayBracket: false })
+
+    for (const [i, _from] of splitFrom.entries()) {
+      if (i >= splitTo.length) break
+
+      const _to = splitTo[Number(i)]
+
+      if (_from !== to) {
+        if (_from.startsWith('[') && _to.startsWith('[')) {
+          const fromKey = Number(_from.substring(1, _from.length - 1))
+          const toKey = Number(_to.substring(1, _from.length - 1))
+
+          if (fromKey < toKey) splitTo[Number(i)] = `[${toKey - 1}]`
+        }
+      }
+    }
+
+    let result = ''
+    splitTo.forEach((str, index) => {
+      if (index === 0) result = str
+      else if (str.startsWith('[')) result += str
+      else result += `.${str}`
+    })
+
+    return result
   }
 }
