@@ -7,7 +7,8 @@ import { useBackHistoryStore } from '@/store/history'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
-import { NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'
+import { NodeModel } from '@minoru/react-dnd-treeview'
+import { TreeApi } from 'react-arborist'
 import { useDebouncedCallback } from 'use-debounce'
 import AddressBar from './AddressBar'
 import TopNavigationBar from './TopNavigationBar'
@@ -17,9 +18,9 @@ const Main = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { currentItem, setCurrentItem } = useCurrentItemStore()
 
-  const { setBackHistories } = useBackHistoryStore()
+  const { backHistories, setBackHistories } = useBackHistoryStore()
 
-  const treeRef = useRef<TreeMethods>(null)
+  const treeRef = useRef<TreeApi<Data>>(null)
 
   useEffect(() => {
     if (!currentItem.id) setCurrentItem({ id: 'root', data: json })
@@ -28,22 +29,11 @@ const Main = () => {
   const handleOnInputSubmit = (currentPath: string) => {
     const id = currentPath
     const paths = JSONUtil.getTrailingPaths(id)
-    treeRef.current?.open(paths)
+
+    paths.forEach((path) => treeRef.current?.open(path))
 
     const data = JSONUtil.getByPath(json, id) as Record<string, unknown>
     setCurrentItem({ id, data })
-  }
-
-  const handleMenuClick = (node: NodeModel<CustomData>) => {
-    const id = `${node.id}`
-    const data = JSONUtil.getByPath(json, id) as Record<string, unknown>
-    const parentPath = JSONUtil.getParentPath(id)
-    setCurrentItem({ id, data })
-    setBackHistories((prev) => [...prev, parentPath])
-  }
-
-  const handleDrop = (newJson: Record<string, unknown> | unknown[]) => {
-    setJson(newJson)
   }
 
   const handleItemRelocation = (
@@ -114,9 +104,11 @@ const Main = () => {
     setJson(structuredClone(json))
   }
 
-  const handleItemEnter = (itemId: string) => {
+  const enterFolder = (itemId: string) => {
+    if (itemId === currentItem.id) return
+
     const paths = JSONUtil.getTrailingPaths(itemId)
-    treeRef.current?.open(paths)
+    paths.forEach((path) => treeRef.current?.open(path))
 
     const data = JSONUtil.getByPath(json, itemId) as Record<string, unknown>
     const parentPath = JSONUtil.getParentPath(itemId)
@@ -147,7 +139,7 @@ const Main = () => {
         currentItem={currentItem}
       />
       <AddressBar
-        className="flex items-center gap-4 border px-4 py-2"
+        className="flex items-center gap-4 border-b-2 px-4 py-2"
         currentPath={currentItem.id}
         onInputSubmit={handleOnInputSubmit}
       />
@@ -157,17 +149,16 @@ const Main = () => {
           json={json}
           currentItemId={currentItem.id}
           treeRef={treeRef}
-          onClickItem={handleMenuClick}
-          onItemDrop={handleDrop}
+          enterFolder={enterFolder}
           errorMessage={errorMessage}
         />
         <MainContent
-          className="h-full w-7/12 overflow-auto border-x"
+          className="h-full w-7/12 overflow-auto border-x-2"
           json={json}
           currentItem={currentItem}
           onItemRelocation={handleItemRelocation}
           onItemMove={handleItemMove}
-          onItemEnter={handleItemEnter}
+          onItemEnter={enterFolder}
         />
         <RightNav
           className="flex h-full w-3/12 flex-col overflow-auto"

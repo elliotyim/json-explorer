@@ -489,4 +489,45 @@ export class JSONUtil {
     const newPath = path.substring(0, lastIndex)
     return `${newPath}${replacer}`
   }
+
+  static relocate(
+    obj: Record<string, unknown> | unknown[],
+    targetIndex: number,
+    selectedNodes: { index: number; data: Data }[],
+  ): Record<string, unknown> | unknown[] | null {
+    if (!selectedNodes.length) return null
+
+    const parentPath = selectedNodes[0].data.parentPath
+    const json = structuredClone(obj)
+
+    const parent = JSONUtil.getByPath(json, parentPath) as unknown[]
+    const toBeChanged = new Set(selectedNodes.map((node) => node.index))
+    const values = []
+
+    for (const [index, value] of parent.entries()) {
+      if (index === targetIndex) {
+        selectedNodes.forEach((node) => {
+          const data = node.data
+          if (data.type === 'object') values.push({ [data.name]: data.value })
+          else values.push(data.value)
+        })
+      }
+      if (!toBeChanged.has(index)) {
+        values.push(value)
+      }
+    }
+
+    if (targetIndex === parent.length) {
+      selectedNodes.forEach((node) => values.push(node.data.value))
+    }
+
+    const result = JSONUtil.set({
+      obj: json,
+      keyPath: parentPath,
+      value: values,
+    })
+
+    const newJSON = Array.isArray(result) ? [...result] : { ...result }
+    return newJSON
+  }
 }
