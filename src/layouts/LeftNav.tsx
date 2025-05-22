@@ -134,6 +134,8 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     enterFolder(parentId)
   }
 
+  useEffect(() => treeRef.current?.open('root'), [treeRef])
+
   const Node = ({ tree, node, style, dragHandle }: NodeRendererProps<Data>) => {
     const { setRightNavTab } = useRightNavTabStore()
     const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()

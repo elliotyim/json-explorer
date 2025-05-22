@@ -12,13 +12,18 @@ import { TreeApi } from 'react-arborist'
 import { useDebouncedCallback } from 'use-debounce'
 import AddressBar from './AddressBar'
 import TopNavigationBar from './TopNavigationBar'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable'
 
 const Main = () => {
   const { json, setJson } = useJsonStore()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { currentItem, setCurrentItem } = useCurrentItemStore()
 
-  const { backHistories, setBackHistories } = useBackHistoryStore()
+  const { setBackHistories } = useBackHistoryStore()
 
   const treeRef = useRef<TreeApi<Data>>(null)
 
@@ -143,29 +148,40 @@ const Main = () => {
         currentPath={currentItem.id}
         onInputSubmit={handleOnInputSubmit}
       />
-      <div className="flex w-full flex-1 overflow-auto">
-        <LeftNav
-          className="h-full w-2/12 overflow-y-auto"
-          json={json}
-          currentItemId={currentItem.id}
-          treeRef={treeRef}
-          enterFolder={enterFolder}
-          errorMessage={errorMessage}
-        />
-        <MainContent
-          className="h-full w-7/12 overflow-auto border-x-2"
-          json={json}
-          currentItem={currentItem}
-          onItemRelocation={handleItemRelocation}
-          onItemMove={handleItemMove}
-          onItemEnter={enterFolder}
-        />
-        <RightNav
-          className="flex h-full w-3/12 flex-col overflow-auto"
-          json={json}
-          onValueChange={(value) => debouncedValueChange(value)}
-        />
-      </div>
+      <ResizablePanelGroup
+        direction="horizontal"
+        className="w-full overflow-auto"
+      >
+        <ResizablePanel defaultSize={15} minSize={10}>
+          <LeftNav
+            className="h-full w-full overflow-y-auto"
+            json={json}
+            currentItemId={currentItem.id}
+            treeRef={treeRef}
+            enterFolder={enterFolder}
+            errorMessage={errorMessage}
+          />
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize={60}>
+          <MainContent
+            className="h-full w-full overflow-auto border-x-2"
+            json={json}
+            currentItem={currentItem}
+            onItemRelocation={handleItemRelocation}
+            onItemMove={handleItemMove}
+            onItemEnter={enterFolder}
+          />
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize={25} minSize={10}>
+          <RightNav
+            className="flex h-full w-full flex-col overflow-auto"
+            json={json}
+            onValueChange={(value) => debouncedValueChange(value)}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }
