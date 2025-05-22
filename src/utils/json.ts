@@ -1,10 +1,17 @@
 import { NodeModel } from '@minoru/react-dnd-treeview'
 
+interface CompileProps {
+  input: unknown
+  name?: string
+  path?: string
+  parentPath?: string
+  depth?: number
+}
+
 interface FlattenProps {
   input: unknown
   name?: string
   parentPath?: string
-  obj?: unknown
   depth?: number
 }
 
@@ -154,7 +161,7 @@ export class JSONUtil {
     const paths = this.getSplitPaths({ path, removeArrayBracket: false })
 
     paths.reduce((acc, val) => {
-      if (!acc) return val
+      if (!acc) acc = val
       else if (val.startsWith('[')) acc += val
       else acc = `${acc}.${val}`
 
@@ -177,11 +184,84 @@ export class JSONUtil {
     }, obj)
   }
 
+  static compile({
+    input,
+    name,
+    path = 'root',
+    parentPath = 'root',
+    depth = Number.MAX_SAFE_INTEGER,
+  }: CompileProps): Data[] {
+    const result: Data[] = []
+
+    if (Array.isArray(input)) {
+      const folder: Data = {
+        id: path,
+        name: name ?? path,
+        value: input,
+        type: 'array',
+        parentPath,
+        children: [],
+      }
+
+      input.forEach((value, i) => {
+        const name = `${i}`
+        const childPath = `${path}[${i}]`
+
+        folder.children?.push(
+          ...this.compile({
+            input: value,
+            name,
+            path: childPath,
+            parentPath,
+            depth: depth - 1,
+          }),
+        )
+      })
+
+      result.push(folder)
+    } else if (typeof input === 'object' && input != null) {
+      const folder: Data = {
+        id: path,
+        name: name ?? path,
+        value: input,
+        type: 'object',
+        parentPath,
+        children: [],
+      }
+
+      for (const [name, value] of Object.entries(input)) {
+        const childPath = `${path}.${name}`
+
+        folder.children?.push(
+          ...this.compile({
+            name,
+            input: value,
+            path: childPath,
+            parentPath,
+            depth: depth - 1,
+          }),
+        )
+      }
+
+      result.push(folder)
+    } else {
+      const id = path
+      const value = input
+
+      name = name ?? path
+
+      const payload: Data = { id, name, value, type: 'value', parentPath }
+
+      result.push(payload)
+    }
+
+    return result
+  }
+
   static flatten({
     input,
     name,
     parentPath = 'root',
-    obj = input,
     depth = Number.MAX_SAFE_INTEGER,
   }: FlattenProps): NodeModel<CustomData>[] {
     const result: NodeModel<CustomData>[] = []
@@ -201,7 +281,6 @@ export class JSONUtil {
             name,
             input: value,
             parentPath: path,
-            obj,
             depth: depth - 1,
           }),
         )
@@ -220,7 +299,6 @@ export class JSONUtil {
             name,
             input: value,
             parentPath: path,
-            obj,
             depth: depth - 1,
           }),
         )
