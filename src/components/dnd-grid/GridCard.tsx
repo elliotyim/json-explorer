@@ -1,4 +1,3 @@
-import { NodeModel } from '@minoru/react-dnd-treeview'
 import { useEffect, useRef, useState } from 'react'
 import { useDrag, useDrop, XYCoord } from 'react-dnd'
 import { TypeIcon } from '../dnd-tree/TypeIcon'
@@ -14,9 +13,9 @@ import { DOMUtil } from '@/utils/dom'
 import { Identifier } from 'dnd-core'
 
 interface Props {
-  item: NodeModel<CustomData>
+  item: Data
   index: number
-  parentType: CustomData['type']
+  parentType: Data['type']
   onItemRelocation?: (targetIndex: number) => void
   onItemMove?: (
     source: HTMLElement,
@@ -26,7 +25,7 @@ interface Props {
   setDraggingItemId?: (id: string | null) => void
 }
 
-interface DragItem extends NodeModel<CustomData> {
+interface DragItem extends Data {
   index: number
 }
 
@@ -120,7 +119,8 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       if (dragIndex > hoverIndex && hoverClientX > hoverMiddleX) return
     },
     drop(_, monitor) {
-      const containerDiv = ref.current?.parentElement
+      const targetCell = ref.current?.parentElement
+      const containerDiv = targetCell?.parentElement
       const sourceOffset = monitor.getInitialSourceClientOffset()
       const clientOffset = monitor.getClientOffset()
 
@@ -130,11 +130,21 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
       const sourceX = sourceOffset.x - containerRect.x
       const sourceY = sourceOffset.y - containerRect.y
-      const source = DOMUtil.getDivOnPointer(sourceX, sourceY, containerDiv)
+      const source = DOMUtil.getDivOnPointer(
+        sourceX,
+        sourceY,
+        containerDiv,
+        true,
+      )
 
       const targetX = clientOffset.x - containerRect.x
       const targetY = clientOffset.y - containerRect.y
-      const target = DOMUtil.getDivOnPointer(targetX, targetY, containerDiv)
+      const target = DOMUtil.getDivOnPointer(
+        targetX,
+        targetY,
+        containerDiv,
+        true,
+      )
 
       const targetType = target?.dataset.type
 
@@ -172,7 +182,7 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     <Card
       ref={ref}
       data-index={index}
-      data-type={item.data?.type}
+      data-type={item.type}
       data-handler-id={handlerId}
       style={{
         opacity: isDragging ? 0.2 : 1,
@@ -188,18 +198,16 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <TypeIcon node={item} isOpen={false} />
-                <span>{truncate(item.text)}</span>
+                <TypeIcon type={item.type} />
+                <span>{truncate(item.name)}</span>
               </div>
             </div>
           </div>
         </CardTitle>
-        <CardDescription>{item.data?.type}</CardDescription>
+        <CardDescription>{item.type}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="truncate">
-          {JSON.stringify(item.data?.value, null, 1)}
-        </div>
+        <div className="truncate">{JSON.stringify(item.value, null, 1)}</div>
       </CardContent>
     </Card>
   )

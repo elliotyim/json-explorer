@@ -1,48 +1,36 @@
-import { NodeModel } from '@minoru/react-dnd-treeview'
 import React from 'react'
 import {
   FaFolder,
   FaFolderOpen,
   FaKey,
+  FaQuestion,
   FaRegFolder,
   FaRegFolderOpen,
 } from 'react-icons/fa6'
+import { IconBaseProps } from 'react-icons/lib'
 
 interface Props {
-  node: NodeModel<CustomData>
-  size?: number
+  type?: Data['type']
   isOpen?: boolean
 }
 
-export const TypeIcon: React.FC<
-  React.HTMLAttributes<HTMLDivElement> & Props
-> = ({ node, size, isOpen = false, ...props }) => {
-  switch (node.data?.type) {
+export const TypeIcon: React.FC<IconBaseProps & Props> = ({
+  type,
+  isOpen = false,
+  ...props
+}) => {
+  switch (type) {
     case 'array':
       return isOpen ? (
-        <div {...props}>
-          <FaRegFolderOpen size={size} />
-        </div>
+        <FaRegFolderOpen {...props} />
       ) : (
-        <div {...props}>
-          <FaRegFolder size={size} />
-        </div>
+        <FaRegFolder {...props} />
       )
     case 'object':
-      return isOpen ? (
-        <div {...props}>
-          <FaFolderOpen size={size} />
-        </div>
-      ) : (
-        <div {...props}>
-          <FaFolder size={size} />
-        </div>
-      )
+      return isOpen ? <FaFolderOpen {...props} /> : <FaFolder {...props} />
+    case 'value':
+      return <FaKey {...props} />
     default:
-      return (
-        <div {...props}>
-          <FaKey size={size} />
-        </div>
-      )
+      return <FaQuestion {...props} />
   }
 }

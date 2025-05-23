@@ -11,11 +11,9 @@ import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 import { useEffect, useMemo, useState } from 'react'
-import { FaQuestion } from 'react-icons/fa6'
 import CodeEditor from '../code-editor/CodeEditor'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { NodeModel } from '@minoru/react-dnd-treeview'
 
 const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
@@ -29,7 +27,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
   const { isItemEditing, setIsItemEditing } = useItemEditingStore()
 
-  const selectedItems = useMemo<NodeModel<CustomData>[]>(
+  const selectedItems = useMemo<Data[]>(
     () =>
       Object.keys(selectedItemIds).map((id) =>
         JSONUtil.inspect({ obj: json, path: id }),
@@ -56,10 +54,10 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   const handleSubmit = () => {
     if (singleItem == null || editedValue == null) return
 
-    const parent = JSONUtil.getByPath(json, singleItem.parent as string)
+    const parent = JSONUtil.getByPath(json, singleItem.parentPath)
     const value = JSON.parse(editedValue)
 
-    const originalId = singleItem.id as string
+    const originalId = singleItem.id
 
     let newId
     if (Array.isArray(parent)) {
@@ -77,21 +75,20 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   }
 
   const renderIcon = () => {
-    if (singleItem) return <TypeIcon node={singleItem} isOpen={false} />
-    else return <FaQuestion />
+    return <TypeIcon type={singleItem?.type} />
   }
 
   const renderTitle = () => {
     let text
     if (singleItem != null) {
-      const parent = JSONUtil.getByPath(json, singleItem.parent as string)
+      const parent = JSONUtil.getByPath(json, singleItem.parentPath)
       if (!Array.isArray(parent) && isItemEditing) {
         return (
           <Input value={itemKey} onChange={(e) => setItemKey(e.target.value)} />
         )
       }
 
-      text = singleItem.text
+      text = singleItem.name
     } else if (selectedItems.length) {
       text = `${selectedItems.length} item selected`
     } else {
@@ -103,14 +100,14 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 
   const renderDescription = () => {
     if (selectedItems.length === 0) return 'No Description'
-    else if (selectedItems.length === 1) return singleItem?.data?.type
+    else if (selectedItems.length === 1) return singleItem?.type
     else return 'Complex'
   }
 
   const renderPreview = () => {
     const ids = Object.keys(selectedItemIds)
     if (ids.length === 1) {
-      return JSON.stringify(singleItem?.data?.value, null, 2)
+      return JSON.stringify(singleItem?.value, null, 2)
     } else if (ids.length > 1) {
       const parentPath = JSONUtil.getParentPath(ids[0])
       const parent = JSONUtil.getByPath(json, parentPath)
@@ -120,7 +117,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
           ? JSONUtil.sortIndexPaths(ids)
           : ids
       const result = sortedIds.map(
-        (id) => JSONUtil.inspect({ obj: json, path: id }).data?.value,
+        (id) => JSONUtil.inspect({ obj: json, path: id }).value,
       )
 
       return JSON.stringify(result, null, 2)
@@ -130,9 +127,9 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 
   useEffect(() => {
     if (singleItem) {
-      setItemKey(singleItem.text)
-      setItemValue(singleItem.data?.value)
-      setEditedValue(JSON.stringify(singleItem.data?.value))
+      setItemKey(singleItem.name)
+      setItemValue(singleItem.value)
+      setEditedValue(JSON.stringify(singleItem.value))
     }
   }, [singleItem, isItemEditing])
 

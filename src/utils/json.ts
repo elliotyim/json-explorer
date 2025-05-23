@@ -1,10 +1,15 @@
-import { NodeModel } from '@minoru/react-dnd-treeview'
+interface CompileProps {
+  input: unknown
+  name?: string
+  path?: string
+  parentPath?: string
+  depth?: number
+}
 
 interface FlattenProps {
   input: unknown
   name?: string
   parentPath?: string
-  obj?: unknown
   depth?: number
 }
 
@@ -69,18 +74,19 @@ export class JSONUtil {
     value: unknown,
     path: string,
     parentPath: string,
-  ): NodeModel<CustomData> | null {
-    const payload: NodeModel<CustomData> = {
+  ): Data | null {
+    const payload: Data = {
       id: path,
-      parent: parentPath,
-      text: name,
-      droppable: true,
+      name,
+      value,
+      type: 'value',
+      parentPath,
     }
     if (Array.isArray(value)) {
-      payload.data = { value, type: 'array' }
+      payload.type = 'array'
       return payload
     } else if (typeof value === 'object' && value !== null) {
-      payload.data = { value, type: 'object' }
+      payload.type = 'object'
       return payload
     } else {
       return null
@@ -154,7 +160,7 @@ export class JSONUtil {
     const paths = this.getSplitPaths({ path, removeArrayBracket: false })
 
     paths.reduce((acc, val) => {
-      if (!acc) return val
+      if (!acc) acc = val
       else if (val.startsWith('[')) acc += val
       else acc = `${acc}.${val}`
 
@@ -177,14 +183,87 @@ export class JSONUtil {
     }, obj)
   }
 
+  static compile({
+    input,
+    name,
+    path = 'root',
+    parentPath = 'root',
+    depth = Number.MAX_SAFE_INTEGER,
+  }: CompileProps): Data[] {
+    const result: Data[] = []
+
+    if (Array.isArray(input)) {
+      const folder: Data = {
+        id: path,
+        name: name ?? path,
+        value: input,
+        type: 'array',
+        parentPath,
+        children: [],
+      }
+
+      input.forEach((value, i) => {
+        const name = `${i}`
+        const childPath = `${path}[${i}]`
+
+        folder.children?.push(
+          ...this.compile({
+            input: value,
+            name,
+            path: childPath,
+            parentPath,
+            depth: depth - 1,
+          }),
+        )
+      })
+
+      result.push(folder)
+    } else if (typeof input === 'object' && input != null) {
+      const folder: Data = {
+        id: path,
+        name: name ?? path,
+        value: input,
+        type: 'object',
+        parentPath,
+        children: [],
+      }
+
+      for (const [name, value] of Object.entries(input)) {
+        const childPath = `${path}.${name}`
+
+        folder.children?.push(
+          ...this.compile({
+            name,
+            input: value,
+            path: childPath,
+            parentPath,
+            depth: depth - 1,
+          }),
+        )
+      }
+
+      result.push(folder)
+    } else {
+      const id = path
+      const value = input
+
+      name = name ?? path
+
+      const payload: Data = { id, name, value, type: 'value', parentPath }
+
+      result.push(payload)
+    }
+
+    return result
+  }
+
   static flatten({
     input,
     name,
     parentPath = 'root',
-    obj = input,
     depth = Number.MAX_SAFE_INTEGER,
-  }: FlattenProps): NodeModel<CustomData>[] {
-    const result: NodeModel<CustomData>[] = []
+  }: FlattenProps): Data[] {
+    const result: Data[] = []
 
     if (Array.isArray(input)) {
       if (depth === 0) return result
@@ -201,7 +280,6 @@ export class JSONUtil {
             name,
             input: value,
             parentPath: path,
-            obj,
             depth: depth - 1,
           }),
         )
@@ -220,7 +298,6 @@ export class JSONUtil {
             name,
             input: value,
             parentPath: path,
-            obj,
             depth: depth - 1,
           }),
         )
@@ -232,12 +309,12 @@ export class JSONUtil {
       const path = parentPath
       parentPath = this.getParentPath(path)
 
-      const payload: NodeModel<CustomData> = {
+      const payload: Data = {
         id: path,
-        parent: parentPath,
-        text: `${name}`,
-        droppable: false,
-        data: { type: 'value', value },
+        name: `${name}`,
+        value,
+        type: 'value',
+        parentPath,
       }
 
       result.push(payload)
@@ -311,7 +388,7 @@ export class JSONUtil {
     return structuredClone(obj)
   }
 
-  static inspect({ obj, path }: InspectProps): NodeModel<CustomData> {
+  static inspect({ obj, path }: InspectProps): Data {
     const parentPath = this.getParentPath(path)
     const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
 
@@ -320,12 +397,12 @@ export class JSONUtil {
     const value = lastKey === 'root' ? obj : parent[lastKey]
     const type = this.getType(value)
 
-    const payload: NodeModel<CustomData> = {
+    const payload: Data = {
       id: path,
-      text: lastKey,
-      parent: parentPath,
-      data: { type, value },
-      droppable: type === 'value' ? false : true,
+      name: lastKey,
+      value,
+      type,
+      parentPath,
     }
 
     return payload
@@ -343,7 +420,7 @@ export class JSONUtil {
 
     const result = ids.map((id) => {
       const target = this.inspect({ obj, path: id })
-      return { [target.text]: target.data?.value }
+      return { [target.name]: target.value }
     })
 
     sessionStorage.setItem('copyPaste', JSON.stringify(result))
@@ -410,5 +487,80 @@ export class JSONUtil {
     const lastIndex = path.lastIndexOf(splitPaths.at(-1)!)
     const newPath = path.substring(0, lastIndex)
     return `${newPath}${replacer}`
+  }
+
+  static relocate(
+    obj: Record<string, unknown> | unknown[],
+    targetIndex: number,
+    selectedNodes: { index: number; data: Data }[],
+  ): Record<string, unknown> | unknown[] | null {
+    if (!selectedNodes.length) return null
+
+    const parentPath = selectedNodes[0].data.parentPath
+    const json = structuredClone(obj)
+
+    const parent = JSONUtil.getByPath(json, parentPath) as unknown[]
+    const toBeChanged = new Set(selectedNodes.map((node) => node.index))
+    const values = []
+
+    if (targetIndex === -1) targetIndex = parent.length
+
+    for (const [index, value] of parent.entries()) {
+      if (index === targetIndex) {
+        selectedNodes.forEach((node) => {
+          const data = node.data
+          if (data.type === 'object') values.push({ [data.name]: data.value })
+          else values.push(data.value)
+        })
+      }
+      if (!toBeChanged.has(index)) {
+        values.push(value)
+      }
+    }
+
+    if (targetIndex === parent.length) {
+      selectedNodes.forEach((node) => values.push(node.data.value))
+    }
+
+    const result = JSONUtil.set({
+      obj: json,
+      keyPath: parentPath,
+      value: values,
+    })
+
+    const newJSON = Array.isArray(result) ? [...result] : { ...result }
+    return newJSON
+  }
+
+  static adjustArrayPath(from: string, to: string): string {
+    const splitFrom = this.getSplitPaths({
+      path: from,
+      removeArrayBracket: false,
+    })
+    const splitTo = this.getSplitPaths({ path: to, removeArrayBracket: false })
+
+    for (const [i, _from] of splitFrom.entries()) {
+      if (i >= splitTo.length) break
+
+      const _to = splitTo[Number(i)]
+
+      if (_from !== to) {
+        if (_from.startsWith('[') && _to.startsWith('[')) {
+          const fromKey = Number(_from.substring(1, _from.length - 1))
+          const toKey = Number(_to.substring(1, _from.length - 1))
+
+          if (fromKey < toKey) splitTo[Number(i)] = `[${toKey - 1}]`
+        }
+      }
+    }
+
+    let result = ''
+    splitTo.forEach((str, index) => {
+      if (index === 0) result = str
+      else if (str.startsWith('[')) result += str
+      else result += `.${str}`
+    })
+
+    return result
   }
 }

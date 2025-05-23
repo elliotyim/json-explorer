@@ -7,10 +7,15 @@ import { useBackHistoryStore } from '@/store/history'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
-import { NodeModel, TreeMethods } from '@minoru/react-dnd-treeview'
+import { TreeApi } from 'react-arborist'
 import { useDebouncedCallback } from 'use-debounce'
 import AddressBar from './AddressBar'
 import TopNavigationBar from './TopNavigationBar'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable'
 
 const Main = () => {
   const { json, setJson } = useJsonStore()
@@ -19,7 +24,7 @@ const Main = () => {
 
   const { setBackHistories } = useBackHistoryStore()
 
-  const treeRef = useRef<TreeMethods>(null)
+  const treeRef = useRef<TreeApi<Data>>(null)
 
   useEffect(() => {
     if (!currentItem.id) setCurrentItem({ id: 'root', data: json })
@@ -28,31 +33,20 @@ const Main = () => {
   const handleOnInputSubmit = (currentPath: string) => {
     const id = currentPath
     const paths = JSONUtil.getTrailingPaths(id)
-    treeRef.current?.open(paths)
+
+    paths.forEach((path) => treeRef.current?.open(path))
 
     const data = JSONUtil.getByPath(json, id) as Record<string, unknown>
     setCurrentItem({ id, data })
-  }
-
-  const handleMenuClick = (node: NodeModel<CustomData>) => {
-    const id = `${node.id}`
-    const data = JSONUtil.getByPath(json, id) as Record<string, unknown>
-    const parentPath = JSONUtil.getParentPath(id)
-    setCurrentItem({ id, data })
-    setBackHistories((prev) => [...prev, parentPath])
-  }
-
-  const handleDrop = (newJson: Record<string, unknown> | unknown[]) => {
-    setJson(newJson)
   }
 
   const handleItemRelocation = (
     targetIndex: number,
-    selectedNodes: { index: number; item: NodeModel<CustomData> }[],
+    selectedNodes: { index: number; item: Data }[],
   ) => {
     if (!selectedNodes.length) return
 
-    const parentPath = selectedNodes?.[0]?.item.parent
+    const parentPath = selectedNodes?.[0]?.item.parentPath
     if (!parentPath || typeof parentPath !== 'string') return
 
     const parent = JSONUtil.getByPath(json, parentPath) as unknown[]
@@ -61,7 +55,7 @@ const Main = () => {
 
     for (const [index, value] of parent.entries()) {
       if (index === targetIndex) {
-        selectedNodes.forEach((node) => values.push(node.item.data?.value))
+        selectedNodes.forEach((node) => values.push(node.item.value))
       }
       if (!toBeChanged.has(index)) {
         values.push(value)
@@ -69,7 +63,7 @@ const Main = () => {
     }
 
     if (targetIndex === parent.length) {
-      selectedNodes.forEach((node) => values.push(node.item.data?.value))
+      selectedNodes.forEach((node) => values.push(node.item.value))
     }
 
     const result = JSONUtil.set({
@@ -85,38 +79,40 @@ const Main = () => {
   const handleItemMove = (
     source: HTMLElement,
     target: HTMLElement,
-    selectedNodes: NodeModel<CustomData>[],
+    selectedNodes: Data[],
     targetIndex?: number,
   ) => {
-    const sourceId = source.dataset.item as string
-    const targetId = target.dataset.item as string
+    const sourceId = source.dataset.item
+    const targetId = target.dataset.item
 
     const wrongTarget = selectedNodes.filter(
       (node) => node.id !== sourceId && node.id === targetId,
     ).length
 
-    if (wrongTarget) return
+    if (wrongTarget || sourceId == null || targetId == null) return
 
     selectedNodes.forEach((node) => {
       JSONUtil.copy({
         obj: json,
-        from: node.id as string,
+        from: node.id,
         to: targetId,
         targetIndex,
       })
     })
 
     selectedNodes.reverse().forEach((node) => {
-      const parent = JSONUtil.getByPath(json, node.parent as string)
-      JSONUtil.remove(parent, node.id as string)
+      const parent = JSONUtil.getByPath(json, node.parentPath)
+      JSONUtil.remove(parent, node.id)
     })
 
     setJson(structuredClone(json))
   }
 
-  const handleItemEnter = (itemId: string) => {
+  const enterFolder = (itemId: string) => {
+    if (itemId === currentItem.id) return
+
     const paths = JSONUtil.getTrailingPaths(itemId)
-    treeRef.current?.open(paths)
+    paths.forEach((path) => treeRef.current?.open(path))
 
     const data = JSONUtil.getByPath(json, itemId) as Record<string, unknown>
     const parentPath = JSONUtil.getParentPath(itemId)
@@ -147,34 +143,44 @@ const Main = () => {
         currentItem={currentItem}
       />
       <AddressBar
-        className="flex items-center gap-4 border px-4 py-2"
+        className="flex items-center gap-4 border-b-2 px-4 py-2"
         currentPath={currentItem.id}
         onInputSubmit={handleOnInputSubmit}
       />
-      <div className="flex w-full flex-1 overflow-auto">
-        <LeftNav
-          className="h-full w-2/12 overflow-y-auto"
-          json={json}
-          currentItemId={currentItem.id}
-          treeRef={treeRef}
-          onClickItem={handleMenuClick}
-          onItemDrop={handleDrop}
-          errorMessage={errorMessage}
-        />
-        <MainContent
-          className="h-full w-7/12 overflow-auto border-x"
-          json={json}
-          currentItem={currentItem}
-          onItemRelocation={handleItemRelocation}
-          onItemMove={handleItemMove}
-          onItemEnter={handleItemEnter}
-        />
-        <RightNav
-          className="flex h-full w-3/12 flex-col overflow-auto"
-          json={json}
-          onValueChange={(value) => debouncedValueChange(value)}
-        />
-      </div>
+      <ResizablePanelGroup
+        direction="horizontal"
+        className="w-full overflow-auto"
+      >
+        <ResizablePanel defaultSize={15} minSize={10}>
+          <LeftNav
+            className="h-full w-full overflow-y-auto"
+            json={json}
+            currentItemId={currentItem.id}
+            treeRef={treeRef}
+            enterFolder={enterFolder}
+            errorMessage={errorMessage}
+          />
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize={60} minSize={30}>
+          <MainContent
+            className="h-full w-full overflow-auto border-x-2"
+            json={json}
+            currentItem={currentItem}
+            onItemRelocation={handleItemRelocation}
+            onItemMove={handleItemMove}
+            onItemEnter={enterFolder}
+          />
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize={25} minSize={10}>
+          <RightNav
+            className="flex h-full w-full flex-col overflow-auto"
+            json={json}
+            onValueChange={(value) => debouncedValueChange(value)}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }

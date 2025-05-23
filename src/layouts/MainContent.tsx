@@ -15,7 +15,6 @@ import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
-import { NodeModel } from '@minoru/react-dnd-treeview'
 import { useEffect, useState } from 'react'
 
 interface Props {
@@ -25,13 +24,13 @@ interface Props {
     targetIndex: number,
     selectedNodes: {
       index: number
-      item: NodeModel<CustomData>
+      item: Data
     }[],
   ) => void
   onItemMove?: (
     source: HTMLElement,
     target: HTMLElement,
-    selectedNodes: NodeModel<CustomData>[],
+    selectedNodes: Data[],
     targetIndex?: number,
   ) => void
   onItemEnter?: (itemId: string) => void
@@ -45,7 +44,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   onItemEnter,
   ...props
 }) => {
-  const [displayItems, setDisplayItems] = useState<NodeModel<CustomData>[]>([])
+  const [displayItems, setDisplayItems] = useState<Data[]>([])
 
   const { setJson } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
@@ -123,8 +122,9 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   useEffect(() => {
     if (!currentItem.data) return
 
+    const input = JSONUtil.getByPath(json, currentItem.id)
     const data = JSONUtil.flatten({
-      input: currentItem.data,
+      input,
       parentPath: currentItem.id,
       depth: 1,
     })
@@ -170,10 +170,18 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           </ContextMenuItem>
 
           <ContextMenuSeparator />
-          <ContextMenuItem inset onSelect={handleItemEdit}>
+          <ContextMenuItem
+            inset
+            disabled={!Object.keys(selectedItemIds).length}
+            onSelect={handleItemEdit}
+          >
             Modify
           </ContextMenuItem>
-          <ContextMenuItem inset onSelect={handleItemDelete}>
+          <ContextMenuItem
+            inset
+            disabled={!Object.keys(selectedItemIds).length}
+            onSelect={handleItemDelete}
+          >
             Delete
           </ContextMenuItem>
           <ContextMenuSeparator />

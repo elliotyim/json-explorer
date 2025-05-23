@@ -91,11 +91,14 @@ export class DOMUtil {
     pointerX: number,
     pointerY: number,
     containerDiv: HTMLElement,
+    selectInner?: boolean,
   ): HTMLElement | null {
     const containerRect = containerDiv.getBoundingClientRect()
 
-    for (const childNode of containerDiv.childNodes) {
-      const childDiv = childNode as HTMLElement
+    for (const child of containerDiv.children) {
+      const childDiv = (
+        selectInner ? child.firstElementChild : child
+      ) as HTMLElement
       const childRect = this.generateChildRect(containerRect, childDiv)
 
       if (this.intersectWithPos(pointerX, pointerY, childRect)) return childDiv
