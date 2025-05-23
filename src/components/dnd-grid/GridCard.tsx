@@ -81,7 +81,7 @@ const GridCard: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       }
       timer.current = setTimeout(() => {
         setIsHovering(false)
-      }, 100)
+      }, 0)
 
       const dragIndex = item.index
       const hoverIndex = index

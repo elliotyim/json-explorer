@@ -1,8 +1,3 @@
-interface CustomData {
-  value: unknown
-  type: 'array' | 'object' | 'value'
-}
-
 interface Data {
   id: string
   name: string

@@ -73,7 +73,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       const timer = setTimeout(() => {
         setIsItemEditing(true)
         clearTimeout(timer)
-      }, 100)
+      }, 0)
     }
   }
 
@@ -83,7 +83,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     setSelectedItemIds({})
   }
 
-  const handleItemCreate = (type: CustomData['type']) => {
+  const handleItemCreate = (type: Data['type']) => {
     const id = currentItem.id
     const itemSpec = JSONUtil.inspect({ obj: json, path: id })
     const item = JSONUtil.getByPath(json, id) as Record<string, unknown>
@@ -112,7 +112,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     const timer = setTimeout(() => {
       setIsItemEditing(true)
       clearTimeout(timer)
-    }, 100)
+    }, 0)
   }
 
   const showProperties = () => {

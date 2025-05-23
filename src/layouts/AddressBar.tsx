@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { BUTTON } from '@/constants/button'
 import { useBackHistoryStore, useForwardHistoryStore } from '@/store/history'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
@@ -22,7 +23,6 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   onInputSubmit,
   ...props
 }) => {
-  const buttonSize = 32
   const [inputValue, setInputValue] = useState<string>('')
 
   const { json } = useJsonStore()
@@ -30,6 +30,46 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   const { backHistories, setBackHistories } = useBackHistoryStore()
   const { forwardHistories, setForwardHistories } = useForwardHistoryStore()
+
+  const handleBackButtonClick = () => {
+    if (!backHistories.length) return
+
+    const prev = backHistories.pop() ?? ''
+    const prevItem = JSONUtil.getByPath(json, prev)
+
+    setBackHistories([...backHistories])
+    setForwardHistories((prev) => [...prev, currentItem.id])
+    setCurrentItem({
+      id: prev,
+      data: prevItem as Record<string, unknown>,
+    })
+  }
+
+  const handleForwardButtonClick = () => {
+    if (!forwardHistories.length) return
+
+    const next = forwardHistories.pop() ?? ''
+    const nextItem = JSONUtil.getByPath(json, next)
+
+    setBackHistories((prev) => [...prev, currentItem.id])
+    setForwardHistories([...forwardHistories])
+    setCurrentItem({
+      id: next,
+      data: nextItem as Record<string, unknown>,
+    })
+  }
+
+  const handleUpButtonClick = () => {
+    const parentPath = JSONUtil.getParentPath(currentItem.id)
+    const item = JSONUtil.getByPath(json, parentPath)
+
+    setCurrentItem({
+      id: parentPath,
+      data: item as Record<string, unknown>,
+    })
+    setBackHistories((prev) => [...prev, currentItem.id])
+    setForwardHistories([])
+  }
 
   useEffect(() => {
     if (currentPath) setInputValue(currentPath)
@@ -41,57 +81,23 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         <Button
           variant={'outline'}
           disabled={!backHistories.length}
-          onClick={() => {
-            if (!backHistories.length) return
-
-            const prev = backHistories.pop() ?? ''
-            const prevItem = JSONUtil.getByPath(json, prev)
-
-            setBackHistories([...backHistories])
-            setForwardHistories((prev) => [...prev, currentItem.id])
-            setCurrentItem({
-              id: prev,
-              data: prevItem as Record<string, unknown>,
-            })
-          }}
+          onClick={handleBackButtonClick}
         >
-          <FaArrowLeft size={buttonSize} />
+          <FaArrowLeft size={BUTTON.SIZE} />
         </Button>
         <Button
           variant={'outline'}
           disabled={!forwardHistories.length}
-          onClick={() => {
-            if (!forwardHistories.length) return
-
-            const next = forwardHistories.pop() ?? ''
-            const nextItem = JSONUtil.getByPath(json, next)
-
-            setBackHistories((prev) => [...prev, currentItem.id])
-            setForwardHistories([...forwardHistories])
-            setCurrentItem({
-              id: next,
-              data: nextItem as Record<string, unknown>,
-            })
-          }}
+          onClick={handleForwardButtonClick}
         >
-          <FaArrowRight size={buttonSize} />
+          <FaArrowRight size={BUTTON.SIZE} />
         </Button>
         <Button
           variant={'outline'}
           disabled={currentItem.id === 'root'}
-          onClick={() => {
-            const parentPath = JSONUtil.getParentPath(currentItem.id)
-            const item = JSONUtil.getByPath(json, parentPath)
-
-            setCurrentItem({
-              id: parentPath,
-              data: item as Record<string, unknown>,
-            })
-            setBackHistories((prev) => [...prev, currentItem.id])
-            setForwardHistories([])
-          }}
+          onClick={handleUpButtonClick}
         >
-          <FaArrowUp size={buttonSize} />
+          <FaArrowUp size={BUTTON.SIZE} />
         </Button>
       </div>
       <div className="flex-1">
@@ -108,11 +114,10 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         variant={'outline'}
         disabled={!inputValue}
         onClick={() => {
-          if (!inputValue || !onInputSubmit) return
-          onInputSubmit(inputValue)
+          if (inputValue && onInputSubmit) onInputSubmit(inputValue)
         }}
       >
-        <FaArrowTurnDown className="rotate-90" size={buttonSize} />
+        <FaArrowTurnDown className="rotate-90" size={BUTTON.SIZE} />
       </Button>
     </div>
   )

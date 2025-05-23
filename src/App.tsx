@@ -1,7 +1,7 @@
-import Main from './layouts/Main'
+import Layout from './layouts/Layout'
 
 function App() {
-  return <Main />
+  return <Layout />
 }
 
 export default App

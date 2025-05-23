@@ -1,25 +1,23 @@
 import LeftNav from '@/layouts/LeftNav'
 import MainContent from '@/layouts/MainContent'
 import RightNav from '@/layouts/RightNav'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
-import { useBackHistoryStore } from '@/store/history'
-import { useCurrentItemStore } from '@/store/item'
-import { useJsonStore } from '@/store/json'
-import { JSONUtil } from '@/utils/json'
-import { TreeApi } from 'react-arborist'
-import { useDebouncedCallback } from 'use-debounce'
-import AddressBar from './AddressBar'
-import TopNavigationBar from './TopNavigationBar'
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
+import { useBackHistoryStore } from '@/store/history'
+import { useCurrentItemStore } from '@/store/item'
+import { useJsonStore } from '@/store/json'
+import { JSONUtil } from '@/utils/json'
+import { TreeApi } from 'react-arborist'
+import AddressBar from './AddressBar'
+import TopNavigationBar from './TopNavigationBar'
 
-const Main = () => {
+const Layout = () => {
   const { json, setJson } = useJsonStore()
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { currentItem, setCurrentItem } = useCurrentItemStore()
 
   const { setBackHistories } = useBackHistoryStore()
@@ -121,21 +119,6 @@ const Main = () => {
     setBackHistories((prev) => [...prev, parentPath])
   }
 
-  const debouncedValueChange = useDebouncedCallback((value) => {
-    if (!value) return
-
-    try {
-      setJson(JSON.parse(value))
-      setErrorMessage(null)
-    } catch (e: unknown) {
-      if (e instanceof SyntaxError) {
-        setErrorMessage('JSON input is not valid!')
-      } else {
-        throw e
-      }
-    }
-  }, 1000)
-
   return (
     <div className="flex h-screen w-full flex-col">
       <TopNavigationBar
@@ -155,10 +138,8 @@ const Main = () => {
           <LeftNav
             className="h-full w-full overflow-y-auto"
             json={json}
-            currentItemId={currentItem.id}
             treeRef={treeRef}
             enterFolder={enterFolder}
-            errorMessage={errorMessage}
           />
         </ResizablePanel>
         <ResizableHandle />
@@ -177,7 +158,7 @@ const Main = () => {
           <RightNav
             className="flex h-full w-full flex-col overflow-auto"
             json={json}
-            onValueChange={(value) => debouncedValueChange(value)}
+            onValueChange={(value) => setJson(JSON.parse(value))}
           />
         </ResizablePanel>
       </ResizablePanelGroup>
@@ -185,4 +166,4 @@ const Main = () => {
   )
 }
 
-export default Main
+export default Layout

@@ -1,4 +1,6 @@
+import CodeEditor from '@/components/code-editor/CodeEditor'
 import { TypeIcon } from '@/components/dnd-tree/TypeIcon'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -6,20 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 import { useEffect, useMemo, useState } from 'react'
-import CodeEditor from '../code-editor/CodeEditor'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
 
 const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
   const [itemKey, setItemKey] = useState<string>('')
-  const [itemValue, setItemValue] = useState<unknown>()
 
   const [editedValue, setEditedValue] = useState<string>('')
 
@@ -36,19 +35,30 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   )
   const singleItem = selectedItems.length === 1 ? selectedItems[0] : null
 
+  const itemValues = (selectedIds: string[]): string => {
+    if (selectedIds.length === 1) {
+      return JSON.stringify(singleItem?.value, null, 2)
+    } else if (selectedIds.length > 1) {
+      const parentPath = JSONUtil.getParentPath(selectedIds[0])
+      const parent = JSONUtil.getByPath(json, parentPath)
+
+      const sortedIds =
+        JSONUtil.getType(parent) === 'array'
+          ? JSONUtil.sortIndexPaths(selectedIds)
+          : selectedIds
+      const result = sortedIds.map(
+        (id) => JSONUtil.inspect({ obj: json, path: id }).value,
+      )
+
+      return JSON.stringify(result, null, 2)
+    }
+    return ''
+  }
+
   const clearAll = () => {
     setItemKey('')
     setEditedValue('')
     setIsItemEditing(false)
-  }
-
-  const isJsonValid = (jsonString: string) => {
-    try {
-      JSON.parse(jsonString)
-      return true
-    } catch {
-      return false
-    }
   }
 
   const handleSubmit = () => {
@@ -72,10 +82,6 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     setJson(structuredClone(json))
     setIsItemEditing(false)
     setSelectedItemIds({ [newId]: true })
-  }
-
-  const renderIcon = () => {
-    return <TypeIcon type={singleItem?.type} />
   }
 
   const renderTitle = () => {
@@ -104,31 +110,9 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     else return 'Complex'
   }
 
-  const renderPreview = () => {
-    const ids = Object.keys(selectedItemIds)
-    if (ids.length === 1) {
-      return JSON.stringify(singleItem?.value, null, 2)
-    } else if (ids.length > 1) {
-      const parentPath = JSONUtil.getParentPath(ids[0])
-      const parent = JSONUtil.getByPath(json, parentPath)
-
-      const sortedIds =
-        JSONUtil.getType(parent) === 'array'
-          ? JSONUtil.sortIndexPaths(ids)
-          : ids
-      const result = sortedIds.map(
-        (id) => JSONUtil.inspect({ obj: json, path: id }).value,
-      )
-
-      return JSON.stringify(result, null, 2)
-    }
-    return null
-  }
-
   useEffect(() => {
     if (singleItem) {
       setItemKey(singleItem.name)
-      setItemValue(singleItem.value)
       setEditedValue(JSON.stringify(singleItem.value))
     }
   }, [singleItem, isItemEditing])
@@ -138,7 +122,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
       <CardHeader>
         <CardTitle>
           <div className="flex items-center gap-2">
-            {renderIcon()}
+            <TypeIcon type={singleItem?.type} />
             {renderTitle()}
           </div>
         </CardTitle>
@@ -146,17 +130,18 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
       </CardHeader>
       <CardContent className="h-full overflow-auto">
         <div className="flex h-full flex-col gap-2">
-          {isItemEditing ? (
-            <>
-              <CodeEditor
-                className="h-full overflow-auto"
-                jsonString={JSON.stringify(itemValue, null, 2)}
-                onValueChange={(val) => setEditedValue(val)}
-              />
-              <div className="flex w-full gap-2">
+          <CodeEditor
+            readOnly={!isItemEditing}
+            className="h-full overflow-auto"
+            jsonString={itemValues(Object.keys(selectedItemIds))}
+            onValueChange={(val) => setEditedValue(val)}
+          />
+          <div className="flex w-full gap-2">
+            {isItemEditing ? (
+              <>
                 <Button
                   className="flex-1 cursor-pointer"
-                  disabled={!isJsonValid(editedValue)}
+                  disabled={!JSONUtil.isJsonValid(editedValue)}
                   onClick={handleSubmit}
                 >
                   Confirm
@@ -168,23 +153,19 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
                 >
                   Cancel
                 </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <pre className="h-full overflow-auto rounded-lg border border-slate-200 p-4">
-                {renderPreview()}
-              </pre>
-              <div className="flex w-full gap-2">
+              </>
+            ) : (
+              <>
                 <Button
                   className="flex-1 cursor-pointer"
+                  disabled={Object.keys(selectedItemIds).length !== 1}
                   onClick={() => setIsItemEditing(true)}
                 >
                   Modify
                 </Button>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
