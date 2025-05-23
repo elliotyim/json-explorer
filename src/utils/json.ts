@@ -1,5 +1,3 @@
-import { NodeModel } from '@minoru/react-dnd-treeview'
-
 interface CompileProps {
   input: unknown
   name?: string
@@ -76,18 +74,19 @@ export class JSONUtil {
     value: unknown,
     path: string,
     parentPath: string,
-  ): NodeModel<CustomData> | null {
-    const payload: NodeModel<CustomData> = {
+  ): Data | null {
+    const payload: Data = {
       id: path,
-      parent: parentPath,
-      text: name,
-      droppable: true,
+      name,
+      value,
+      type: 'value',
+      parentPath,
     }
     if (Array.isArray(value)) {
-      payload.data = { value, type: 'array' }
+      payload.type = 'array'
       return payload
     } else if (typeof value === 'object' && value !== null) {
-      payload.data = { value, type: 'object' }
+      payload.type = 'object'
       return payload
     } else {
       return null
@@ -263,8 +262,8 @@ export class JSONUtil {
     name,
     parentPath = 'root',
     depth = Number.MAX_SAFE_INTEGER,
-  }: FlattenProps): NodeModel<CustomData>[] {
-    const result: NodeModel<CustomData>[] = []
+  }: FlattenProps): Data[] {
+    const result: Data[] = []
 
     if (Array.isArray(input)) {
       if (depth === 0) return result
@@ -310,12 +309,12 @@ export class JSONUtil {
       const path = parentPath
       parentPath = this.getParentPath(path)
 
-      const payload: NodeModel<CustomData> = {
+      const payload: Data = {
         id: path,
-        parent: parentPath,
-        text: `${name}`,
-        droppable: false,
-        data: { type: 'value', value },
+        name: `${name}`,
+        value,
+        type: 'value',
+        parentPath,
       }
 
       result.push(payload)
@@ -389,7 +388,7 @@ export class JSONUtil {
     return structuredClone(obj)
   }
 
-  static inspect({ obj, path }: InspectProps): NodeModel<CustomData> {
+  static inspect({ obj, path }: InspectProps): Data {
     const parentPath = this.getParentPath(path)
     const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
 
@@ -398,12 +397,12 @@ export class JSONUtil {
     const value = lastKey === 'root' ? obj : parent[lastKey]
     const type = this.getType(value)
 
-    const payload: NodeModel<CustomData> = {
+    const payload: Data = {
       id: path,
-      text: lastKey,
-      parent: parentPath,
-      data: { type, value },
-      droppable: type === 'value' ? false : true,
+      name: lastKey,
+      value,
+      type,
+      parentPath,
     }
 
     return payload
@@ -421,7 +420,7 @@ export class JSONUtil {
 
     const result = ids.map((id) => {
       const target = this.inspect({ obj, path: id })
-      return { [target.text]: target.data?.value }
+      return { [target.name]: target.value }
     })
 
     sessionStorage.setItem('copyPaste', JSON.stringify(result))

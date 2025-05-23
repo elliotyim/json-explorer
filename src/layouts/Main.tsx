@@ -7,7 +7,6 @@ import { useBackHistoryStore } from '@/store/history'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
-import { NodeModel } from '@minoru/react-dnd-treeview'
 import { TreeApi } from 'react-arborist'
 import { useDebouncedCallback } from 'use-debounce'
 import AddressBar from './AddressBar'
@@ -43,11 +42,11 @@ const Main = () => {
 
   const handleItemRelocation = (
     targetIndex: number,
-    selectedNodes: { index: number; item: NodeModel<CustomData> }[],
+    selectedNodes: { index: number; item: Data }[],
   ) => {
     if (!selectedNodes.length) return
 
-    const parentPath = selectedNodes?.[0]?.item.parent
+    const parentPath = selectedNodes?.[0]?.item.parentPath
     if (!parentPath || typeof parentPath !== 'string') return
 
     const parent = JSONUtil.getByPath(json, parentPath) as unknown[]
@@ -56,7 +55,7 @@ const Main = () => {
 
     for (const [index, value] of parent.entries()) {
       if (index === targetIndex) {
-        selectedNodes.forEach((node) => values.push(node.item.data?.value))
+        selectedNodes.forEach((node) => values.push(node.item.value))
       }
       if (!toBeChanged.has(index)) {
         values.push(value)
@@ -64,7 +63,7 @@ const Main = () => {
     }
 
     if (targetIndex === parent.length) {
-      selectedNodes.forEach((node) => values.push(node.item.data?.value))
+      selectedNodes.forEach((node) => values.push(node.item.value))
     }
 
     const result = JSONUtil.set({
@@ -80,30 +79,30 @@ const Main = () => {
   const handleItemMove = (
     source: HTMLElement,
     target: HTMLElement,
-    selectedNodes: NodeModel<CustomData>[],
+    selectedNodes: Data[],
     targetIndex?: number,
   ) => {
-    const sourceId = source.dataset.item as string
-    const targetId = target.dataset.item as string
+    const sourceId = source.dataset.item
+    const targetId = target.dataset.item
 
     const wrongTarget = selectedNodes.filter(
       (node) => node.id !== sourceId && node.id === targetId,
     ).length
 
-    if (wrongTarget) return
+    if (wrongTarget || sourceId == null || targetId == null) return
 
     selectedNodes.forEach((node) => {
       JSONUtil.copy({
         obj: json,
-        from: node.id as string,
+        from: node.id,
         to: targetId,
         targetIndex,
       })
     })
 
     selectedNodes.reverse().forEach((node) => {
-      const parent = JSONUtil.getByPath(json, node.parent as string)
-      JSONUtil.remove(parent, node.id as string)
+      const parent = JSONUtil.getByPath(json, node.parentPath)
+      JSONUtil.remove(parent, node.id)
     })
 
     setJson(structuredClone(json))
@@ -163,7 +162,7 @@ const Main = () => {
           />
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel defaultSize={60}>
+        <ResizablePanel defaultSize={60} minSize={30}>
           <MainContent
             className="h-full w-full overflow-auto border-x-2"
             json={json}

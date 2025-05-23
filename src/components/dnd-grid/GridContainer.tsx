@@ -1,30 +1,30 @@
 import { TAB } from '@/constants/tab'
 import { cn } from '@/lib/utils'
 import { useExtraItemIdsStore, useSelectedItemIdsStore } from '@/store/item'
+import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { DOMUtil, DOMVector } from '@/utils/dom'
 import { JSONUtil } from '@/utils/json'
-import { DndProvider, NodeModel } from '@minoru/react-dnd-treeview'
 import { useEffect, useRef, useState } from 'react'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import GridCard from './GridCard'
-import { useJsonStore } from '@/store/json'
 import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
+import GridCard from './GridCard'
+import { DndProvider } from 'react-dnd'
 
 interface Props {
-  items: NodeModel<CustomData>[]
+  items: Data[]
   currentItemId: string
   onItemRelocation?: (
     targetIndex: number,
     selectedNodes: {
       index: number
-      item: NodeModel<CustomData>
+      item: Data
     }[],
   ) => void
   onItemMove?: (
     source: HTMLElement,
     target: HTMLElement,
-    selectedNodes: NodeModel<CustomData>[],
+    selectedNodes: Data[],
     targetIndex?: number,
   ) => void
   onItemEnter?: (itemId: string) => void
@@ -218,9 +218,9 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         <GridCard
           item={item}
           index={index}
-          parentType={itemType(item.parent as string)}
+          parentType={itemType(item.parentPath)}
           data-item={item.id}
-          data-item-type={item.data?.type}
+          data-item-type={item.type}
           onItemMove={handleItemMove}
           onItemRelocation={handleItemRelocation}
           setDraggingItemId={setDraggingItemId}
@@ -340,7 +340,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
               if (!containerDiv) return
 
               const item = DOMUtil.getDivOnPointer(x, y, containerDiv, true)
-              const itemId = item?.dataset.item as string
+              const itemId = item?.dataset.item
               if (itemId != null) setSelectedItemIds({ [itemId]: true })
             }
             return
