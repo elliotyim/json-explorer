@@ -17,16 +17,11 @@ import AddressBar from './AddressBar'
 import TopNavigationBar from './TopNavigationBar'
 
 const Layout = () => {
-  const { json, setJson } = useJsonStore()
-  const { currentItem, setCurrentItem } = useCurrentItemStore()
-
-  const { setBackHistories } = useBackHistoryStore()
-
   const treeRef = useRef<TreeApi<Data>>(null)
 
-  useEffect(() => {
-    if (!currentItem.id) setCurrentItem({ id: 'root', data: json })
-  }, [currentItem.id, json, setCurrentItem])
+  const { json, setJson } = useJsonStore()
+  const { currentItem, setCurrentItem } = useCurrentItemStore()
+  const { setBackHistories } = useBackHistoryStore()
 
   const handleOnInputSubmit = (currentPath: string) => {
     const id = currentPath
@@ -118,6 +113,10 @@ const Layout = () => {
     setCurrentItem({ id: itemId, data })
     setBackHistories((prev) => [...prev, parentPath])
   }
+
+  useEffect(() => {
+    if (!currentItem.id) setCurrentItem({ id: 'root', data: json })
+  }, [currentItem.id, json, setCurrentItem])
 
   return (
     <div className="flex h-screen w-full flex-col">

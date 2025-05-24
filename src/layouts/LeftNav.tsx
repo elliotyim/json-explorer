@@ -28,7 +28,7 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { setJson } = useJsonStore()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setRightNavTab } = useRightNavTabStore()
-  const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
+  const { setSelectedItemIds } = useSelectedItemIdsStore()
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') treeRef?.current?.deselectAll()
@@ -40,7 +40,12 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   }
 
   const handleItemSelect = (nodes: NodeApi<Data>[]) => {
-    if (nodes.length === 1 && !pushedKeys.current['Shift']) {
+    if (
+      nodes.length === 1 &&
+      !pushedKeys.current['Shift'] &&
+      !pushedKeys.current['Control'] &&
+      !pushedKeys.current['Meta']
+    ) {
       const node = nodes[0]
       setSelectedItemIds({ [node.data.id]: true })
 
@@ -58,6 +63,10 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       } else if (enterFolder) {
         enterFolder(node.id)
       }
+    } else {
+      const items: Record<string, boolean> = {}
+      nodes.forEach((node) => (items[node.data.id] = true))
+      setSelectedItemIds(items)
     }
   }
 
@@ -163,7 +172,11 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           clearTimeout(timer)
         }, 0)
       }
-    } else if (Object.keys(selectedItemIds).length) {
+    } else if (
+      !pushedKeys.current['Shift'] &&
+      !pushedKeys.current['Control'] &&
+      !pushedKeys.current['Meta']
+    ) {
       treeRef.current?.open(node.id)
       enterFolder(node.id)
     }

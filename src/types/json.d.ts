@@ -1,3 +1,7 @@
+interface JSONObj {
+  type: Record<string, unknown> | unknown[]
+}
+
 interface Data {
   id: string
   name: string

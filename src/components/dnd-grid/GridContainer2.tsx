@@ -7,7 +7,7 @@ import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { DOMUtil, DOMVector } from '@/utils/dom'
 import { JSONUtil } from '@/utils/json'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
@@ -32,7 +32,9 @@ interface Props {
   onItemEnter?: (itemId: string) => void
 }
 
-const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
+const GridContainer2: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & Props
+> = ({
   items,
   currentItemId,
   onItemRelocation,
@@ -55,20 +57,13 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const [isAreaDragging, setIsAreaDragging] = useState<boolean>(false)
   const [pushedKeys, setPushedKeys] = useState<Record<string, boolean>>({})
 
-  const selectionRect =
-    dragVector && scrollVector && containerRef.current && isAreaDragging
-      ? dragVector
-          .add(scrollVector)
-          .clamp(
-            new DOMRect(
-              0,
-              0,
-              containerRef.current.scrollWidth,
-              containerRef.current.scrollHeight,
-            ),
-          )
-          .toDOMRect()
-      : null
+  const selectionRect = useMemo<DOMRect | null>(() => {
+    const scrollContainer = containerRef.current
+    if (!dragVector || !scrollVector || !scrollContainer || !isAreaDragging) {
+      return null
+    }
+    return DOMUtil.getSelectionRect(dragVector, scrollVector, scrollContainer)
+  }, [dragVector, isAreaDragging, scrollVector])
 
   const getSelctedItems = (selectedArea: DOMRect): Record<string, boolean> => {
     const next: Record<string, boolean> = {}
@@ -145,50 +140,6 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     setExtraItemIds({})
   }, [currentItemId, setExtraItemIds, setSelectedItemIds])
 
-  useEffect(() => {
-    if (!isAreaDragging) return
-
-    let handle = requestAnimationFrame(scrollTheLad)
-
-    return () => cancelAnimationFrame(handle)
-
-    function clamp(num: number, min: number, max: number) {
-      return Math.min(Math.max(num, min), max)
-    }
-
-    function scrollTheLad() {
-      if (containerRef.current == null || dragVector == null) return
-
-      const currentPointer = dragVector.toTerminalPoint()
-      const containerRect = containerRef.current.getBoundingClientRect()
-
-      const shouldScrollRight = containerRect.width - currentPointer.x < 20
-      const shouldScrollLeft = currentPointer.x < 20
-      const shouldScrollDown = containerRect.height - currentPointer.y < 20
-      const shouldScrollUp = currentPointer.y < 20
-
-      const left = shouldScrollRight
-        ? clamp(20 - containerRect.width + currentPointer.x, 0, 15)
-        : shouldScrollLeft
-          ? -1 * clamp(20 - currentPointer.x, 0, 15)
-          : undefined
-      const top = shouldScrollDown
-        ? clamp(20 - containerRect.height + currentPointer.y, 0, 15)
-        : shouldScrollUp
-          ? -1 * clamp(20 - currentPointer.y, 0, 15)
-          : undefined
-
-      if (top === undefined && left === undefined) {
-        handle = requestAnimationFrame(scrollTheLad)
-        return
-      }
-
-      containerRef.current.scrollBy({ left, top })
-
-      handle = requestAnimationFrame(scrollTheLad)
-    }
-  }, [dragVector, isAreaDragging])
-
   const containerSize = ITEM.SIZE + ITEM.GAP_SIZE * 2
 
   const columnCount = (width: number) =>
@@ -234,6 +185,50 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       </div>
     )
   }
+
+  useEffect(() => {
+    if (!isAreaDragging) return
+
+    let handle = requestAnimationFrame(scrollTheLad)
+
+    return () => cancelAnimationFrame(handle)
+
+    function clamp(num: number, min: number, max: number) {
+      return Math.min(Math.max(num, min), max)
+    }
+
+    function scrollTheLad() {
+      if (containerRef.current == null || dragVector == null) return
+
+      const currentPointer = dragVector.toTerminalPoint()
+      const containerRect = containerRef.current.getBoundingClientRect()
+
+      const shouldScrollRight = containerRect.width - currentPointer.x < 20
+      const shouldScrollLeft = currentPointer.x < 20
+      const shouldScrollDown = containerRect.height - currentPointer.y < 20
+      const shouldScrollUp = currentPointer.y < 20
+
+      const left = shouldScrollRight
+        ? clamp(20 - containerRect.width + currentPointer.x, 0, 15)
+        : shouldScrollLeft
+          ? -1 * clamp(20 - currentPointer.x, 0, 15)
+          : undefined
+      const top = shouldScrollDown
+        ? clamp(20 - containerRect.height + currentPointer.y, 0, 15)
+        : shouldScrollUp
+          ? -1 * clamp(20 - currentPointer.y, 0, 15)
+          : undefined
+
+      if (top === undefined && left === undefined) {
+        handle = requestAnimationFrame(scrollTheLad)
+        return
+      }
+
+      containerRef.current.scrollBy({ left, top })
+
+      handle = requestAnimationFrame(scrollTheLad)
+    }
+  }, [dragVector, isAreaDragging])
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -490,4 +485,4 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   )
 }
 
-export default GridContainer
+export default GridContainer2
