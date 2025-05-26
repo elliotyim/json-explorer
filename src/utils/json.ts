@@ -572,4 +572,12 @@ export class JSONUtil {
       return false
     }
   }
+
+  static getItemType(obj: JSONObj['type'], itemId: string) {
+    const item = JSONUtil.getByPath(obj, itemId)
+
+    if (Array.isArray(item)) return 'array'
+    else if (typeof item === 'object' && item !== null) return 'object'
+    return 'value'
+  }
 }
