@@ -27,6 +27,7 @@
     "react-icons": "^5.5.0",
     "react-resizable-panels": "^3.0.2",
     "react-router": "^7.4.1",
+    "react-style-object-to-css": "^1.1.2",
     "react-virtualized": "^9.22.6",
     "tailwind-merge": "^3.1.0",
     "tailwindcss": "^4.1.1",
