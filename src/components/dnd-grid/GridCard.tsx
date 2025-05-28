@@ -78,6 +78,11 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
 
     const parentType: Data['type'] = itemType(item.parentPath)
 
+    const isSelected =
+      selectedItemIds?.[item.id] ||
+      extraItemIds?.[item.id] ||
+      draggingItems?.[item.id]
+
     const truncate = (title: string) => {
       const len = 9
       if (title.length > len) return title.substring(0, len) + '..'
@@ -117,17 +122,13 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
 
         if (dragIndex === hoverIndex) return
 
-        const hoverBoundingRect = ref.current.getBoundingClientRect()
-
-        const hoverMiddleX =
-          (hoverBoundingRect.right - hoverBoundingRect.left) / 2
-
+        const hoverRect = ref.current.getBoundingClientRect()
         const clientOffset = monitor.getClientOffset()
 
-        const hoverClientX =
-          (clientOffset as XYCoord).x - hoverBoundingRect.left
+        const hoverClientX = (clientOffset as XYCoord).x - hoverRect.left
+        const hoverMiddleX = (hoverRect.right - hoverRect.left) / 2
 
-        const width = hoverBoundingRect.width
+        const width = hoverRect.width
         const offset = ITEM.GAP_SIZE * 1.5
 
         if (parentType === 'array') {
@@ -177,8 +178,8 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
         const targetType = JSONUtil.getItemType(json, target.id)
 
         const sourceWrapper = DOMUtil.getNthChild(containerDiv, source.index)
-        const sourceDiv = sourceWrapper?.firstElementChild as HTMLDivElement
         const targetWrapper = DOMUtil.getNthChild(containerDiv, target.index)
+        const sourceDiv = sourceWrapper?.firstElementChild as HTMLDivElement
         const targetDiv = targetWrapper?.firstElementChild as HTMLDivElement
 
         setOnLeft(false)
@@ -210,11 +211,6 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
 
     drag(drop(ref))
 
-    const isSelected =
-      selectedItemIds?.[item.id] ||
-      extraItemIds?.[item.id] ||
-      draggingItems?.[item.id]
-
     return (
       <div
         ref={ref}
@@ -240,9 +236,9 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
             backgroundColor: isSelected ? 'black' : 'white',
             color: isSelected ? 'white' : 'black',
             boxShadow: onLeft
-              ? '-10px 0px 10px 0px rgba(20,75,222,0.5)'
+              ? '-20px 0px 5px -2px rgba(20,75,222,0.5)'
               : onRight
-                ? '10px 0px 10px 0px rgba(20,75,222,0.5)'
+                ? '20px 0px 5px -2px rgba(20,75,222,0.5)'
                 : undefined,
           }}
           {...props}

@@ -52,6 +52,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { json, setJson } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
   const { extraItemIds, setExtraItemIds } = useExtraItemIdsStore()
+  const { itemAreas, setItemAreas } = useItemAreaStore()
 
   const { draggingItemId } = useDraggingItemStore()
   const [draggingItems, setDraggingItems] = useState<Record<string, boolean>>(
@@ -62,8 +63,6 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const [containerWidth, setContainerWidth] = useState<number>(0)
 
   const [isReady, setIsReady] = useState<boolean>(false)
-
-  const { itemAreas, setItemAreas } = useItemAreaStore()
 
   const handleItemRelocation = (targetIndex: number) => {
     if (onItemRelocation) {
