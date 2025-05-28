@@ -232,6 +232,7 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
           data-index={index}
           data-type={item.type}
           data-item-type={item.type}
+          className="cursor-pointer"
           style={{
             width: '100%',
             height: '100%',
