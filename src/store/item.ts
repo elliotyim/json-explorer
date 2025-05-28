@@ -7,6 +7,27 @@ interface CurrentItemState {
   ) => void
 }
 
+interface DraggingItemState {
+  draggingItemId: string | null
+  setDraggingItemId: (
+    updater: string | null | ((prev: string | null) => string | null),
+  ) => void
+}
+
+interface DisplayItemsState {
+  displayItems: Data[]
+  setDisplayItems: (updater: Data[] | ((prev: Data[]) => Data[])) => void
+}
+
+interface ItemAreaState {
+  itemAreas: Record<string, DOMRect>
+  setItemAreas: (
+    updater:
+      | Record<string, DOMRect>
+      | ((prev: Record<string, DOMRect>) => Record<string, DOMRect>),
+  ) => void
+}
+
 interface SelectedItemIdsState {
   selectedItemIds: Record<string, boolean>
   setSelectedItemIds: (
@@ -37,6 +58,36 @@ export const useCurrentItemStore = create<CurrentItemState>((set) => ({
       typeof updater === 'function'
         ? { currentItem: updater(prev.currentItem) }
         : { currentItem: updater },
+    ),
+}))
+
+export const useDraggingItemStore = create<DraggingItemState>((set) => ({
+  draggingItemId: null,
+  setDraggingItemId: (updater) =>
+    set((prev) =>
+      typeof updater === 'function'
+        ? { draggingItemId: updater(prev.draggingItemId) }
+        : { draggingItemId: updater },
+    ),
+}))
+
+export const useDisplayItemsStore = create<DisplayItemsState>((set) => ({
+  displayItems: [],
+  setDisplayItems: (updater) =>
+    set((prev) =>
+      typeof updater === 'function'
+        ? { displayItems: updater(prev.displayItems) }
+        : { displayItems: updater },
+    ),
+}))
+
+export const useItemAreaStore = create<ItemAreaState>((set) => ({
+  itemAreas: {},
+  setItemAreas: (updater) =>
+    set((prev) =>
+      typeof updater === 'function'
+        ? { itemAreas: updater(prev.itemAreas) }
+        : { itemAreas: updater },
     ),
 }))
 

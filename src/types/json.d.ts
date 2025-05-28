@@ -10,3 +10,7 @@ interface Data {
   parentPath: string
   children?: Data[]
 }
+
+interface DragItem extends Data {
+  index: number
+}
