@@ -1,5 +1,3 @@
-import { ITEM } from '@/constants/item'
-
 export class DOMVector {
   constructor(
     readonly x: number,
@@ -93,7 +91,7 @@ export class DOMUtil {
     pointerX: number,
     pointerY: number,
     containerDiv: HTMLElement,
-    offset?: number = 0,
+    offset: number = 0,
   ): HTMLElement | null {
     const containerRect = containerDiv.getBoundingClientRect()
 
