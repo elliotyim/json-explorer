@@ -104,7 +104,7 @@ export class JSONUtil {
     return parseInt(match[match.length - 1][1], 10)
   }
 
-  static getType(obj: unknown): CustomData['type'] {
+  static getType(obj: unknown): Data['type'] {
     if (Array.isArray(obj)) return 'array'
     else if (typeof obj === 'object' && obj !== null) return 'object'
     else return 'value'
@@ -562,5 +562,22 @@ export class JSONUtil {
     })
 
     return result
+  }
+
+  static isJsonValid(jsonString: string) {
+    try {
+      JSON.parse(jsonString)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  static getItemType(obj: JSONObj['type'], itemId: string) {
+    const item = JSONUtil.getByPath(obj, itemId)
+
+    if (Array.isArray(item)) return 'array'
+    else if (typeof item === 'object' && item !== null) return 'object'
+    return 'value'
   }
 }

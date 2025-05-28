@@ -91,15 +91,18 @@ export class DOMUtil {
     pointerX: number,
     pointerY: number,
     containerDiv: HTMLElement,
-    selectInner?: boolean,
+    offset: number = 0,
   ): HTMLElement | null {
     const containerRect = containerDiv.getBoundingClientRect()
 
     for (const child of containerDiv.children) {
-      const childDiv = (
-        selectInner ? child.firstElementChild : child
-      ) as HTMLElement
+      const childDiv = child as HTMLDivElement
       const childRect = this.generateChildRect(containerRect, childDiv)
+
+      childRect.x = childRect.x + offset
+      childRect.width = childRect.width - offset * 2
+      childRect.y = childRect.y + offset
+      childRect.height = childRect.height - offset * 2
 
       if (this.intersectWithPos(pointerX, pointerY, childRect)) return childDiv
     }
@@ -107,10 +110,83 @@ export class DOMUtil {
     return null
   }
 
-  static getCurrentPoint(e: React.PointerEvent): { x: number; y: number } {
-    const containerRect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - containerRect.x
-    const y = e.clientY - containerRect.y
+  static getCurrentPoint(
+    container: HTMLElement,
+    event: PointerEvent,
+    offsetX: number = 0,
+    offsetY: number = 0,
+  ): { x: number; y: number } {
+    const containerRect = container.getBoundingClientRect()
+    const x = event.clientX - containerRect.x + offsetX
+    const y = event.clientY - containerRect.y + offsetY
     return { x, y }
+  }
+
+  static getNthFirstChild(
+    parent: HTMLElement | null,
+    n: number = 0,
+  ): HTMLElement | null {
+    if (parent == null) return null
+
+    let target = parent
+    for (let i = 0; i < n; i++) {
+      target = target?.firstElementChild as HTMLElement
+    }
+    return target
+  }
+
+  static getItem(
+    point: DOMRect,
+    itemAreas: Record<string, DOMRect>,
+    itemOffsetX: number = 0,
+    itemOffsetY: number = 0,
+  ): { id: string; index: number } | null {
+    const items = Object.entries(itemAreas).sort(([, a], [, b]) => {
+      if (a.y < b.y) return -1
+      if (a.y > b.y) return 1
+      if (a.x < b.x) return -1
+      if (a.x > b.x) return 1
+      return 0
+    })
+
+    const copiedItems = structuredClone(items)
+
+    for (const i in Object.entries(copiedItems)) {
+      const index = +i
+      const [id, itemArea] = copiedItems[index]
+
+      itemArea.x += itemOffsetX
+      itemArea.width -= itemOffsetX * 2
+      itemArea.y += itemOffsetY
+      itemArea.height -= itemOffsetY * 2
+
+      if (this.intersect(point, itemArea)) return { id, index }
+    }
+
+    return null
+  }
+
+  static getItems(
+    selectedArea: DOMRect,
+    itemAreas: Record<string, DOMRect>,
+  ): Record<string, boolean> {
+    const next: Record<string, boolean> = {}
+
+    Object.entries(itemAreas).forEach(([id, itemArea]) => {
+      if (!this.intersect(selectedArea, itemArea)) return
+      next[id] = true
+    })
+
+    return next
+  }
+
+  static compare(a: DOMRect, b: DOMRect): boolean {
+    return (
+      a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+    )
+  }
+
+  static getNthChild(container: HTMLElement, n: number): Element | null {
+    return container?.children?.[n] ?? null
   }
 }

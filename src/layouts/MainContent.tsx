@@ -1,5 +1,4 @@
 import GridContainer from '@/components/dnd-grid/GridContainer'
-
 import {
   ContextMenu,
   ContextMenuContent,
@@ -11,11 +10,15 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { TAB } from '@/constants/tab'
-import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
+import {
+  useDisplayItemsStore,
+  useItemEditingStore,
+  useSelectedItemIdsStore,
+} from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 interface Props {
   json: Record<string, unknown> | unknown[]
@@ -44,7 +47,8 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   onItemEnter,
   ...props
 }) => {
-  const [displayItems, setDisplayItems] = useState<Data[]>([])
+  // const [displayItems, setDisplayItems] = useState<Data[]>([])
+  const { displayItems, setDisplayItems } = useDisplayItemsStore()
 
   const { setJson } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
@@ -73,7 +77,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       const timer = setTimeout(() => {
         setIsItemEditing(true)
         clearTimeout(timer)
-      }, 100)
+      }, 0)
     }
   }
 
@@ -83,7 +87,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     setSelectedItemIds({})
   }
 
-  const handleItemCreate = (type: CustomData['type']) => {
+  const handleItemCreate = (type: Data['type']) => {
     const id = currentItem.id
     const itemSpec = JSONUtil.inspect({ obj: json, path: id })
     const item = JSONUtil.getByPath(json, id) as Record<string, unknown>
@@ -112,7 +116,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     const timer = setTimeout(() => {
       setIsItemEditing(true)
       clearTimeout(timer)
-    }, 100)
+    }, 0)
   }
 
   const showProperties = () => {
@@ -130,7 +134,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     })
 
     setDisplayItems(data)
-  }, [json, currentItem.id, currentItem.data])
+  }, [json, currentItem.id, currentItem.data, setDisplayItems])
 
   return (
     <div {...props}>

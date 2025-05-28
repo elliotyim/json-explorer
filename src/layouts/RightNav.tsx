@@ -1,5 +1,5 @@
 import CodeEditor from '@/components/code-editor/CodeEditor'
-import Properties from '@/components/properties/Properties'
+import Properties from '@/components/right-nav/Properties'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TAB } from '@/constants/tab'
 import { useRightNavTabStore } from '@/store/tab'
@@ -36,6 +36,7 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             jsonString={JSON.stringify(json, null, 2)}
             onValueChange={onValueChange}
             className="h-full"
+            withButtons
           />
         </TabsContent>
         <TabsContent value={TAB.PROPERTIES} className="h-full overflow-auto">

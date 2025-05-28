@@ -1,6 +1,5 @@
-interface CustomData {
-  value: unknown
-  type: 'array' | 'object' | 'value'
+interface JSONObj {
+  type: Record<string, unknown> | unknown[]
 }
 
 interface Data {
@@ -10,4 +9,8 @@ interface Data {
   type: 'array' | 'object' | 'value'
   parentPath: string
   children?: Data[]
+}
+
+interface DragItem extends Data {
+  index: number
 }

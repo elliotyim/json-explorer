@@ -1,34 +1,27 @@
 import LeftNav from '@/layouts/LeftNav'
 import MainContent from '@/layouts/MainContent'
 import RightNav from '@/layouts/RightNav'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
-import { useBackHistoryStore } from '@/store/history'
-import { useCurrentItemStore } from '@/store/item'
-import { useJsonStore } from '@/store/json'
-import { JSONUtil } from '@/utils/json'
-import { TreeApi } from 'react-arborist'
-import { useDebouncedCallback } from 'use-debounce'
-import AddressBar from './AddressBar'
-import TopNavigationBar from './TopNavigationBar'
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
+import { useBackHistoryStore } from '@/store/history'
+import { useCurrentItemStore } from '@/store/item'
+import { useJsonStore } from '@/store/json'
+import { JSONUtil } from '@/utils/json'
+import { TreeApi } from 'react-arborist'
+import AddressBar from './AddressBar'
+import TopNavigationBar from './TopNavigationBar'
 
-const Main = () => {
-  const { json, setJson } = useJsonStore()
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { currentItem, setCurrentItem } = useCurrentItemStore()
-
-  const { setBackHistories } = useBackHistoryStore()
-
+const Layout = () => {
   const treeRef = useRef<TreeApi<Data>>(null)
 
-  useEffect(() => {
-    if (!currentItem.id) setCurrentItem({ id: 'root', data: json })
-  }, [currentItem.id, json, setCurrentItem])
+  const { json, setJson } = useJsonStore()
+  const { currentItem, setCurrentItem } = useCurrentItemStore()
+  const { setBackHistories } = useBackHistoryStore()
 
   const handleOnInputSubmit = (currentPath: string) => {
     const id = currentPath
@@ -121,20 +114,9 @@ const Main = () => {
     setBackHistories((prev) => [...prev, parentPath])
   }
 
-  const debouncedValueChange = useDebouncedCallback((value) => {
-    if (!value) return
-
-    try {
-      setJson(JSON.parse(value))
-      setErrorMessage(null)
-    } catch (e: unknown) {
-      if (e instanceof SyntaxError) {
-        setErrorMessage('JSON input is not valid!')
-      } else {
-        throw e
-      }
-    }
-  }, 1000)
+  useEffect(() => {
+    if (!currentItem.id) setCurrentItem({ id: 'root', data: json })
+  }, [currentItem.id, json, setCurrentItem])
 
   return (
     <div className="flex h-screen w-full flex-col">
@@ -155,10 +137,8 @@ const Main = () => {
           <LeftNav
             className="h-full w-full overflow-y-auto"
             json={json}
-            currentItemId={currentItem.id}
             treeRef={treeRef}
             enterFolder={enterFolder}
-            errorMessage={errorMessage}
           />
         </ResizablePanel>
         <ResizableHandle />
@@ -177,7 +157,7 @@ const Main = () => {
           <RightNav
             className="flex h-full w-full flex-col overflow-auto"
             json={json}
-            onValueChange={(value) => debouncedValueChange(value)}
+            onValueChange={(value) => setJson(JSON.parse(value))}
           />
         </ResizablePanel>
       </ResizablePanelGroup>
@@ -185,4 +165,4 @@ const Main = () => {
   )
 }
 
-export default Main
+export default Layout

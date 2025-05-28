@@ -1,33 +1,23 @@
-import { TypeIcon } from '@/components/dnd-tree/TypeIcon'
+import TreeNode from '@/components/dnd-tree/TreeNode'
+import { MOUSE_CLICK } from '@/constants/mouse'
 import { TAB } from '@/constants/tab'
-import { cn } from '@/lib/utils'
-import { useSelectedItemIdsStore } from '@/store/item'
+import { TREE_NODE } from '@/constants/tree'
+import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
 import { useEffect, useRef, useState } from 'react'
-import {
-  MoveHandler,
-  NodeApi,
-  NodeRendererProps,
-  Tree,
-  TreeApi,
-} from 'react-arborist'
-import { FaCaretRight } from 'react-icons/fa6'
+import { MoveHandler, NodeApi, Tree, TreeApi } from 'react-arborist'
 import { AutoSizer } from 'react-virtualized'
 
 interface Props {
   json: Record<string, unknown> | unknown[]
-  errorMessage: string | null
-  currentItemId: string
   treeRef: React.RefObject<TreeApi<Data> | null>
   enterFolder: (id: string) => void
 }
 
 const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   json,
-  errorMessage,
-  currentItemId,
   treeRef,
   enterFolder,
   ...props
@@ -36,12 +26,10 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const pushedKeys = useRef<Record<string, boolean>>({})
 
   const { setJson } = useJsonStore()
-
-  useEffect(() => setData(JSONUtil.compile({ input: json })), [json])
-  useEffect(
-    () => treeRef?.current?.select(currentItemId, { focus: true }),
-    [currentItemId, treeRef],
-  )
+  const { currentItem, setCurrentItem } = useCurrentItemStore()
+  const { setRightNavTab } = useRightNavTabStore()
+  // const { setSelectedItemIds } = useSelectedItemIdsStore() // TODO: Fix the Item Sync Problem!
+  const [, setSelectedItemIds] = useState<Record<string, boolean>>({})
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') treeRef?.current?.deselectAll()
@@ -52,14 +40,42 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     delete pushedKeys.current[e.key]
   }
 
-  const onSelect = (nodes: NodeApi<Data>[]) => {
-    if (nodes.length === 1 && !pushedKeys.current['Shift']) {
+  const handleItemSelect = (nodes: NodeApi<Data>[]) => {
+    if (
+      nodes.length === 1 &&
+      !pushedKeys.current['Shift'] &&
+      !pushedKeys.current['Control'] &&
+      !pushedKeys.current['Meta']
+    ) {
       const node = nodes[0]
-      if (node.data.type !== 'value' && enterFolder) enterFolder(node.id)
+      setSelectedItemIds({ [node.data.id]: true })
+
+      if (node.data.type === 'value') {
+        if (currentItem.id !== node.parent?.id) {
+          const parentId = node.parent?.id ?? ''
+          const data = JSONUtil.getByPath(json, parentId) as unknown[]
+
+          setCurrentItem({ id: parentId, data })
+          const timer = setTimeout(() => {
+            setSelectedItemIds({ [node.data.id]: true })
+            clearTimeout(timer)
+          }, 0)
+        }
+      } else if (enterFolder) {
+        enterFolder(node.id)
+      }
+    } else {
+      const items: Record<string, boolean> = {}
+      nodes.forEach((node) => (items[node.data.id] = true))
+      setSelectedItemIds(items)
     }
   }
 
-  const onMove: MoveHandler<Data> = ({ dragNodes, parentId, parentNode }) => {
+  const handleItemMove: MoveHandler<Data> = ({
+    dragNodes,
+    parentId,
+    parentNode,
+  }) => {
     if (parentId == null) return
 
     let targetIndex: number
@@ -139,98 +155,57 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     enterFolder(destination)
   }
 
-  useEffect(() => treeRef.current?.open('root'), [treeRef])
-
-  const Node = ({ tree, node, style, dragHandle }: NodeRendererProps<Data>) => {
-    const { setRightNavTab } = useRightNavTabStore()
-    const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
-
-    const onCaretClick = (e: React.MouseEvent) => {
-      e.stopPropagation()
-      if (node.isOpen) tree.close(node.id)
-      else tree.open(node.id)
-    }
-
-    const handleItemClick = (
-      e: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    ) => {
-      if (node.data.type === 'value') {
-        if (e.detail === 2) {
-          if (node.parent) {
-            tree.open(node.parent?.data.id ?? '')
-            enterFolder(node.parent?.data.id ?? '')
-          }
-
-          const timer = setTimeout(() => {
-            tree.focus(node)
-            setSelectedItemIds({ [node.id]: true })
-            setRightNavTab(TAB.PROPERTIES)
-            clearTimeout(timer)
-          }, 0)
+  const handleItemClick = (
+    node: NodeApi<Data>,
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+  ) => {
+    if (node.data.type === 'value') {
+      if (e.detail === MOUSE_CLICK.DOUBLE) {
+        if (node.parent) {
+          treeRef.current?.open(node.parent?.data.id ?? '')
+          enterFolder(node.parent?.data.id ?? '')
         }
-      } else if (Object.keys(selectedItemIds).length) {
-        tree.open(node.id)
-        enterFolder(node.id)
+
+        const timer = setTimeout(() => {
+          treeRef.current?.focus(node)
+          setSelectedItemIds({ [node.id]: true })
+          setRightNavTab(TAB.PROPERTIES)
+          clearTimeout(timer)
+        }, 0)
       }
+    } else if (
+      !pushedKeys.current['Shift'] &&
+      !pushedKeys.current['Control'] &&
+      !pushedKeys.current['Meta']
+    ) {
+      treeRef.current?.open(node.id)
+      enterFolder(node.id)
     }
-
-    const highlight = (node: NodeApi<Data>): string => {
-      let className = ''
-      if (node.id === currentItemId) className = 'bg-blue-300'
-      else if (node.isFocused) className = 'bg-gray-400'
-      else if (node.isSelected) className = 'bg-gray-300'
-      return className
-    }
-
-    return (
-      <div
-        className={cn(
-          'flex h-[32px] items-center border-b border-slate-200 ps-2 pe-2',
-          highlight(node),
-        )}
-        style={style}
-        ref={dragHandle}
-        onClick={handleItemClick}
-      >
-        <div className="flex h-[24px] w-[24px] items-center justify-center">
-          {node.data.type !== 'value' ? (
-            <FaCaretRight
-              className={cn(
-                `cursor-pointer transition-transform duration-100 ease-linear`,
-                node.isOpen ? 'rotate-90' : 'rotate-0',
-              )}
-              onClick={onCaretClick}
-            />
-          ) : null}
-        </div>
-        <TypeIcon type={node.data.type} isOpen={node.isOpen} />
-        <span className="ps-2">{node.data.name}</span>
-      </div>
-    )
   }
+
+  useEffect(() => setData(JSONUtil.compile({ input: json })), [json])
+  useEffect(() => treeRef.current?.open('root'), [treeRef])
 
   return (
     <div {...props} onKeyDown={handleKeyDown} onKeyUp={handleKeyUp}>
-      <span className={cn(errorMessage ? null : 'hidden')}>{errorMessage}</span>
-      <div className={cn('h-full', errorMessage ? 'hidden' : null)}>
-        <div className="flex h-full flex-col gap-1">
-          <AutoSizer>
-            {({ height, width }) => (
-              <Tree<Data>
-                ref={treeRef}
-                data={data}
-                width={width}
-                height={height}
-                rowHeight={32}
-                onSelect={onSelect}
-                onMove={onMove}
-                openByDefault={false}
-              >
-                {Node}
-              </Tree>
-            )}
-          </AutoSizer>
-        </div>
+      <div className="h-full">
+        <AutoSizer>
+          {({ height, width }) => (
+            <Tree<Data>
+              ref={treeRef}
+              data={data}
+              width={width}
+              height={height}
+              rowHeight={TREE_NODE.ROW_HEIGHT}
+              onSelect={handleItemSelect}
+              onMove={handleItemMove}
+              openByDefault={false}
+              className="pb-10"
+            >
+              {(props) => <TreeNode onItemClick={handleItemClick} {...props} />}
+            </Tree>
+          )}
+        </AutoSizer>
       </div>
     </div>
   )
