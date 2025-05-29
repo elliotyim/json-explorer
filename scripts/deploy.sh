@@ -16,15 +16,15 @@ ENV_FILE="$ENV.env"
 echo "[+] Loading environment from $ENV env file"
 export $(grep -v '^#' $ENV_FILE | xargs)
 
-echo "[+] Pruning unused Docker resources..."
-docker container prune -f
-docker image prune -a -f
-
 echo "[+] Pulling latest image..."
 docker pull $NAME-$ENV:latest
 
 echo "[+] Deploying stack: $STACK_NAME"
 IMAGE_NAME="$IMAGE_NAME" docker stack deploy -c docker-compose-$ENV.yml $STACK_NAME
 docker service update --force "${STACK_NAME}_app"
+
+echo "[+] Pruning unused Docker resources..."
+docker container prune -f
+docker image prune -a -f
 
 echo "[✓] Deployment triggered. Use 'docker service ls' to monitor status."
