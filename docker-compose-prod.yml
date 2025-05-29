@@ -11,9 +11,9 @@ services:
       replicas: 2
       update_config:
         parallelism: 1
-        delay: 10s
+        delay: 5s
         failure_action: rollback
-        monitor: 10s
+        monitor: 5s
         order: start-first
       restart_policy:
         condition: on-failure

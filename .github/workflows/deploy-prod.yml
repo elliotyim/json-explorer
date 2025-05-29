@@ -2,7 +2,7 @@ name: AWS Prod Deployment
 
 on:
   push:
-    branches: ['main', 'deployment/test']
+    branches: ['main']
 
 permissions:
   id-token: write # This is required for requesting the JWT
