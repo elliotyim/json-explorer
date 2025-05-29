@@ -119,48 +119,50 @@ const Layout = () => {
   }, [currentItem.id, json, setCurrentItem])
 
   return (
-    <div className="flex h-screen w-full flex-col">
-      <TopNavigationBar
-        className="bg-slate-100 px-5 py-2"
-        currentItem={currentItem}
-      />
-      <AddressBar
-        className="flex items-center gap-4 border-b-2 px-4 py-2"
-        currentPath={currentItem.id}
-        onInputSubmit={handleOnInputSubmit}
-      />
-      <ResizablePanelGroup
-        direction="horizontal"
-        className="w-full overflow-auto"
-      >
-        <ResizablePanel defaultSize={15} minSize={10}>
-          <LeftNav
-            className="h-full w-full overflow-y-auto"
-            json={json}
-            treeRef={treeRef}
-            enterFolder={enterFolder}
-          />
-        </ResizablePanel>
-        <ResizableHandle />
-        <ResizablePanel defaultSize={60} minSize={30}>
-          <MainContent
-            className="h-full w-full overflow-auto border-x-2"
-            json={json}
-            currentItem={currentItem}
-            onItemRelocation={handleItemRelocation}
-            onItemMove={handleItemMove}
-            onItemEnter={enterFolder}
-          />
-        </ResizablePanel>
-        <ResizableHandle />
-        <ResizablePanel defaultSize={25} minSize={10}>
-          <RightNav
-            className="flex h-full w-full flex-col overflow-auto"
-            json={json}
-            onValueChange={(value) => setJson(JSON.parse(value))}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+    <div className="flex h-screen w-full">
+      <div className="m-20 flex w-full flex-col rounded-xl border border-slate-300">
+        <TopNavigationBar
+          className="rounded-t-xl bg-slate-100 px-5 py-2"
+          currentItem={currentItem}
+        />
+        <AddressBar
+          className="flex items-center gap-4 border-b-2 px-4 py-2"
+          currentPath={currentItem.id}
+          onInputSubmit={handleOnInputSubmit}
+        />
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="w-full overflow-auto"
+        >
+          <ResizablePanel defaultSize={15} minSize={10}>
+            <LeftNav
+              className="h-full w-full overflow-y-auto"
+              json={json}
+              treeRef={treeRef}
+              enterFolder={enterFolder}
+            />
+          </ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel defaultSize={60} minSize={30}>
+            <MainContent
+              className="h-full w-full overflow-auto border-x-2"
+              json={json}
+              currentItem={currentItem}
+              onItemRelocation={handleItemRelocation}
+              onItemMove={handleItemMove}
+              onItemEnter={enterFolder}
+            />
+          </ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel defaultSize={25} minSize={10}>
+            <RightNav
+              className="flex h-full w-full flex-col overflow-auto"
+              json={json}
+              onValueChange={(value) => setJson(JSON.parse(value))}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
     </div>
   )
 }
