@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    image: ${IMAGE_NAME}:latest
+    volumes:
+      - ${OUT_CONF}:${IN_CONF}
+      - ${OUT_CERT_PUB}:${IN_CERT_PUB}
+      - ${OUT_CERT_PRIV}:${IN_CERT_PRIV}
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 20s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+    ports:
+      - '80:80'
+      - '443:443'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost']
+      interval: 10s
+      timeout: 3s
+      retries: 3

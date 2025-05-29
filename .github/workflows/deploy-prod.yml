@@ -1,0 +1,63 @@
+name: AWS Prod Deployment
+
+on:
+  push:
+    branches: ['main', 'deployment/test']
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      ENV: 'prod'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Get AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActionsSession
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Build Docker Image
+        run: bash scripts/build.sh ${{ secrets.DOCKERHUB_REPO }} $ENV
+
+      - name: Push Docker Image
+        run: docker push ${{ secrets.DOCKERHUB_REPO }}-$ENV
+
+      - name: Get Actions IP
+        id: ip
+        uses: haythem/public-ip@v1.3
+
+      - name: Add IP
+        run: |
+          aws lightsail open-instance-public-ports \
+            --instance-name ${{ secrets.AWS_INSTANCE_NAME }} \
+            --port-info fromPort=${{ secrets.SSH_PORT }},toPort=${{ secrets.SSH_PORT }},protocol=TCP,cidrs=${{ steps.ip.outputs.ipv4 }}/32
+
+      - name: Deploy App
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.WORKDIR }} &&
+            bash deploy.sh ${{ secrets.DOCKERHUB_REPO }} prod
+
+      - name: Release IP
+        if: always()
+        run: |
+          aws lightsail close-instance-public-ports \
+            --instance-name ${{ secrets.AWS_INSTANCE_NAME }} \
+            --port-info fromPort=${{ secrets.SSH_PORT }},toPort=${{ secrets.SSH_PORT }},protocol=TCP,cidrs=${{ steps.ip.outputs.ipv4 }}/32
