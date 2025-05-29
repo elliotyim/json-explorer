@@ -16,6 +16,8 @@ ENV_FILE="$ENV.env"
 echo "[+] Loading environment from $ENV env file"
 export $(grep -v '^#' $ENV_FILE | xargs)
 
+echo "[+] Pruning unused Docker resources..."
+docker container prune -f
 docker image prune -a -f
 
 echo "[+] Pulling latest image..."
