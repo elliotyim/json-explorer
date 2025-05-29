@@ -5,8 +5,11 @@ interface JsonState {
   setJson: (json: Record<string, unknown> | unknown[]) => void
 }
 
-import fixture from '@/fixtures/sample.json' // Remove this after
 export const useJsonStore = create<JsonState>((set) => ({
-  json: fixture,
+  json: {
+    key: 'value',
+    array: ['value2', 'value3'],
+    object: { key2: 'value4' },
+  },
   setJson: (json) => set(() => ({ json })),
 }))
