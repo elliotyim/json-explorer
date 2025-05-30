@@ -86,6 +86,12 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     const folders = new Set()
 
     const filteredNodes = [...dragNodes]
+      .filter(
+        (node) =>
+          !(
+            node.parent?.id === parentId && node.parent?.data.type === 'object'
+          ),
+      )
       .sort((a, b) => a.id.length - b.id.length)
       .filter((node) => !trailingParentIds.has(node.id)) // Remove improper folders
       .filter((node) => {
