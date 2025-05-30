@@ -92,6 +92,26 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
     const [{ isDragging }, drag] = useDrag(() => ({
       type: DRAG_ITEM.CARD,
       item: () => ({ ...item, index }),
+      canDrag(monitor) {
+        if (!ref.current) return false
+
+        const hoverRect = ref.current.getBoundingClientRect()
+        const clientOffset = monitor.getClientOffset()
+
+        const hoverClientX = (clientOffset as XYCoord).x - hoverRect.left
+        const hoverClientY = (clientOffset as XYCoord).y - hoverRect.top
+
+        if (
+          hoverClientX < ITEM.GAP_SIZE ||
+          hoverClientX > ITEM.SIZE + ITEM.GAP_SIZE ||
+          hoverClientY < ITEM.GAP_SIZE ||
+          hoverClientY > ITEM.SIZE + ITEM.GAP_SIZE
+        ) {
+          return false
+        }
+
+        return true
+      },
       collect: (monitor) => ({ isDragging: monitor.isDragging() }),
       end(_, monitor) {
         if (monitor.didDrop() && onDropEnd) onDropEnd()

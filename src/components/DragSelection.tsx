@@ -24,6 +24,7 @@ interface Props {
   isReady: boolean
   containerRef: React.RefObject<HTMLDivElement | null> | null
   scrollRef?: React.RefObject<HTMLDivElement | null> | null
+  innerContainerRef?: React.RefObject<HTMLDivElement | null> | null
   onSelectionStart?: ({
     event,
     x,
@@ -39,6 +40,7 @@ const DragSelection: React.FC<Props> = ({
   isReady,
   containerRef,
   scrollRef = containerRef,
+  innerContainerRef = containerRef,
   onSelectionStart,
   onSelectionChange,
   onSelectionEnd,
@@ -47,14 +49,15 @@ const DragSelection: React.FC<Props> = ({
 
   const [dragVector, setDragVector] = useState<DOMVector | null>(null)
   const [scrollVector, setScrollVector] = useState<DOMVector | null>(null)
-  const [, setIsAreaDragging] = useState<boolean>(false)
+  const [isAreaDragging, setIsAreaDragging] = useState<boolean>(false)
 
-  const selectionArea = dragVector?.toDOMRect()
+  const selectionAreaRef = useRef<DOMRect>(null)
 
   const onPointerMove = useCallback(
     (event: PointerEvent) => {
       const container = containerRef?.current
-      if (!container || !dragVector || !scrollVector) return
+      const scroller = scrollRef?.current
+      if (!container || !scroller || !dragVector || !scrollVector) return
 
       const prevX = dragVector.x
       const prevY = dragVector.y
@@ -69,14 +72,24 @@ const DragSelection: React.FC<Props> = ({
 
       const selectionArea = nextDragVector.add(scrollVector).toDOMRect()
 
+      const { scrollLeft, scrollTop } = scroller
+
+      const visualArea = new DOMRect(
+        selectionArea.x - scrollLeft,
+        selectionArea.y - scrollTop,
+        selectionArea.width,
+        selectionArea.height,
+      )
+
       if (onSelectionChange) {
         const handle = requestAnimationFrame(() => {
+          selectionAreaRef.current = visualArea
           onSelectionChange({ event, selectionArea })
           cancelAnimationFrame(handle)
         })
       }
     },
-    [containerRef, dragVector, onSelectionChange, scrollVector],
+    [containerRef, dragVector, onSelectionChange, scrollRef, scrollVector],
   )
 
   const onPointerUp = useCallback(
@@ -102,6 +115,7 @@ const DragSelection: React.FC<Props> = ({
       setDragVector(null)
       setScrollVector(null)
       setIsAreaDragging(false)
+      selectionAreaRef.current = null
     },
     [containerRef, dragVector, onSelectionEnd, scrollRef, scrollVector],
   )
@@ -136,17 +150,33 @@ const DragSelection: React.FC<Props> = ({
 
   const onScroll = useCallback(
     (e: Event) => {
-      let width = 0,
-        height = 0
-      const scrollX = (e.currentTarget as HTMLElement).scrollLeft
-      const scrollY = (e.currentTarget as HTMLElement).scrollTop
+      const scroller = e.currentTarget as HTMLElement
+      if (!dragVector || !scrollVector) return
 
-      if (dragVector && scrollVector) {
-        width = scrollX - scrollVector.x
-        height = scrollY - scrollVector.y
-      }
+      const scrollLeft = scroller.scrollLeft
+      const scrollTop = scroller.scrollTop
 
-      setScrollVector(new DOMVector(scrollX, scrollY, width, height))
+      const scrollX = scrollVector.x
+      const scrollY = scrollVector.y
+
+      const nextScrollVector = new DOMVector(
+        scrollX,
+        scrollY,
+        scrollLeft - scrollX,
+        scrollTop - scrollY,
+      )
+
+      const logicalArea = dragVector.add(nextScrollVector).toDOMRect()
+
+      const visualArea = new DOMRect(
+        logicalArea.x - scrollLeft,
+        logicalArea.y - scrollTop,
+        logicalArea.width,
+        logicalArea.height,
+      )
+
+      selectionAreaRef.current = visualArea
+      setScrollVector(nextScrollVector)
     },
     [dragVector, scrollVector],
   )
@@ -180,16 +210,69 @@ const DragSelection: React.FC<Props> = ({
     scrollRef,
   ])
 
+  useEffect(() => {
+    if (!isAreaDragging) return
+
+    let handle = requestAnimationFrame(scrollTheLad)
+
+    return () => cancelAnimationFrame(handle)
+
+    function clamp(num: number, min: number, max: number) {
+      return Math.min(Math.max(num, min), max)
+    }
+
+    function scrollTheLad() {
+      if (!containerRef?.current || !scrollRef?.current || !dragVector) return
+
+      const currentPointer = dragVector.toTerminalPoint()
+      const containerRect = containerRef.current.getBoundingClientRect()
+
+      const offset = 100
+
+      const shouldScrollRight = containerRect.width - currentPointer.x < offset
+      const shouldScrollLeft = currentPointer.x < offset
+      const shouldScrollDown = containerRect.height - currentPointer.y < offset
+      const shouldScrollUp = currentPointer.y < offset
+
+      let left
+      if (shouldScrollRight) {
+        left = clamp(offset - containerRect.width + currentPointer.x, 0, 15)
+      } else if (shouldScrollLeft) {
+        left = -1 * clamp(offset - currentPointer.x, 0, 15)
+      } else {
+        left = undefined
+      }
+
+      let top
+      if (shouldScrollDown) {
+        top = clamp(offset - containerRect.height + currentPointer.y, 0, 15)
+      } else if (shouldScrollUp) {
+        top = -1 * clamp(offset - currentPointer.y, 0, 15)
+      } else {
+        top = undefined
+      }
+
+      if (top === undefined && left === undefined) {
+        handle = requestAnimationFrame(scrollTheLad)
+        return
+      }
+
+      scrollRef?.current?.scrollBy({ left, top })
+
+      handle = requestAnimationFrame(scrollTheLad)
+    }
+  }, [containerRef, dragVector, innerContainerRef, isAreaDragging, scrollRef])
+
   return (
     <div
       ref={selectionRef}
       className={'invisible absolute border-2 border-black bg-black/30'}
       style={{
-        top: selectionArea?.y,
-        left: selectionArea?.x,
-        width: selectionArea?.width,
-        height: selectionArea?.height,
-        visibility: selectionArea != null ? 'visible' : 'hidden',
+        top: selectionAreaRef.current?.y,
+        left: selectionAreaRef.current?.x,
+        width: selectionAreaRef.current?.width,
+        height: selectionAreaRef.current?.height,
+        visibility: selectionAreaRef.current != null ? 'visible' : 'hidden',
       }}
     />
   )
