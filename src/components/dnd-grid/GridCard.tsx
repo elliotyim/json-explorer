@@ -252,7 +252,7 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
           style={{
             width: '100%',
             height: '100%',
-            opacity: isDragging ? 0.2 : 1,
+            opacity: isDragging ? 0.5 : 1,
             backgroundColor: isSelected ? 'black' : 'white',
             color: isSelected ? 'white' : 'black',
             boxShadow: onLeft
