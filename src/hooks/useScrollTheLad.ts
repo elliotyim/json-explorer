@@ -33,19 +33,8 @@ export const useAutoScroll = ({
 
       const offset = 100
 
-      const shouldScrollRight = containerRect.width - currentPointer.x < offset
-      const shouldScrollLeft = currentPointer.x < offset
       const shouldScrollDown = containerRect.height - currentPointer.y < offset
       const shouldScrollUp = currentPointer.y < offset
-
-      let left
-      if (shouldScrollRight) {
-        left = clamp(offset - containerRect.width + currentPointer.x, 0, 15)
-      } else if (shouldScrollLeft) {
-        left = -1 * clamp(offset - currentPointer.x, 0, 15)
-      } else {
-        left = undefined
-      }
 
       let top
       if (shouldScrollDown) {
@@ -56,12 +45,12 @@ export const useAutoScroll = ({
         top = undefined
       }
 
-      if (top === undefined && left === undefined) {
+      if (top === undefined) {
         handle = requestAnimationFrame(scrollTheLad)
         return
       }
 
-      scrollRef?.current?.scrollBy({ left, top })
+      scrollRef?.current?.scrollBy({ top })
 
       handle = requestAnimationFrame(scrollTheLad)
     }
