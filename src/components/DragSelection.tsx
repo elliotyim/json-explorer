@@ -1,4 +1,5 @@
 import { MOUSE_CLICK } from '@/constants/mouse'
+import { useAutoScroll } from '@/hooks/useScrollTheLad'
 import { DOMUtil, DOMVector } from '@/utils/dom'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -47,14 +48,15 @@ const DragSelection: React.FC<Props> = ({
 
   const [dragVector, setDragVector] = useState<DOMVector | null>(null)
   const [scrollVector, setScrollVector] = useState<DOMVector | null>(null)
-  const [, setIsAreaDragging] = useState<boolean>(false)
+  const [isAreaDragging, setIsAreaDragging] = useState<boolean>(false)
 
-  const selectionArea = dragVector?.toDOMRect()
+  const selectionAreaRef = useRef<DOMRect>(null)
 
   const onPointerMove = useCallback(
     (event: PointerEvent) => {
       const container = containerRef?.current
-      if (!container || !dragVector || !scrollVector) return
+      const scroller = scrollRef?.current
+      if (!container || !scroller || !dragVector || !scrollVector) return
 
       const prevX = dragVector.x
       const prevY = dragVector.y
@@ -69,14 +71,24 @@ const DragSelection: React.FC<Props> = ({
 
       const selectionArea = nextDragVector.add(scrollVector).toDOMRect()
 
+      const { scrollLeft, scrollTop } = scroller
+
+      const visualArea = new DOMRect(
+        selectionArea.x - scrollLeft,
+        selectionArea.y - scrollTop,
+        selectionArea.width,
+        selectionArea.height,
+      )
+
       if (onSelectionChange) {
         const handle = requestAnimationFrame(() => {
+          selectionAreaRef.current = visualArea
           onSelectionChange({ event, selectionArea })
           cancelAnimationFrame(handle)
         })
       }
     },
-    [containerRef, dragVector, onSelectionChange, scrollVector],
+    [containerRef, dragVector, onSelectionChange, scrollRef, scrollVector],
   )
 
   const onPointerUp = useCallback(
@@ -102,6 +114,7 @@ const DragSelection: React.FC<Props> = ({
       setDragVector(null)
       setScrollVector(null)
       setIsAreaDragging(false)
+      selectionAreaRef.current = null
     },
     [containerRef, dragVector, onSelectionEnd, scrollRef, scrollVector],
   )
@@ -136,17 +149,33 @@ const DragSelection: React.FC<Props> = ({
 
   const onScroll = useCallback(
     (e: Event) => {
-      let width = 0,
-        height = 0
-      const scrollX = (e.currentTarget as HTMLElement).scrollLeft
-      const scrollY = (e.currentTarget as HTMLElement).scrollTop
+      const scroller = e.currentTarget as HTMLElement
+      if (!dragVector || !scrollVector) return
 
-      if (dragVector && scrollVector) {
-        width = scrollX - scrollVector.x
-        height = scrollY - scrollVector.y
-      }
+      const scrollLeft = scroller.scrollLeft
+      const scrollTop = scroller.scrollTop
 
-      setScrollVector(new DOMVector(scrollX, scrollY, width, height))
+      const scrollX = scrollVector.x
+      const scrollY = scrollVector.y
+
+      const nextScrollVector = new DOMVector(
+        scrollX,
+        scrollY,
+        scrollLeft - scrollX,
+        scrollTop - scrollY,
+      )
+
+      const logicalArea = dragVector.add(nextScrollVector).toDOMRect()
+
+      const visualArea = new DOMRect(
+        logicalArea.x - scrollLeft,
+        logicalArea.y - scrollTop,
+        logicalArea.width,
+        logicalArea.height,
+      )
+
+      selectionAreaRef.current = visualArea
+      setScrollVector(nextScrollVector)
     },
     [dragVector, scrollVector],
   )
@@ -180,16 +209,23 @@ const DragSelection: React.FC<Props> = ({
     scrollRef,
   ])
 
+  useAutoScroll({
+    containerRef,
+    scrollRef,
+    isDragging: isAreaDragging,
+    dragVector,
+  })
+
   return (
     <div
       ref={selectionRef}
       className={'invisible absolute border-2 border-black bg-black/30'}
       style={{
-        top: selectionArea?.y,
-        left: selectionArea?.x,
-        width: selectionArea?.width,
-        height: selectionArea?.height,
-        visibility: selectionArea != null ? 'visible' : 'hidden',
+        top: selectionAreaRef.current?.y,
+        left: selectionAreaRef.current?.x,
+        width: selectionAreaRef.current?.width,
+        height: selectionAreaRef.current?.height,
+        visibility: selectionAreaRef.current != null ? 'visible' : 'hidden',
       }}
     />
   )

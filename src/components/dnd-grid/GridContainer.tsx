@@ -150,7 +150,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     <DndProvider backend={HTML5Backend}>
       <div
         ref={outerContainerRef}
-        className="h-full w-full"
+        className="h-full w-full overflow-hidden"
         onClick={(e) => {
           const clickCount = e.detail
           if (clickCount === 2) {
