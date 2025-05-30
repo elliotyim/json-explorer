@@ -136,7 +136,7 @@ const Layout = () => {
         >
           <ResizablePanel defaultSize={15} minSize={10}>
             <LeftNav
-              className="h-full w-full overflow-y-auto"
+              className="h-full w-full overflow-y-auto rounded-bl-xl"
               json={json}
               treeRef={treeRef}
               enterFolder={enterFolder}
@@ -156,7 +156,7 @@ const Layout = () => {
           <ResizableHandle />
           <ResizablePanel defaultSize={25} minSize={10}>
             <RightNav
-              className="flex h-full w-full flex-col overflow-auto"
+              className="flex h-full w-full flex-col overflow-auto rounded-br-xl"
               json={json}
               onValueChange={(value) => setJson(JSON.parse(value))}
             />

@@ -262,7 +262,6 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             const point = new DOMRect(event.x, event.y, 0, 0)
             const containerRect =
               outerContainerRef.current?.getBoundingClientRect()
-
             if (!containerRect) return
 
             const isPointerInside = DOMUtil.intersect(point, containerRect)
