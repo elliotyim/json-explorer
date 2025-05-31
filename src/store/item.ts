@@ -7,6 +7,13 @@ interface CurrentItemState {
   ) => void
 }
 
+interface FocusedItemState {
+  focusedItemId: string | null
+  setFocusedItemId: (
+    updater: string | null | ((prev: string | null) => string | null),
+  ) => void
+}
+
 interface DraggingItemState {
   draggingItemId: string | null
   setDraggingItemId: (
@@ -58,6 +65,16 @@ export const useCurrentItemStore = create<CurrentItemState>((set) => ({
       typeof updater === 'function'
         ? { currentItem: updater(prev.currentItem) }
         : { currentItem: updater },
+    ),
+}))
+
+export const useFocusedItem = create<FocusedItemState>((set) => ({
+  focusedItemId: null,
+  setFocusedItemId: (updater) =>
+    set((prev) =>
+      typeof updater === 'function'
+        ? { focusedItemId: updater(prev.focusedItemId) }
+        : { focusedItemId: updater },
     ),
 }))
 

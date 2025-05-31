@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BUTTON } from '@/constants/button'
+import { useHistory } from '@/hooks/useHistory'
 import { useBackHistoryStore, useForwardHistoryStore } from '@/store/history'
 import { useCurrentItemStore } from '@/store/item'
-import { useJsonStore } from '@/store/json'
-import { JSONUtil } from '@/utils/json'
 import { useEffect, useState } from 'react'
 import {
   FaArrowLeft,
@@ -25,51 +24,12 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 }) => {
   const [inputValue, setInputValue] = useState<string>('')
 
-  const { json } = useJsonStore()
-  const { currentItem, setCurrentItem } = useCurrentItemStore()
+  const { currentItem } = useCurrentItemStore()
 
-  const { backHistories, setBackHistories } = useBackHistoryStore()
-  const { forwardHistories, setForwardHistories } = useForwardHistoryStore()
+  const { backHistories } = useBackHistoryStore()
+  const { forwardHistories } = useForwardHistoryStore()
 
-  const handleBackButtonClick = () => {
-    if (!backHistories.length) return
-
-    const prev = backHistories.pop() ?? ''
-    const prevItem = JSONUtil.getByPath(json, prev)
-
-    setBackHistories([...backHistories])
-    setForwardHistories((prev) => [...prev, currentItem.id])
-    setCurrentItem({
-      id: prev,
-      data: prevItem as Record<string, unknown>,
-    })
-  }
-
-  const handleForwardButtonClick = () => {
-    if (!forwardHistories.length) return
-
-    const next = forwardHistories.pop() ?? ''
-    const nextItem = JSONUtil.getByPath(json, next)
-
-    setBackHistories((prev) => [...prev, currentItem.id])
-    setForwardHistories([...forwardHistories])
-    setCurrentItem({
-      id: next,
-      data: nextItem as Record<string, unknown>,
-    })
-  }
-
-  const handleUpButtonClick = () => {
-    const parentPath = JSONUtil.getParentPath(currentItem.id)
-    const item = JSONUtil.getByPath(json, parentPath)
-
-    setCurrentItem({
-      id: parentPath,
-      data: item as Record<string, unknown>,
-    })
-    setBackHistories((prev) => [...prev, currentItem.id])
-    setForwardHistories([])
-  }
+  const { goBackward, goForward, goPrev } = useHistory()
 
   useEffect(() => {
     if (currentPath) setInputValue(currentPath)
@@ -81,21 +41,21 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         <Button
           variant={'outline'}
           disabled={!backHistories.length}
-          onClick={handleBackButtonClick}
+          onClick={goBackward}
         >
           <FaArrowLeft size={BUTTON.SIZE} />
         </Button>
         <Button
           variant={'outline'}
           disabled={!forwardHistories.length}
-          onClick={handleForwardButtonClick}
+          onClick={goForward}
         >
           <FaArrowRight size={BUTTON.SIZE} />
         </Button>
         <Button
           variant={'outline'}
           disabled={currentItem.id === 'root'}
-          onClick={handleUpButtonClick}
+          onClick={goPrev}
         >
           <FaArrowUp size={BUTTON.SIZE} />
         </Button>
