@@ -27,6 +27,7 @@ interface Props {
   index: number
   selectedItemIds: Record<string, boolean>
   extraItemIds: Record<string, boolean>
+  focusedItemId: string | null
   draggingItems: Record<string, boolean>
   style: React.CSSProperties
   onDropEnd?: () => void
@@ -48,6 +49,7 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
       onItemMove,
       selectedItemIds,
       extraItemIds,
+      focusedItemId,
       draggingItems,
       style,
       ...props
@@ -236,6 +238,9 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
         ref={ref}
         key={item.id}
         data-handler-id={handlerId}
+        className={
+          focusedItemId == item.id ? 'rounded-xl bg-blue-200' : undefined
+        }
         style={{
           ...style,
           width: ITEM.SIZE + ITEM.GAP_SIZE * 2,

@@ -16,6 +16,9 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
 import DragSelection from '../DragSelection'
 import GridCard from './GridCard'
+import { useKeyboardAction } from '@/hooks/useKeyboard'
+import { MathUtil } from '@/utils/math'
+import { useInitialFocus } from '@/store/settings'
 
 interface Props {
   items: Data[]
@@ -47,9 +50,10 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const outerContainerRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  const { isFocusDone, setIsFocusDone } = useInitialFocus()
   const { setRightNavTab } = useRightNavTabStore()
 
-  const { json, setJson } = useJsonStore()
+  const { json } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
   const { extraItemIds, setExtraItemIds } = useExtraItemIdsStore()
   const { itemAreas, setItemAreas } = useItemAreaStore()
@@ -59,10 +63,13 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     {},
   )
 
-  const [pushedKeys, setPushedKeys] = useState<Record<string, boolean>>({})
   const [containerWidth, setContainerWidth] = useState<number>(0)
-
   const [isReady, setIsReady] = useState<boolean>(false)
+
+  const { focusedItemId, onKeyDown, onKeyUp } = useKeyboardAction({
+    containerWidth,
+    onItemEnter,
+  })
 
   const handleItemRelocation = (targetIndex: number) => {
     if (onItemRelocation) {
@@ -100,25 +107,23 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     }
   }
 
-  const columnCount = (width: number) =>
-    Math.floor(width / (ITEM.SIZE + ITEM.GAP_SIZE * 2))
-
   const cellRenderer = ({
     columnIndex,
     rowIndex,
     style,
     parent,
   }: GridCellProps) => {
-    const index = columnCount(parent.props.width) * rowIndex + columnIndex
-    const item = items[index]
+    const i = MathUtil.countColumn(parent.props.width) * rowIndex + columnIndex
+    const item = items[i]
 
     return item ? (
       <GridCard
         item={item}
-        index={index}
+        index={i}
         selectedItemIds={selectedItemIds}
         extraItemIds={extraItemIds}
         draggingItems={draggingItems}
+        focusedItemId={focusedItemId}
         style={style}
         onDropEnd={() => setDraggingItems({})}
         onItemMove={handleItemMove}
@@ -126,6 +131,13 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       />
     ) : null
   }
+
+  useEffect(() => {
+    if (!isFocusDone && outerContainerRef) {
+      outerContainerRef.current?.focus()
+      setIsFocusDone(true)
+    }
+  }, [isFocusDone, setIsFocusDone])
 
   useEffect(() => {
     setSelectedItemIds({})
@@ -136,8 +148,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     const areas: Record<string, DOMRect> = {}
 
     items.forEach((item, index) => {
-      const columnIndex = index % columnCount(containerWidth)
-      const rowIndex = Math.floor(index / columnCount(containerWidth))
+      const columnIndex = index % MathUtil.countColumn(containerWidth)
+      const rowIndex = Math.floor(index / MathUtil.countColumn(containerWidth))
       const x = ITEM.GAP_SIZE + columnIndex * (ITEM.SIZE + ITEM.GAP_SIZE * 2)
       const y = ITEM.GAP_SIZE + rowIndex * (ITEM.SIZE + ITEM.GAP_SIZE * 2)
       areas[item.id] = new DOMRect(x, y, ITEM.SIZE, ITEM.SIZE)
@@ -163,39 +175,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           }
         }}
         tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.ctrlKey) {
-            if (e.key === 'a') {
-              e.preventDefault()
-              if (Object.keys(selectedItemIds).length !== items.length) {
-                const allSelectedItems: Record<string, boolean> = {}
-                items.forEach((item) => (allSelectedItems[item.id] = true))
-                setSelectedItemIds(allSelectedItems)
-              }
-            } else if (e.key === 'c') {
-              JSONUtil.copyItems(json, Object.keys(selectedItemIds))
-            } else if (e.key === 'v') {
-              const result = JSONUtil.pastItems(json, currentItemId)
-              setJson(result)
-            } else if (e.key === 'x') {
-              const itemIds = Object.keys(selectedItemIds)
-              const result = JSONUtil.cutItems(json, itemIds)
-              setJson(result)
-              setSelectedItemIds({})
-            }
-          }
-
-          if (e.key === 'Escape') {
-            e.preventDefault()
-            setSelectedItemIds({})
-          } else if (!pushedKeys[e.key]) {
-            setPushedKeys((prev) => ({ ...prev, [e.key]: true }))
-          }
-        }}
-        onKeyUp={(e) => {
-          delete pushedKeys[e.key]
-          setPushedKeys({ ...pushedKeys })
-        }}
+        onKeyDown={onKeyDown}
+        onKeyUp={onKeyUp}
         {...props}
       >
         <AutoSizer
@@ -220,8 +201,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
               height={height}
               columnWidth={ITEM.SIZE + ITEM.GAP_SIZE * 2}
               rowHeight={ITEM.SIZE + ITEM.GAP_SIZE * 2}
-              rowCount={Math.ceil(items.length / columnCount(width))}
-              columnCount={columnCount(width)}
+              rowCount={Math.ceil(items.length / MathUtil.countColumn(width))}
+              columnCount={MathUtil.countColumn(width)}
               cellRenderer={cellRenderer}
               containerStyle={{ width, minWidth: width, minHeight: height }}
             />
