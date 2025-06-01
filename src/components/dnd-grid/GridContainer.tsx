@@ -118,6 +118,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
     return item ? (
       <GridCard
+        key={item.id}
         item={item}
         index={i}
         selectedItemIds={selectedItemIds}

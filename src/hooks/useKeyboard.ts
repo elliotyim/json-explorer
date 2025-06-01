@@ -204,8 +204,6 @@ export const useKeyboardAction = ({
       handleFunctionKeys(e)
       return
     }
-
-    console.log(e.key)
   }
 
   const onKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
