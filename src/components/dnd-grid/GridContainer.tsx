@@ -1,5 +1,8 @@
 import { ITEM } from '@/constants/item'
+import { MOUSE_CLICK } from '@/constants/mouse'
 import { TAB } from '@/constants/tab'
+import { useKeyboardAction } from '@/hooks/useKeyboard'
+import { useContextMenuOpenStore } from '@/store/contextmenu'
 import {
   useDraggingItemStore,
   useExtraItemIdsStore,
@@ -7,18 +10,17 @@ import {
   useSelectedItemIdsStore,
 } from '@/store/item'
 import { useJsonStore } from '@/store/json'
+import { useInitialFocus } from '@/store/settings'
 import { useRightNavTabStore } from '@/store/tab'
 import { DOMUtil } from '@/utils/dom'
 import { JSONUtil } from '@/utils/json'
+import { MathUtil } from '@/utils/math'
 import { useEffect, useRef, useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
 import DragSelection from '../DragSelection'
 import GridCard from './GridCard'
-import { useKeyboardAction } from '@/hooks/useKeyboard'
-import { MathUtil } from '@/utils/math'
-import { useInitialFocus } from '@/store/settings'
 
 interface Props {
   items: Data[]
@@ -52,6 +54,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   const { isFocusDone, setIsFocusDone } = useInitialFocus()
   const { setRightNavTab } = useRightNavTabStore()
+  const { isContextOpen } = useContextMenuOpenStore()
 
   const { json } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
@@ -252,6 +255,11 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             const newItem = DOMUtil.getItems(selectionArea, itemAreas)
 
             const handle = requestAnimationFrame(() => {
+              if (event.button === MOUSE_CLICK.RIGHT) {
+                setSelectedItemIds((prev) => ({ ...prev, ...newItem }))
+                return
+              }
+
               const toBeRemoved = new Set()
               Object.keys(newItem).forEach((id) => {
                 if (selectedItemIds[id]) toBeRemoved.add(id)
@@ -273,12 +281,12 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
                       setExtraItemIds({})
                       setSelectedItemIds(newItem)
                     }
-                  } else if (!event.ctrlKey) {
+                  } else if (!event.ctrlKey && !isContextOpen) {
                     setExtraItemIds({})
                     setSelectedItemIds(newItem)
                   }
                 }
-              } else if (!event.ctrlKey) {
+              } else if (!event.ctrlKey && !isContextOpen) {
                 setExtraItemIds({})
                 setSelectedItemIds(newItem)
               }
