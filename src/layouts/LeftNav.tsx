@@ -1,5 +1,4 @@
 import TreeNode from '@/components/dnd-tree/TreeNode'
-import { MOUSE_CLICK } from '@/constants/mouse'
 import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
 import { useCurrentItemStore } from '@/store/item'
@@ -166,7 +165,8 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     e: React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
     if (node.data.type === 'value') {
-      if (e.detail === MOUSE_CLICK.DOUBLE) {
+      const clickCount = e.detail
+      if (clickCount === 2) {
         if (node.parent) {
           treeRef.current?.open(node.parent?.data.id ?? '')
           enterFolder(node.parent?.data.id ?? '')

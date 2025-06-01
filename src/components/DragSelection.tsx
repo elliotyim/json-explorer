@@ -107,14 +107,12 @@ const DragSelection: React.FC<Props> = ({
         selectionArea = new DOMRect(x + scrollX, y + scrollY, 0, 0)
       }
 
-      if (onSelectionEnd) {
-        onSelectionEnd({ event: e, selectionArea })
-      }
-
       setDragVector(null)
       setScrollVector(null)
       setIsAreaDragging(false)
       selectionAreaRef.current = null
+
+      if (onSelectionEnd) onSelectionEnd({ event: e, selectionArea })
     },
     [containerRef, dragVector, onSelectionEnd, scrollRef, scrollVector],
   )

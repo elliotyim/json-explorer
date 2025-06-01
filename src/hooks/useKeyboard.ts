@@ -193,6 +193,14 @@ export const useKeyboardAction = ({
       return
     }
 
+    if (e.key === 'Delete') {
+      e.preventDefault()
+      const result = JSONUtil.deleteItems(json, Object.keys(selectedItemIds))
+      setJson(result)
+      clearSelect()
+      return
+    }
+
     if (e.key === 'ContextMenu') {
       if (focusedItemId && !selectedItemIds[focusedItemId]) {
         setSelectedItemIds((prev) => ({ ...prev, [focusedItemId]: true }))
@@ -204,8 +212,6 @@ export const useKeyboardAction = ({
       handleFunctionKeys(e)
       return
     }
-
-    console.log(e.key)
   }
 
   const onKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {

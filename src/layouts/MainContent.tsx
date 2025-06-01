@@ -10,6 +10,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { TAB } from '@/constants/tab'
+import { useContextMenuOpenStore } from '@/store/contextmenu'
 import {
   useDisplayItemsStore,
   useItemEditingStore,
@@ -47,13 +48,13 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   onItemEnter,
   ...props
 }) => {
-  // const [displayItems, setDisplayItems] = useState<Data[]>([])
-  const { displayItems, setDisplayItems } = useDisplayItemsStore()
+  const { setRightNavTab } = useRightNavTabStore()
+  const { setIsContextOpen } = useContextMenuOpenStore()
+  const { setIsItemEditing } = useItemEditingStore()
 
   const { setJson } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
-  const { setIsItemEditing } = useItemEditingStore()
-  const { setRightNavTab } = useRightNavTabStore()
+  const { displayItems, setDisplayItems } = useDisplayItemsStore()
 
   const handleItemCopy = () => {
     JSONUtil.copyItems(json, Object.keys(selectedItemIds))
@@ -138,7 +139,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props}>
-      <ContextMenu>
+      <ContextMenu onOpenChange={setIsContextOpen}>
         <ContextMenuTrigger>
           <GridContainer
             items={displayItems}

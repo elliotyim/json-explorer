@@ -236,7 +236,6 @@ const GridCard = forwardRef<HTMLDivElement, Props>(
     return (
       <div
         ref={ref}
-        key={item.id}
         data-handler-id={handlerId}
         className={
           focusedItemId == item.id ? 'rounded-xl bg-blue-200' : undefined
