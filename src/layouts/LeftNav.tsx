@@ -4,6 +4,7 @@ import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
 import { useCurrentItemStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
+import { useSearchTriggerStore } from '@/store/search'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
 import { useEffect, useRef, useState } from 'react'
@@ -24,6 +25,7 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   enterFolder,
   ...props
 }) => {
+  const inputRef = useRef<HTMLInputElement>(null)
   const pushedKeys = useRef<Record<string, boolean>>({})
 
   const [data, setData] = useState<Data[]>()
@@ -33,6 +35,7 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setRightNavTab } = useRightNavTabStore()
   const { setSelectedItemIds } = useSelectedItemIdsStore()
+  const { isSearchTriggered, setIsSearchTriggered } = useSearchTriggerStore()
 
   const debouncedValueChange = useDebouncedCallback((value) => {
     setTerm(value)
@@ -217,15 +220,24 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   useEffect(() => setData(JSONUtil.compile({ input: json })), [json])
   useEffect(() => treeRef.current?.open('root'), [treeRef])
+  useEffect(() => {
+    if (isSearchTriggered) {
+      inputRef.current?.focus()
+      setIsSearchTriggered(false)
+    }
+  }, [isSearchTriggered, setIsSearchTriggered])
 
   return (
     <div {...props} onKeyDown={handleKeyDown} onKeyUp={handleKeyUp}>
       <div className="flex h-full w-full flex-col">
-        <div className="flex w-full items-center gap-2 border-b-2 border-slate-200 p-2">
+        <div className="flex w-full items-center gap-2 border-b-2 border-slate-200 px-3 py-2">
           <div className="flex-shrink-0">
             <FaMagnifyingGlass size={20} />
           </div>
-          <Input onChange={(e) => debouncedValueChange(e.target.value)} />
+          <Input
+            ref={inputRef}
+            onChange={(e) => debouncedValueChange(e.target.value)}
+          />
         </div>
         <div className="h-full w-full">
           <AutoSizer>
