@@ -13,13 +13,14 @@ import { cn } from '@/lib/utils'
 import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
-  const [itemKey, setItemKey] = useState<string>('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
+  const [itemKey, setItemKey] = useState<string>('')
   const [editedValue, setEditedValue] = useState<string>('')
 
   const { json, setJson } = useJsonStore()
@@ -90,7 +91,11 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
       const parent = JSONUtil.getByPath(json, singleItem.parentPath)
       if (!Array.isArray(parent) && isItemEditing) {
         return (
-          <Input value={itemKey} onChange={(e) => setItemKey(e.target.value)} />
+          <Input
+            ref={inputRef}
+            value={itemKey}
+            onChange={(e) => setItemKey(e.target.value)}
+          />
         )
       }
 
@@ -115,7 +120,11 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
       setItemKey(singleItem.name)
       setEditedValue(JSON.stringify(singleItem.value))
     }
-  }, [singleItem, isItemEditing])
+  }, [singleItem])
+
+  useEffect(() => {
+    if (isItemEditing) inputRef.current?.focus()
+  }, [isItemEditing])
 
   return (
     <Card className={cn('h-full', props.className)} {...props}>

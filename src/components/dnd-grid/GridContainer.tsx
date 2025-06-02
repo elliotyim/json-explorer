@@ -52,7 +52,12 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const outerContainerRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const { isFocusDone, setIsFocusDone } = useInitialFocus()
+  const [containerWidth, setContainerWidth] = useState<number>(0)
+  const [isReady, setIsReady] = useState<boolean>(false)
+
+  const [isFocusDone, setIsFocusDone] = useState<boolean>(false)
+
+  const { isAppReady } = useInitialFocus()
   const { setRightNavTab } = useRightNavTabStore()
   const { isContextOpen } = useContextMenuOpenStore()
 
@@ -65,9 +70,6 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const [draggingItems, setDraggingItems] = useState<Record<string, boolean>>(
     {},
   )
-
-  const [containerWidth, setContainerWidth] = useState<number>(0)
-  const [isReady, setIsReady] = useState<boolean>(false)
 
   const { focusedItemId, onKeyDown, onKeyUp } = useKeyboardAction({
     containerWidth,
@@ -137,11 +139,11 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   }
 
   useEffect(() => {
-    if (!isFocusDone && outerContainerRef) {
+    if (isAppReady && !isFocusDone && outerContainerRef) {
       outerContainerRef.current?.focus()
       setIsFocusDone(true)
     }
-  }, [isFocusDone, setIsFocusDone])
+  }, [isAppReady, isFocusDone])
 
   useEffect(() => {
     setSelectedItemIds({})

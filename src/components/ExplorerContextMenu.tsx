@@ -55,7 +55,7 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
       const timer = setTimeout(() => {
         setIsItemEditing(true)
         clearTimeout(timer)
-      }, 0)
+      }, 500)
     }
   }
 
@@ -94,7 +94,7 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
     const timer = setTimeout(() => {
       setIsItemEditing(true)
       clearTimeout(timer)
-    }, 0)
+    }, 500)
   }
 
   const handleDisplayProperties = () => {

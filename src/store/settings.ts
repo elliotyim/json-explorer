@@ -1,16 +1,16 @@
 import { create } from 'zustand'
 
 interface InitialFocusState {
-  isFocusDone: boolean
-  setIsFocusDone: (updater: boolean | ((prev: boolean) => boolean)) => void
+  isAppReady: boolean
+  setIsAppReady: (updater: boolean | ((prev: boolean) => boolean)) => void
 }
 
 export const useInitialFocus = create<InitialFocusState>((set) => ({
-  isFocusDone: false,
-  setIsFocusDone: (updater) =>
+  isAppReady: false,
+  setIsAppReady: (updater) =>
     set((prev) =>
       typeof updater === 'function'
-        ? { isFocusDone: updater(prev.isFocusDone) }
-        : { isFocusDone: updater },
+        ? { isAppReady: updater(prev.isAppReady) }
+        : { isAppReady: updater },
     ),
 }))
