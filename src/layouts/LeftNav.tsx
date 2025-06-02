@@ -1,7 +1,7 @@
 import TreeNode from '@/components/dnd-tree/TreeNode'
 import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
-import { useCurrentItemStore } from '@/store/item'
+import { useCurrentItemStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
@@ -28,8 +28,7 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { setJson } = useJsonStore()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setRightNavTab } = useRightNavTabStore()
-  // const { setSelectedItemIds } = useSelectedItemIdsStore() // TODO: Fix the Item Sync Problem!
-  const [, setSelectedItemIds] = useState<Record<string, boolean>>({})
+  const { setSelectedItemIds } = useSelectedItemIdsStore()
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') treeRef?.current?.deselectAll()
