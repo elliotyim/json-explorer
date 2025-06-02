@@ -39,7 +39,13 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   }, 300)
 
   const handleSearch = (node: NodeApi<Data>, term: string): boolean => {
-    if (node.data.name.toLowerCase().includes(term.toLowerCase())) return true
+    if (!node.parent) return false
+    if (node.parent.data.name?.toLowerCase().includes(term.toLowerCase())) {
+      return true
+    }
+    if (node.data.name.toLowerCase().includes(term.toLowerCase())) {
+      return true
+    }
     if (
       node.data.type === 'value' &&
       `${node.data.value}`.toLowerCase().includes(term.toLowerCase())
