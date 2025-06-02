@@ -1,4 +1,5 @@
 import TreeNode from '@/components/dnd-tree/TreeNode'
+import { Input } from '@/components/ui/input'
 import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
 import { useCurrentItemStore, useSelectedItemIdsStore } from '@/store/item'
@@ -7,7 +8,9 @@ import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
 import { useEffect, useRef, useState } from 'react'
 import { MoveHandler, NodeApi, Tree, TreeApi } from 'react-arborist'
+import { FaMagnifyingGlass } from 'react-icons/fa6'
 import { AutoSizer } from 'react-virtualized'
+import { useDebouncedCallback } from 'use-debounce'
 
 interface Props {
   json: Record<string, unknown> | unknown[]
@@ -24,11 +27,28 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const pushedKeys = useRef<Record<string, boolean>>({})
 
   const [data, setData] = useState<Data[]>()
+  const [term, setTerm] = useState<string>('')
 
   const { setJson } = useJsonStore()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setRightNavTab } = useRightNavTabStore()
   const { setSelectedItemIds } = useSelectedItemIdsStore()
+
+  const debouncedValueChange = useDebouncedCallback((value) => {
+    setTerm(value)
+  }, 300)
+
+  const handleSearch = (node: NodeApi<Data>, term: string): boolean => {
+    if (node.data.name.toLowerCase().includes(term.toLowerCase())) return true
+    if (
+      node.data.type === 'value' &&
+      `${node.data.value}`.toLowerCase().includes(term.toLowerCase())
+    ) {
+      return true
+    }
+
+    return false
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') treeRef?.current?.deselectAll()
@@ -194,26 +214,40 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props} onKeyDown={handleKeyDown} onKeyUp={handleKeyUp}>
-      <AutoSizer>
-        {({ width, height }) => (
-          <div className="overflow-auto" style={{ width, height }}>
-            <Tree<Data>
-              ref={treeRef}
-              data={data}
-              width="100%"
-              height={height}
-              rowHeight={TREE_NODE.ROW_HEIGHT}
-              onSelect={handleItemSelect}
-              onMove={handleItemMove}
-              openByDefault={false}
-              className="w-max pb-10"
-              indent={16}
-            >
-              {(props) => <TreeNode onItemClick={handleItemClick} {...props} />}
-            </Tree>
+      <div className="flex h-full w-full flex-col gap-1">
+        <div className="flex w-full items-center gap-2 border-b-2 border-slate-200 p-2">
+          <div className="flex-shrink-0">
+            <FaMagnifyingGlass size={20} />
           </div>
-        )}
-      </AutoSizer>
+          <Input onChange={(e) => debouncedValueChange(e.target.value)} />
+        </div>
+        <div className="h-full w-full">
+          <AutoSizer>
+            {({ width, height }) => (
+              <div className="overflow-auto" style={{ width, height }}>
+                <Tree<Data>
+                  ref={treeRef}
+                  data={data}
+                  width="100%"
+                  height={height}
+                  indent={16}
+                  className="w-max pb-10"
+                  rowHeight={TREE_NODE.ROW_HEIGHT}
+                  searchTerm={term}
+                  searchMatch={handleSearch}
+                  onSelect={handleItemSelect}
+                  onMove={handleItemMove}
+                  openByDefault={false}
+                >
+                  {(props) => (
+                    <TreeNode onItemClick={handleItemClick} {...props} />
+                  )}
+                </Tree>
+              </div>
+            )}
+          </AutoSizer>
+        </div>
+      </div>
     </div>
   )
 }
