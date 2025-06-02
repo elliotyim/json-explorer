@@ -207,6 +207,7 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
     ) {
       treeRef.current?.open(node.id)
       enterFolder(node.id)
+      setSelectedItemIds({ [node.id]: true })
     }
   }
 
