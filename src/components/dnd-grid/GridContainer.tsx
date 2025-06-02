@@ -178,7 +178,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             }
           }
         }}
-        tabIndex={0}
+        tabIndex={-1}
         onKeyDown={onKeyDown}
         onKeyUp={onKeyUp}
         {...props}
