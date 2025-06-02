@@ -130,14 +130,10 @@ const Layout = () => {
           currentPath={currentItem.id}
           onInputSubmit={handleOnInputSubmit}
         />
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="w-full overflow-auto"
-        >
+        <ResizablePanelGroup direction="horizontal" className="w-full">
           <ResizablePanel defaultSize={15} minSize={10}>
             <LeftNav
-              className="h-full w-full overflow-y-auto rounded-bl-xl"
-              json={json}
+              className="h-full w-full overflow-hidden rounded-bl-xl"
               treeRef={treeRef}
               enterFolder={enterFolder}
             />

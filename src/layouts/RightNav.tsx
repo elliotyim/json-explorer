@@ -31,7 +31,11 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             Properties
           </TabsTrigger>
         </TabsList>
-        <TabsContent value={TAB.JSON} className="h-full overflow-auto">
+        <TabsContent
+          tabIndex={-1}
+          value={TAB.JSON}
+          className="h-full overflow-auto"
+        >
           <CodeEditor
             jsonString={JSON.stringify(json, null, 2)}
             onValueChange={onValueChange}
@@ -39,7 +43,11 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             withButtons
           />
         </TabsContent>
-        <TabsContent value={TAB.PROPERTIES} className="h-full overflow-auto">
+        <TabsContent
+          tabIndex={-1}
+          value={TAB.PROPERTIES}
+          className="h-full overflow-auto"
+        >
           <Properties />
         </TabsContent>
       </Tabs>
