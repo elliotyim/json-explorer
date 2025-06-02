@@ -214,7 +214,7 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props} onKeyDown={handleKeyDown} onKeyUp={handleKeyUp}>
-      <div className="flex h-full w-full flex-col gap-1">
+      <div className="flex h-full w-full flex-col">
         <div className="flex w-full items-center gap-2 border-b-2 border-slate-200 p-2">
           <div className="flex-shrink-0">
             <FaMagnifyingGlass size={20} />
