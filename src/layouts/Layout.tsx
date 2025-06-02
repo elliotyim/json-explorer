@@ -134,7 +134,6 @@ const Layout = () => {
           <ResizablePanel defaultSize={15} minSize={10}>
             <LeftNav
               className="h-full w-full overflow-hidden rounded-bl-xl"
-              json={json}
               treeRef={treeRef}
               enterFolder={enterFolder}
             />
