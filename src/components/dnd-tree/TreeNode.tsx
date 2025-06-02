@@ -41,25 +41,25 @@ const TreeNode: React.FC<NodeRendererProps<Data> & Props> = ({
         'flex h-[32px] items-center border-b border-slate-200 ps-2 pe-2',
         highlight(node),
       )}
-      style={style}
+      style={{ ...style, width: '100%' }}
       ref={dragHandle}
-      onClick={(e) => {
-        if (onItemClick) onItemClick(node, e)
-      }}
+      onClick={(e) => onItemClick?.(node, e)}
     >
-      <div className="flex h-[24px] w-[24px] items-center justify-center">
+      <div className="flex h-[24px] w-[24px] flex-shrink-0 items-center justify-center">
         {node.data.type !== 'value' && (
           <FaCaretRight
             className={cn(
-              `cursor-pointer transition-transform duration-100 ease-linear`,
+              'cursor-pointer transition-transform duration-100 ease-linear',
               node.isOpen ? 'rotate-90' : 'rotate-0',
             )}
             onClick={onCaretClick}
           />
         )}
       </div>
-      <TypeIcon type={node.data.type} isOpen={node.isOpen} />
-      <span className="ps-2">{node.data.name}</span>
+      <div className="flex-shrink-0">
+        <TypeIcon size={16} type={node.data.type} isOpen={node.isOpen} />
+      </div>
+      <span className="truncate ps-2">{node.data.name}</span>
     </div>
   )
 }

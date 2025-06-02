@@ -21,8 +21,9 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   enterFolder,
   ...props
 }) => {
-  const [data, setData] = useState<Data[]>()
   const pushedKeys = useRef<Record<string, boolean>>({})
+
+  const [data, setData] = useState<Data[]>()
 
   const { setJson } = useJsonStore()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
@@ -194,25 +195,26 @@ const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props} onKeyDown={handleKeyDown} onKeyUp={handleKeyUp}>
-      <div className="h-full">
-        <AutoSizer>
-          {({ height, width }) => (
+      <AutoSizer>
+        {({ width, height }) => (
+          <div className="overflow-auto" style={{ width, height }}>
             <Tree<Data>
               ref={treeRef}
               data={data}
-              width={width}
+              width="100%"
               height={height}
               rowHeight={TREE_NODE.ROW_HEIGHT}
               onSelect={handleItemSelect}
               onMove={handleItemMove}
               openByDefault={false}
-              className="pb-10"
+              className="w-max pb-10"
+              indent={16}
             >
               {(props) => <TreeNode onItemClick={handleItemClick} {...props} />}
             </Tree>
-          )}
-        </AutoSizer>
-      </div>
+          </div>
+        )}
+      </AutoSizer>
     </div>
   )
 }
