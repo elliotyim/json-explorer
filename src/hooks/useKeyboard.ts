@@ -83,27 +83,28 @@ export const useKeyboardAction = ({
     focusedItemIdRef.current = null
   }
 
-  let animationFrameId: number | null = null
+  const scrollIntoView = useCallback(
+    (y: number, height: number) => {
+      if (!scrollRef?.current) return
+      const scrollContainer = scrollRef.current
 
-  const scrollIntoView = (y: number, height: number) => {
-    if (!scrollRef?.current) return
-    const scrollContainer = scrollRef.current
+      const handle = requestAnimationFrame(() => {
+        const currentHeight = containerRect.height + scrollContainer.scrollTop
 
-    if (animationFrameId) cancelAnimationFrame(animationFrameId)
-    animationFrameId = requestAnimationFrame(() => {
-      const currentHeight = containerRect.height + scrollContainer.scrollTop
-
-      if (currentHeight < y + height) {
-        const top = Math.abs(
-          containerRect.height - (y + height + ITEM.GAP_SIZE),
-        )
-        scrollContainer.scrollTo({ top })
-      } else if (scrollContainer.scrollTop > y) {
-        const top = y - ITEM.GAP_SIZE
-        scrollContainer.scrollTo({ top })
-      }
-    })
-  }
+        if (currentHeight < y + height) {
+          const top = Math.abs(
+            containerRect.height - (y + height + ITEM.GAP_SIZE),
+          )
+          scrollContainer.scrollTo({ top })
+        } else if (scrollContainer.scrollTop > y) {
+          const top = y - ITEM.GAP_SIZE
+          scrollContainer.scrollTo({ top })
+        }
+        cancelAnimationFrame(handle)
+      })
+    },
+    [containerRect.height, scrollRef],
+  )
 
   const handleArrowKeys = (e: React.KeyboardEvent<HTMLDivElement>): number => {
     const columnOffset = MathUtil.countColumn(containerWidth)
@@ -202,18 +203,6 @@ export const useKeyboardAction = ({
         select(selected, true)
       }
 
-      const itemArea = itemAreas[nextItemId]
-      const { y, height } = itemArea
-
-      const currentHeight = containerRect.height + scrollRef.current.scrollTop
-
-      if (
-        (currentHeight !== 0 && currentHeight < y + height) ||
-        scrollRef.current.scrollTop > y
-      ) {
-        scrollIntoView(y, height)
-      }
-
       return
     }
 
@@ -296,6 +285,11 @@ export const useKeyboardAction = ({
   }
 
   useEffect(() => {
+    if (!containerRef?.current || !scrollRef?.current) return
+    setContainerRect(containerRef.current.getBoundingClientRect())
+  }, [containerRef, isReady, scrollRef])
+
+  useEffect(() => {
     const itemIds = Object.keys(selectedItemIds)
     if (itemIds.length === 1) {
       const id = itemIds[0]
@@ -305,9 +299,22 @@ export const useKeyboardAction = ({
   }, [getItemIndex, selectedItemIds])
 
   useEffect(() => {
-    if (!containerRef?.current || !scrollRef?.current) return
-    setContainerRect(containerRef.current.getBoundingClientRect())
-  }, [containerRef, isReady, scrollRef])
+    if (!focusedItemIdRef.current || !scrollRef?.current) return
+
+    const itemArea = itemAreas[focusedItemIdRef.current]
+    if (!itemArea) return
+
+    const { y, height } = itemArea
+    const scrollContainer = scrollRef.current
+    const currentHeight = containerRect.height + scrollContainer.scrollTop
+
+    if (
+      (currentHeight !== 0 && currentHeight < y + height) ||
+      scrollContainer.scrollTop > y
+    ) {
+      scrollIntoView(y, height)
+    }
+  }, [itemIndex, itemAreas, containerRect, scrollRef, scrollIntoView])
 
   return { focusedItemIdRef, pushedKeysRef, onKeyDown, onKeyUp }
 }
