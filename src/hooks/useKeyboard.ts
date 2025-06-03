@@ -190,15 +190,10 @@ export const useKeyboardAction = ({
 
       const currentHeight = containerRect.height + scrollRef.current.scrollTop
 
-      if (currentHeight !== 0 && currentHeight < y + height) {
-        // const top = Math.abs(
-        //   containerRect.height - (y + height + ITEM.GAP_SIZE),
-        // )
-        // scrollRef?.current?.scrollTo({ top })
-        scrollIntoView(y, height)
-      } else if (scrollRef.current.scrollTop > y) {
-        // const top = y - ITEM.GAP_SIZE
-        // scrollRef?.current?.scrollTo({ top })
+      if (
+        (currentHeight !== 0 && currentHeight < y + height) ||
+        scrollRef.current.scrollTop > y
+      ) {
         scrollIntoView(y, height)
       }
 
