@@ -71,7 +71,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     {},
   )
 
-  const { focusedItemId, onKeyDown, onKeyUp } = useKeyboardAction({
+  const { focusedItemIdRef, onKeyDown, onKeyUp } = useKeyboardAction({
     isReady,
     containerRef: outerContainerRef,
     scrollRef: scrollContainerRef,
@@ -132,7 +132,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         selectedItemIds={selectedItemIds}
         extraItemIds={extraItemIds}
         draggingItems={draggingItems}
-        focusedItemId={focusedItemId}
+        focusedItemIdRef={focusedItemIdRef}
         style={style}
         onDropEnd={() => setDraggingItems({})}
         onItemMove={handleItemMove}

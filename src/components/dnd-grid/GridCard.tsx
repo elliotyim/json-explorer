@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  RefObject,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -15,12 +16,12 @@ import {
   CardTitle,
 } from '../ui/card'
 
+import { DRAG_ITEM, ITEM } from '@/constants/item'
 import { useDraggingItemStore, useItemAreaStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { DOMUtil } from '@/utils/dom'
 import { JSONUtil } from '@/utils/json'
 import { Identifier } from 'dnd-core'
-import { DRAG_ITEM, ITEM } from '@/constants/item'
 import React from 'react'
 
 interface Props {
@@ -28,7 +29,7 @@ interface Props {
   index: number
   selectedItemIds: Record<string, boolean>
   extraItemIds: Record<string, boolean>
-  focusedItemId: string | null
+  focusedItemIdRef: RefObject<string | null>
   draggingItems: Record<string, boolean>
   style: React.CSSProperties
   onDropEnd?: () => void
@@ -51,7 +52,7 @@ const GridCard = React.memo(
         onItemMove,
         selectedItemIds,
         extraItemIds,
-        focusedItemId,
+        focusedItemIdRef,
         draggingItems,
         style,
         ...props
@@ -239,14 +240,19 @@ const GridCard = React.memo(
         <div
           ref={ref}
           data-handler-id={handlerId}
-          className={
-            focusedItemId == item.id ? 'rounded-xl bg-blue-200' : undefined
-          }
           style={{
             ...style,
             width: ITEM.SIZE + ITEM.GAP_SIZE * 2,
             height: ITEM.SIZE + ITEM.GAP_SIZE * 2,
             padding: `${ITEM.GAP_SIZE}px`,
+            background:
+              focusedItemIdRef.current == item.id
+                ? 'var(--color-blue-200)'
+                : undefined,
+            borderRadius:
+              focusedItemIdRef.current == item.id
+                ? 'calc(var(--radius)'
+                : undefined,
           }}
         >
           <Card

@@ -3,7 +3,6 @@ import { TAB } from '@/constants/tab'
 import {
   useCurrentItemStore,
   useDisplayItemsStore,
-  useFocusedItem,
   useItemAreaStore,
   useSelectedItemIdsStore,
 } from '@/store/item'
@@ -11,7 +10,7 @@ import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
 import { MathUtil } from '@/utils/math'
-import { startTransition, useEffect, useState } from 'react'
+import { RefObject, startTransition, useEffect, useRef, useState } from 'react'
 import { useHistory } from './useHistory'
 
 interface Props {
@@ -23,7 +22,7 @@ interface Props {
 }
 
 interface ReturnProps {
-  focusedItemId: string | null
+  focusedItemIdRef: RefObject<string | null>
   pushedKeys: Record<string, boolean>
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
   onKeyUp: (e: React.KeyboardEvent<HTMLDivElement>) => void
@@ -36,11 +35,12 @@ export const useKeyboardAction = ({
   containerWidth,
   onItemEnter,
 }: Props): ReturnProps => {
+  const focusedItemIdRef = useRef<string>(null)
+
   const { json, setJson } = useJsonStore()
   const { currentItem } = useCurrentItemStore()
   const { displayItems } = useDisplayItemsStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
-  const { focusedItemId, setFocusedItemId } = useFocusedItem()
   const { setRightNavTab } = useRightNavTabStore()
   const { goBackward } = useHistory()
   const { itemAreas } = useItemAreaStore()
@@ -64,7 +64,7 @@ export const useKeyboardAction = ({
   const clearSelect = () => {
     setSelectedItemIds({})
     setItemIndex(-1)
-    setFocusedItemId(null)
+    focusedItemIdRef.current = null
   }
 
   let animationFrameId: number | null = null
@@ -116,7 +116,7 @@ export const useKeyboardAction = ({
     if (nextIndex > -1 && nextItemId) {
       startTransition(() => {
         setItemIndex(nextIndex)
-        setFocusedItemId(nextItemId)
+        focusedItemIdRef.current = nextItemId
       })
     }
     return nextIndex
@@ -176,7 +176,8 @@ export const useKeyboardAction = ({
     ) {
       if (!scrollRef?.current) return
 
-      const selected = focusedItemId != null ? [focusedItemId] : []
+      const selected =
+        focusedItemIdRef.current != null ? [focusedItemIdRef.current] : []
       const nextIndex = handleArrowKeys(e)
       const nextItemId = displayItems[nextIndex].id
       selected.push(nextItemId)
@@ -201,13 +202,13 @@ export const useKeyboardAction = ({
     }
 
     if (e.key === 'Enter') {
-      if (focusedItemId) {
-        const type = JSONUtil.getItemType(json, focusedItemId)
+      if (focusedItemIdRef.current) {
+        const type = JSONUtil.getItemType(json, focusedItemIdRef.current)
         if (type === 'value') {
-          setSelectedItemIds({ [focusedItemId]: true })
+          setSelectedItemIds({ [focusedItemIdRef.current]: true })
           setRightNavTab(TAB.PROPERTIES)
         } else if (onItemEnter) {
-          onItemEnter(focusedItemId)
+          onItemEnter(focusedItemIdRef.current)
           setItemIndex(-1)
           clearSelect()
         }
@@ -221,16 +222,16 @@ export const useKeyboardAction = ({
       return
     }
 
-    if (e.key === ' ' && focusedItemId) {
+    if (e.key === ' ' && focusedItemIdRef.current) {
       e.preventDefault()
-      const selected = [focusedItemId]
+      const selected = [focusedItemIdRef.current]
       let multi = false
 
       if (e.ctrlKey || e.metaKey) {
-        if (selectedItemIds[focusedItemId]) {
+        if (selectedItemIds[focusedItemIdRef.current]) {
           selected.pop()
           const newSelectedItemIds = structuredClone(selectedItemIds)
-          delete newSelectedItemIds[focusedItemId]
+          delete newSelectedItemIds[focusedItemIdRef.current]
           selected.push(...Object.keys(newSelectedItemIds))
         } else {
           multi = true
@@ -256,8 +257,14 @@ export const useKeyboardAction = ({
     }
 
     if (e.key === 'ContextMenu') {
-      if (focusedItemId && !selectedItemIds[focusedItemId]) {
-        setSelectedItemIds((prev) => ({ ...prev, [focusedItemId]: true }))
+      if (
+        focusedItemIdRef.current &&
+        !selectedItemIds[focusedItemIdRef.current]
+      ) {
+        setSelectedItemIds((prev) => ({
+          ...prev,
+          [focusedItemIdRef.current!]: true,
+        }))
         return
       }
     }
@@ -278,5 +285,5 @@ export const useKeyboardAction = ({
     setContainerRect(containerRef.current.getBoundingClientRect())
   }, [containerRef, isReady, scrollRef])
 
-  return { focusedItemId, pushedKeys, onKeyDown, onKeyUp }
+  return { focusedItemIdRef, pushedKeys, onKeyDown, onKeyUp }
 }
