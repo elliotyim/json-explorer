@@ -107,29 +107,27 @@ export const useKeyboardAction = ({
   )
 
   const handleArrowKeys = (e: React.KeyboardEvent<HTMLDivElement>): number => {
+    e.preventDefault()
+
     const columnOffset = MathUtil.countColumn(containerWidth)
 
-    let nextIndex = -1
+    let nextIndex = itemIndex
     let nextItemId = ''
 
-    const current = itemIndex % columnOffset
+    const current = nextIndex % columnOffset
     if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      nextIndex = Math.max(0, itemIndex - columnOffset)
+      nextIndex = Math.max(0, nextIndex - columnOffset)
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowRight') {
-      e.preventDefault()
-      const next = ((itemIndex + 1) % displayItems.length) % columnOffset
-      nextIndex = current < next ? itemIndex + 1 : itemIndex
+      const next = ((nextIndex + 1) % displayItems.length) % columnOffset
+      if (current < next) nextIndex += 1
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      nextIndex = Math.min(itemIndex + columnOffset, displayItems.length - 1)
+      nextIndex = Math.min(nextIndex + columnOffset, displayItems.length - 1)
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowLeft') {
-      e.preventDefault()
-      const next = Math.abs(itemIndex - 1) % columnOffset
-      nextIndex = current > next ? itemIndex - 1 : itemIndex
+      const next = Math.abs(nextIndex - 1) % columnOffset
+      if (current > next) nextIndex -= 1
       nextItemId = displayItems[nextIndex].id
     }
 
@@ -186,9 +184,7 @@ export const useKeyboardAction = ({
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!pushedKeysRef.current[e.key]) {
-      pushedKeysRef.current[e.key] = true
-    }
+    if (!pushedKeysRef.current[e.key]) pushedKeysRef.current[e.key] = true
 
     if (
       e.key === 'ArrowUp' ||
@@ -204,9 +200,7 @@ export const useKeyboardAction = ({
       const nextItemId = displayItems[nextIndex].id
       selected.push(nextItemId)
 
-      if (e.shiftKey) {
-        select(selected, true)
-      }
+      if (e.shiftKey) select(selected, true)
 
       return
     }
@@ -219,7 +213,6 @@ export const useKeyboardAction = ({
           setRightNavTab(TAB.PROPERTIES)
         } else if (onItemEnter) {
           onItemEnter(focusedItemIdRef.current)
-          setItemIndex(-1)
           clearSelect()
         }
       }
@@ -314,7 +307,7 @@ export const useKeyboardAction = ({
     const currentHeight = containerRect.height + scrollContainer.scrollTop
 
     if (
-      (currentHeight !== 0 && currentHeight < y + height) ||
+      (currentHeight && currentHeight < y + height) ||
       scrollContainer.scrollTop > y
     ) {
       scrollIntoView(y, height)
