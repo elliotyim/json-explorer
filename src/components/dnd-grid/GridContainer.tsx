@@ -72,6 +72,9 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   )
 
   const { focusedItemId, onKeyDown, onKeyUp } = useKeyboardAction({
+    isReady,
+    containerRef: outerContainerRef,
+    scrollRef: scrollContainerRef,
     containerWidth,
     onItemEnter,
   })
