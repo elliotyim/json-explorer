@@ -1,6 +1,7 @@
 import { TypeIcon } from '@/components/dnd-tree/TypeIcon'
 import { JSONUtil } from '@/utils/json'
 import { useMemo } from 'react'
+import { FaGithub } from 'react-icons/fa6'
 
 interface Props {
   currentItem: CurrentItem
@@ -30,9 +31,14 @@ const TopNavigationBar: React.FC<
 
   return (
     <div {...props}>
-      <div className="flex min-h-[24px] items-center gap-4">
-        <TypeIcon type={node.type} />
-        <span>{displayCurrent(currentItem.id)}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex min-h-[24px] items-center gap-4">
+          <TypeIcon type={node.type} />
+          <span>{displayCurrent(currentItem.id)}</span>
+        </div>
+        <a href="https://github.com/elliotyim/json-explorer">
+          <FaGithub size={24} />
+        </a>
       </div>
     </div>
   )
