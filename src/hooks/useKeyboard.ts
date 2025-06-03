@@ -108,15 +108,19 @@ export const useKeyboardAction = ({
 
   const handleArrowKeys = (e: React.KeyboardEvent<HTMLDivElement>): number => {
     const columnOffset = MathUtil.countColumn(containerWidth)
-    let nextIndex = -1,
-      nextItemId = ''
+
+    let nextIndex = -1
+    let nextItemId = ''
+
+    const current = itemIndex % columnOffset
     if (e.key === 'ArrowUp') {
       e.preventDefault()
       nextIndex = Math.max(0, itemIndex - columnOffset)
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowRight') {
       e.preventDefault()
-      nextIndex = Math.min(itemIndex + 1, displayItems.length - 1)
+      const next = ((itemIndex + 1) % displayItems.length) % columnOffset
+      nextIndex = current < next ? itemIndex + 1 : itemIndex
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -124,7 +128,8 @@ export const useKeyboardAction = ({
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault()
-      nextIndex = Math.max(0, itemIndex - 1)
+      const next = Math.abs(itemIndex - 1) % columnOffset
+      nextIndex = current > next ? itemIndex - 1 : itemIndex
       nextItemId = displayItems[nextIndex].id
     }
 
