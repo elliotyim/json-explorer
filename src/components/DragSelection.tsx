@@ -52,6 +52,14 @@ const DragSelection: React.FC<Props> = ({
 
   const selectionAreaRef = useRef<DOMRect>(null)
 
+  const clearAll = useCallback(() => {
+    document.body.style.removeProperty('user-select')
+    setDragVector(null)
+    setScrollVector(null)
+    setIsAreaDragging(false)
+    selectionAreaRef.current = null
+  }, [])
+
   const onPointerMove = useCallback(
     (event: PointerEvent) => {
       const container = containerRef?.current
@@ -107,14 +115,18 @@ const DragSelection: React.FC<Props> = ({
         selectionArea = new DOMRect(x + scrollX, y + scrollY, 0, 0)
       }
 
-      setDragVector(null)
-      setScrollVector(null)
-      setIsAreaDragging(false)
-      selectionAreaRef.current = null
+      clearAll()
 
       if (onSelectionEnd) onSelectionEnd({ event: e, selectionArea })
     },
-    [containerRef, dragVector, onSelectionEnd, scrollRef, scrollVector],
+    [
+      clearAll,
+      containerRef,
+      dragVector,
+      onSelectionEnd,
+      scrollRef,
+      scrollVector,
+    ],
   )
 
   const onPointerDown = useCallback(
@@ -136,7 +148,7 @@ const DragSelection: React.FC<Props> = ({
           scrollX,
           scrollY,
         })
-        if (shouldStop) return
+        if (shouldStop) return clearAll()
       }
 
       const nextDragVector = new DOMVector(x, y, 0, 0)
@@ -148,8 +160,10 @@ const DragSelection: React.FC<Props> = ({
       selectionAreaRef.current = nextDragVector
         .add(nextScrollVector)
         .toDOMRect()
+
+      document.body.style.userSelect = 'none'
     },
-    [containerRef, onSelectionStart, scrollRef],
+    [clearAll, containerRef, onSelectionStart, scrollRef],
   )
 
   const onScroll = useCallback(
@@ -224,13 +238,13 @@ const DragSelection: React.FC<Props> = ({
   return (
     <div
       ref={selectionRef}
-      className={'invisible absolute border-2 border-black bg-black/30'}
+      className={'absolute border-2 border-black bg-black/30'}
       style={{
         top: selectionAreaRef.current?.y,
         left: selectionAreaRef.current?.x,
         width: selectionAreaRef.current?.width,
         height: selectionAreaRef.current?.height,
-        visibility: selectionAreaRef.current != null ? 'visible' : 'hidden',
+        visibility: isAreaDragging ? 'visible' : 'hidden',
       }}
     />
   )
