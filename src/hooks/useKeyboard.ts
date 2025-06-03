@@ -156,8 +156,8 @@ export const useKeyboardAction = ({
         } else if (onItemEnter) {
           onItemEnter(focusedItemId)
           setItemIndex(-1)
+          clearSelect()
         }
-        clearSelect()
       }
       return
     }
