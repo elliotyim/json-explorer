@@ -10,7 +10,14 @@ import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
 import { MathUtil } from '@/utils/math'
-import { RefObject, startTransition, useEffect, useRef, useState } from 'react'
+import {
+  RefObject,
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useHistory } from './useHistory'
 
 interface Props {
@@ -23,7 +30,7 @@ interface Props {
 
 interface ReturnProps {
   focusedItemIdRef: RefObject<string | null>
-  pushedKeys: Record<string, boolean>
+  pushedKeysRef: RefObject<Record<string, boolean>>
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
   onKeyUp: (e: React.KeyboardEvent<HTMLDivElement>) => void
 }
@@ -36,6 +43,10 @@ export const useKeyboardAction = ({
   onItemEnter,
 }: Props): ReturnProps => {
   const focusedItemIdRef = useRef<string>(null)
+  const pushedKeysRef = useRef<Record<string, boolean>>({})
+
+  const [itemIndex, setItemIndex] = useState<number>(-1)
+  const [containerRect, setContainerRect] = useState<DOMRect>(new DOMRect())
 
   const { json, setJson } = useJsonStore()
   const { currentItem } = useCurrentItemStore()
@@ -45,10 +56,15 @@ export const useKeyboardAction = ({
   const { goBackward } = useHistory()
   const { itemAreas } = useItemAreaStore()
 
-  const [pushedKeys, setPushedKeys] = useState<Record<string, boolean>>({})
-  const [itemIndex, setItemIndex] = useState<number>(-1)
-
-  const [containerRect, setContainerRect] = useState<DOMRect>(new DOMRect())
+  const getItemIndex = useCallback(
+    (id: string): number => {
+      for (const i in displayItems) {
+        if (displayItems[i].id === id) return +i
+      }
+      return -1
+    },
+    [displayItems],
+  )
 
   const select = (itemIds: string[], multi: boolean = false) => {
     if (itemIds.length) {
@@ -164,8 +180,8 @@ export const useKeyboardAction = ({
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!pushedKeys[e.key]) {
-      setPushedKeys((prev) => ({ ...prev, [e.key]: true }))
+    if (!pushedKeysRef.current[e.key]) {
+      pushedKeysRef.current[e.key] = true
     }
 
     if (
@@ -276,14 +292,22 @@ export const useKeyboardAction = ({
   }
 
   const onKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    delete pushedKeys[e.key]
-    setPushedKeys({ ...pushedKeys })
+    delete pushedKeysRef.current[e.key]
   }
+
+  useEffect(() => {
+    const itemIds = Object.keys(selectedItemIds)
+    if (itemIds.length === 1) {
+      const id = itemIds[0]
+      focusedItemIdRef.current = id
+      setItemIndex(getItemIndex(id))
+    }
+  }, [getItemIndex, selectedItemIds])
 
   useEffect(() => {
     if (!containerRef?.current || !scrollRef?.current) return
     setContainerRect(containerRef.current.getBoundingClientRect())
   }, [containerRef, isReady, scrollRef])
 
-  return { focusedItemIdRef, pushedKeys, onKeyDown, onKeyUp }
+  return { focusedItemIdRef, pushedKeysRef, onKeyDown, onKeyUp }
 }
