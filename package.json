@@ -19,6 +19,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.487.0",
+    "monaco-editor": "^0.52.2",
     "react": "^19.0.0",
     "react-arborist": "^3.4.3",
     "react-dnd": "^16.0.1",
