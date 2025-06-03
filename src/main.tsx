@@ -7,6 +7,7 @@ import './index.css'
 import './userWorker.ts'
 
 loader.config({ monaco })
+loader.init()
 
 createRoot(document.getElementById('root')!).render(
   <>
