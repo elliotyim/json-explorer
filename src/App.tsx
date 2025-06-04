@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Layout from './layouts/Layout'
 import NotSupported from './layouts/NotSupported'
 import { useSearchTriggerStore } from './store/search'
+import { useInitialFocus } from './store/settings'
 
 const getWindowRect = () => {
   const { innerWidth, innerHeight } = window
@@ -11,6 +12,9 @@ const getWindowRect = () => {
 function App() {
   const [windowRect, setWindowRect] = useState<DOMRect>(getWindowRect())
   const { setIsSearchTriggered } = useSearchTriggerStore()
+  const { setIsAppReady } = useInitialFocus()
+
+  const handleResize = useCallback(() => setWindowRect(getWindowRect()), [])
 
   const handleSearchTrigger = useCallback(
     (e: KeyboardEvent) => {
@@ -23,14 +27,16 @@ function App() {
   )
 
   useEffect(() => {
-    const handleResize = () => setWindowRect(getWindowRect())
     window.addEventListener('resize', handleResize)
     window.addEventListener('keydown', handleSearchTrigger)
+
+    setIsAppReady(true)
+
     return () => {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('keydown', handleSearchTrigger)
     }
-  }, [handleSearchTrigger])
+  }, [handleResize, handleSearchTrigger, setIsAppReady])
 
   return windowRect.width >= 1280 ? <Layout /> : <NotSupported />
 }

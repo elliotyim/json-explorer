@@ -1,43 +1,70 @@
+import { ITEM } from '@/constants/item'
 import { TAB } from '@/constants/tab'
 import {
   useCurrentItemStore,
   useDisplayItemsStore,
-  useFocusedItem,
+  useItemAreaStore,
   useSelectedItemIdsStore,
 } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
 import { MathUtil } from '@/utils/math'
-import { useState } from 'react'
+import {
+  RefObject,
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useHistory } from './useHistory'
 
 interface Props {
   containerWidth: number
+  isReady: boolean
+  containerRef: React.RefObject<HTMLDivElement | null> | null
+  scrollRef?: React.RefObject<HTMLDivElement | null> | null
   onItemEnter?: (itemId: string) => void
 }
 
 interface ReturnProps {
-  focusedItemId: string | null
-  pushedKeys: Record<string, boolean>
+  focusedItemIdRef: RefObject<string | null>
+  pushedKeysRef: RefObject<Record<string, boolean>>
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
   onKeyUp: (e: React.KeyboardEvent<HTMLDivElement>) => void
 }
 
 export const useKeyboardAction = ({
+  isReady,
+  containerRef,
+  scrollRef,
   containerWidth,
   onItemEnter,
 }: Props): ReturnProps => {
+  const focusedItemIdRef = useRef<string>(null)
+  const pushedKeysRef = useRef<Record<string, boolean>>({})
+
+  const [itemIndex, setItemIndex] = useState<number>(-1)
+  const [containerRect, setContainerRect] = useState<DOMRect>(new DOMRect())
+
   const { json, setJson } = useJsonStore()
   const { currentItem } = useCurrentItemStore()
   const { displayItems } = useDisplayItemsStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
-  const { focusedItemId, setFocusedItemId } = useFocusedItem()
   const { setRightNavTab } = useRightNavTabStore()
   const { goBackward } = useHistory()
+  const { itemAreas } = useItemAreaStore()
 
-  const [pushedKeys, setPushedKeys] = useState<Record<string, boolean>>({})
-  const [itemIndex, setItemIndex] = useState<number>(-1)
+  const getItemIndex = useCallback(
+    (id: string): number => {
+      for (const i in displayItems) {
+        if (displayItems[i].id === id) return +i
+      }
+      return -1
+    },
+    [displayItems],
+  )
 
   const select = (itemIds: string[], multi: boolean = false) => {
     if (itemIds.length) {
@@ -53,36 +80,64 @@ export const useKeyboardAction = ({
   const clearSelect = () => {
     setSelectedItemIds({})
     setItemIndex(-1)
-    setFocusedItemId(null)
+    focusedItemIdRef.current = null
   }
 
+  const scrollIntoView = useCallback(
+    (y: number, height: number) => {
+      if (!scrollRef?.current) return
+      const scrollContainer = scrollRef.current
+
+      const handle = requestAnimationFrame(() => {
+        const currentHeight = containerRect.height + scrollContainer.scrollTop
+
+        if (currentHeight < y + height) {
+          const top = Math.abs(
+            containerRect.height - (y + height + ITEM.GAP_SIZE),
+          )
+          scrollContainer.scrollTo({ top })
+        } else if (scrollContainer.scrollTop > y) {
+          const top = y - ITEM.GAP_SIZE
+          scrollContainer.scrollTo({ top })
+        }
+        cancelAnimationFrame(handle)
+      })
+    },
+    [containerRect.height, scrollRef],
+  )
+
   const handleArrowKeys = (e: React.KeyboardEvent<HTMLDivElement>): number => {
+    e.preventDefault()
+
     const columnOffset = MathUtil.countColumn(containerWidth)
-    let nextIndex = -1,
-      nextItemId = ''
+
+    let nextIndex = itemIndex
+    let nextItemId = ''
+
+    const current = nextIndex % columnOffset
     if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      nextIndex = Math.max(0, itemIndex - columnOffset)
+      nextIndex = Math.max(0, nextIndex - columnOffset)
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowRight') {
-      e.preventDefault()
-      nextIndex = Math.min(itemIndex + 1, displayItems.length - 1)
+      const next = ((nextIndex + 1) % displayItems.length) % columnOffset
+      if (current < next) nextIndex += 1
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      nextIndex = Math.min(itemIndex + columnOffset, displayItems.length - 1)
+      nextIndex = Math.min(nextIndex + columnOffset, displayItems.length - 1)
       nextItemId = displayItems[nextIndex].id
     } else if (e.key === 'ArrowLeft') {
-      e.preventDefault()
-      nextIndex = Math.max(0, itemIndex - 1)
+      const next = Math.abs(nextIndex - 1) % columnOffset
+      if (current > next) nextIndex -= 1
       nextItemId = displayItems[nextIndex].id
     }
 
     if (itemIndex === nextIndex) return nextIndex
 
     if (nextIndex > -1 && nextItemId) {
-      setItemIndex(nextIndex)
-      setFocusedItemId(nextItemId)
+      startTransition(() => {
+        setItemIndex(nextIndex)
+        focusedItemIdRef.current = nextItemId
+      })
     }
     return nextIndex
   }
@@ -129,9 +184,7 @@ export const useKeyboardAction = ({
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!pushedKeys[e.key]) {
-      setPushedKeys((prev) => ({ ...prev, [e.key]: true }))
-    }
+    if (!pushedKeysRef.current[e.key]) pushedKeysRef.current[e.key] = true
 
     if (
       e.key === 'ArrowUp' ||
@@ -139,25 +192,29 @@ export const useKeyboardAction = ({
       e.key === 'ArrowDown' ||
       e.key === 'ArrowLeft'
     ) {
-      const selected = focusedItemId != null ? [focusedItemId] : []
+      if (!scrollRef?.current) return
+
+      const selected =
+        focusedItemIdRef.current != null ? [focusedItemIdRef.current] : []
       const nextIndex = handleArrowKeys(e)
       const nextItemId = displayItems[nextIndex].id
       selected.push(nextItemId)
+
       if (e.shiftKey) select(selected, true)
+
       return
     }
 
     if (e.key === 'Enter') {
-      if (focusedItemId) {
-        const type = JSONUtil.getItemType(json, focusedItemId)
+      if (focusedItemIdRef.current) {
+        const type = JSONUtil.getItemType(json, focusedItemIdRef.current)
         if (type === 'value') {
-          setSelectedItemIds({ [focusedItemId]: true })
+          setSelectedItemIds({ [focusedItemIdRef.current]: true })
           setRightNavTab(TAB.PROPERTIES)
         } else if (onItemEnter) {
-          onItemEnter(focusedItemId)
-          setItemIndex(-1)
+          onItemEnter(focusedItemIdRef.current)
+          clearSelect()
         }
-        clearSelect()
       }
       return
     }
@@ -168,15 +225,16 @@ export const useKeyboardAction = ({
       return
     }
 
-    if (e.key === ' ' && focusedItemId) {
-      const selected = [focusedItemId]
+    if (e.key === ' ' && focusedItemIdRef.current) {
+      e.preventDefault()
+      const selected = [focusedItemIdRef.current]
       let multi = false
 
       if (e.ctrlKey || e.metaKey) {
-        if (selectedItemIds[focusedItemId]) {
+        if (selectedItemIds[focusedItemIdRef.current]) {
           selected.pop()
           const newSelectedItemIds = structuredClone(selectedItemIds)
-          delete newSelectedItemIds[focusedItemId]
+          delete newSelectedItemIds[focusedItemIdRef.current]
           selected.push(...Object.keys(newSelectedItemIds))
         } else {
           multi = true
@@ -202,8 +260,14 @@ export const useKeyboardAction = ({
     }
 
     if (e.key === 'ContextMenu') {
-      if (focusedItemId && !selectedItemIds[focusedItemId]) {
-        setSelectedItemIds((prev) => ({ ...prev, [focusedItemId]: true }))
+      if (
+        focusedItemIdRef.current &&
+        !selectedItemIds[focusedItemIdRef.current]
+      ) {
+        setSelectedItemIds((prev) => ({
+          ...prev,
+          [focusedItemIdRef.current!]: true,
+        }))
         return
       }
     }
@@ -215,9 +279,40 @@ export const useKeyboardAction = ({
   }
 
   const onKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    delete pushedKeys[e.key]
-    setPushedKeys({ ...pushedKeys })
+    delete pushedKeysRef.current[e.key]
   }
 
-  return { focusedItemId, pushedKeys, onKeyDown, onKeyUp }
+  useEffect(() => {
+    if (!containerRef?.current || !scrollRef?.current) return
+    setContainerRect(containerRef.current.getBoundingClientRect())
+  }, [containerRef, isReady, scrollRef])
+
+  useEffect(() => {
+    const itemIds = Object.keys(selectedItemIds)
+    if (itemIds.length === 1) {
+      const id = itemIds[0]
+      focusedItemIdRef.current = id
+      setItemIndex(getItemIndex(id))
+    }
+  }, [getItemIndex, selectedItemIds])
+
+  useEffect(() => {
+    if (!focusedItemIdRef.current || !scrollRef?.current) return
+
+    const itemArea = itemAreas[focusedItemIdRef.current]
+    if (!itemArea) return
+
+    const { y, height } = itemArea
+    const scrollContainer = scrollRef.current
+    const currentHeight = containerRect.height + scrollContainer.scrollTop
+
+    if (
+      (currentHeight && currentHeight < y + height) ||
+      scrollContainer.scrollTop > y
+    ) {
+      scrollIntoView(y, height)
+    }
+  }, [itemIndex, itemAreas, containerRect, scrollRef, scrollIntoView])
+
+  return { focusedItemIdRef, pushedKeysRef, onKeyDown, onKeyUp }
 }
