@@ -121,10 +121,7 @@ const Layout = () => {
   return (
     <div className="flex h-screen w-full">
       <div className="m-20 flex w-full flex-col rounded-xl border border-slate-300">
-        <TopNavigationBar
-          className="rounded-t-xl bg-slate-100 px-5 py-2"
-          currentItem={currentItem}
-        />
+        <TopNavigationBar className="rounded-t-xl bg-slate-100 px-4 py-1" />
         <AddressBar
           className="flex items-center gap-4 border-b-2 px-4 py-2"
           currentPath={currentItem.id}
