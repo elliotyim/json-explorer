@@ -54,6 +54,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
   const [isReady, setIsReady] = useState<boolean>(false)
+  const [enabled, setEnabled] = useState<boolean>(false)
 
   const [isFocusDone, setIsFocusDone] = useState<boolean>(false)
 
@@ -172,6 +173,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       <div
         ref={outerContainerRef}
         className="h-full w-full overflow-hidden"
+        onFocus={() => setEnabled(true)}
+        onBlur={() => setEnabled(false)}
         onClick={(e) => {
           const clickCount = e.detail
           if (clickCount === 2) {
@@ -222,6 +225,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           containerRef={outerContainerRef}
           scrollRef={scrollContainerRef}
           isReady={isReady}
+          enabled={enabled}
           onSelectionStart={({ event: e, x, y, scrollX, scrollY }) => {
             const selectedPoint = new DOMRect(x + scrollX, y + scrollY, 0, 0)
             const newItem = DOMUtil.getItems(selectedPoint, itemAreas)

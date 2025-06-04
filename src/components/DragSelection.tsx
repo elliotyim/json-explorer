@@ -23,6 +23,7 @@ interface SelectionEndProps {
 
 interface Props {
   isReady: boolean
+  enabled: boolean
   containerRef: React.RefObject<HTMLDivElement | null> | null
   scrollRef?: React.RefObject<HTMLDivElement | null> | null
   onSelectionStart?: ({
@@ -38,6 +39,7 @@ interface Props {
 
 const DragSelection: React.FC<Props> = ({
   isReady,
+  enabled,
   containerRef,
   scrollRef = containerRef,
   onSelectionStart,
@@ -64,7 +66,9 @@ const DragSelection: React.FC<Props> = ({
     (event: PointerEvent) => {
       const container = containerRef?.current
       const scroller = scrollRef?.current
-      if (!container || !scroller || !dragVector || !scrollVector) return
+      if (!container || !scroller || !dragVector || !scrollVector || !enabled) {
+        return
+      }
 
       const prevX = dragVector.x
       const prevY = dragVector.y
@@ -96,13 +100,20 @@ const DragSelection: React.FC<Props> = ({
         })
       }
     },
-    [containerRef, dragVector, onSelectionChange, scrollRef, scrollVector],
+    [
+      containerRef,
+      dragVector,
+      enabled,
+      onSelectionChange,
+      scrollRef,
+      scrollVector,
+    ],
   )
 
   const onPointerUp = useCallback(
     (e: PointerEvent) => {
       const container = containerRef?.current
-      if (!container || !scrollRef?.current) return
+      if (!container || !scrollRef?.current || !enabled) return
 
       const { x, y } = DOMUtil.getCurrentPoint(container, e)
       const scrollX = scrollRef.current.scrollLeft
@@ -123,6 +134,7 @@ const DragSelection: React.FC<Props> = ({
       clearAll,
       containerRef,
       dragVector,
+      enabled,
       onSelectionEnd,
       scrollRef,
       scrollVector,
@@ -132,7 +144,12 @@ const DragSelection: React.FC<Props> = ({
   const onPointerDown = useCallback(
     (e: PointerEvent) => {
       const container = containerRef?.current
-      if (e.button !== MOUSE_CLICK.LEFT || !container || !scrollRef?.current) {
+      if (
+        e.button !== MOUSE_CLICK.LEFT ||
+        !container ||
+        !scrollRef?.current ||
+        !enabled
+      ) {
         return
       }
 
@@ -163,7 +180,7 @@ const DragSelection: React.FC<Props> = ({
 
       document.body.style.userSelect = 'none'
     },
-    [clearAll, containerRef, onSelectionStart, scrollRef],
+    [clearAll, containerRef, enabled, onSelectionStart, scrollRef],
   )
 
   const onScroll = useCallback(
