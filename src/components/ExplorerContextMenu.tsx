@@ -3,6 +3,7 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuShortcut,
   ContextMenuSub,
   ContextMenuSubContent,
   ContextMenuSubTrigger,
@@ -111,6 +112,7 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
           onSelect={() => handleItemCopy(selectedItems)}
         >
           Copy
+          <ContextMenuShortcut>⌘C</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuItem
           inset
@@ -118,6 +120,7 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
           onSelect={handleItemPaste}
         >
           Paste
+          <ContextMenuShortcut>⌘V</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuItem
           inset
@@ -125,6 +128,7 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
           onSelect={() => handleItemCut(selectedItems)}
         >
           Cut
+          <ContextMenuShortcut>⌘X</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuSeparator />
@@ -139,8 +143,10 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
           inset
           disabled={!selectedItems.length}
           onSelect={() => handleItemDelete(selectedItems)}
+          variant="destructive"
         >
           Delete
+          <ContextMenuShortcut>⌘D</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuSub>
