@@ -53,7 +53,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ${{ secrets.WORKDIR }} &&
-            bash deploy.sh ${{ secrets.DOCKERHUB_REPO }} prod
+            bash deploy.sh ${{ secrets.DOCKERHUB_REPO }} prod &&
+            bash purge.sh prod
 
       - name: Release IP
         if: always()

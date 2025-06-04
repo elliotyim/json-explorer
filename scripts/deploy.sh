@@ -14,7 +14,9 @@ STACK_NAME="jsonexplorer"
 ENV_FILE="$ENV.env"
 
 echo "[+] Loading environment from $ENV env file"
-export $(grep -v '^#' $ENV_FILE | xargs)
+set -a
+source "$ENV_FILE"
+set +a
 
 echo "[+] Pulling latest image..."
 docker pull $NAME-$ENV:latest
