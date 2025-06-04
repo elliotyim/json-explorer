@@ -8,13 +8,14 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
+import AddressBar from '@/layouts/AddressBar'
+import TopNavigationBar from '@/layouts/TopNavigationBar'
 import { useBackHistoryStore } from '@/store/history'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 import { TreeApi } from 'react-arborist'
-import AddressBar from './AddressBar'
-import TopNavigationBar from './TopNavigationBar'
+import ExplorerDialog from '@/components/ExplorerDialog'
 
 const Layout = () => {
   const treeRef = useRef<TreeApi<Data>>(null)
@@ -156,6 +157,7 @@ const Layout = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+      <ExplorerDialog />
     </div>
   )
 }
