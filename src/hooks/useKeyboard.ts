@@ -21,6 +21,7 @@ import {
 import { useHistory } from './useHistory'
 import { useCommandStore } from '@/store/command'
 import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
+import { CopyItemCommand } from '@/commands/CopyItemCommand'
 
 interface Props {
   containerWidth: number
@@ -180,7 +181,9 @@ export const useKeyboardAction = ({
     if (!itemIds.length) return
 
     if (e.key === 'c') {
-      JSONUtil.copyItems(json, Object.keys(selectedItemIds))
+      const ids = Object.keys(selectedItemIds)
+      const command = new CopyItemCommand(structuredClone(json), { ids })
+      await execute(command)
       return
     }
 

@@ -1,3 +1,4 @@
+import { CopyItemCommand } from '@/commands/CopyItemCommand'
 import { CreateItemCommand } from '@/commands/CreateItemCommand'
 import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
 import {
@@ -39,8 +40,9 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
   const { setIsContextOpen } = useContextMenuOpenStore()
   const { execute } = useCommandStore()
 
-  const handleItemCopy = (selectedItems: string[]) => {
-    JSONUtil.copyItems(json, selectedItems)
+  const handleItemCopy = async (ids: string[]) => {
+    const command = new CopyItemCommand(structuredClone(json), { ids })
+    await execute(command)
   }
 
   const handleItemPaste = async () => {
