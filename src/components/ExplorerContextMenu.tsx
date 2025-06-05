@@ -1,4 +1,5 @@
 import { CreateItemCommand } from '@/commands/CreateItemCommand'
+import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -63,8 +64,9 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
     }
   }
 
-  const handleItemDelete = async (selectedItems: string[]) => {
-    const result = JSONUtil.deleteItems(json, selectedItems)
+  const handleItemDelete = async (ids: string[]) => {
+    const command = new DeleteItemCommand(structuredClone(json), { ids })
+    const result = await execute(command)
     setJson(result)
     setSelectedItemIds({})
   }
