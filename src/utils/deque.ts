@@ -62,4 +62,12 @@ export class Deque<T = unknown> {
     this.right = 1
     this._length = 0
   }
+
+  toArray(): T[] {
+    const result: T[] = []
+    for (let i = this.left + 1; i < this.right; i++) {
+      result.push(this.data[i])
+    }
+    return result
+  }
 }

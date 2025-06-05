@@ -1,3 +1,4 @@
+import { CreateItemCommand } from '@/commands/CreateItemCommand'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,6 +11,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { TAB } from '@/constants/tab'
+import { useCommandStore } from '@/store/command'
 import { useContextMenuOpenStore } from '@/store/contextmenu'
 import {
   useCurrentItemStore,
@@ -28,12 +30,13 @@ interface Props {
 const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
   const { json, setJson } = useJsonStore()
 
-  const { currentItem } = useCurrentItemStore()
+  const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setSelectedItemIds } = useSelectedItemIdsStore()
 
   const { setIsItemEditing } = useItemEditingStore()
   const { setRightNavTab } = useRightNavTabStore()
   const { setIsContextOpen } = useContextMenuOpenStore()
+  const { execute } = useCommandStore()
 
   const handleItemCopy = (selectedItems: string[]) => {
     JSONUtil.copyItems(json, selectedItems)
@@ -60,34 +63,31 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
     }
   }
 
-  const handleItemDelete = (selectedItems: string[]) => {
+  const handleItemDelete = async (selectedItems: string[]) => {
     const result = JSONUtil.deleteItems(json, selectedItems)
     setJson(result)
     setSelectedItemIds({})
   }
 
-  const handleItemCreate = (type: Data['type']) => {
-    const id = currentItem.id
-    const itemSpec = JSONUtil.inspect({ obj: json, path: id })
-    const item = JSONUtil.getByPath(json, id) as Record<string, unknown>
+  const handleItemCreate = async (type: Data['type']) => {
+    const command = new CreateItemCommand(structuredClone(json), {
+      currentItemId: currentItem.id,
+      type,
+    })
+    const result = await execute(command)
 
-    let value
-    if (type === 'array') value = []
-    else if (type === 'object') value = {}
-    else value = null
+    const itemSpec = JSONUtil.inspect({ obj: result, path: currentItem.id })
+    const newData = JSONUtil.getByPath(result, itemSpec.id) as JSONObj['type']
 
     let newItemPath
-    if (Array.isArray(item)) {
-      newItemPath = `${itemSpec.id}[${item.length}]`
-      item.push(value)
+    if (Array.isArray(newData)) {
+      newItemPath = `${currentItem.id}[${currentItem.data.length}]`
     } else {
-      const key = `new${type}`
-      newItemPath = `${itemSpec.id}.${key}`
-      item[key] = value
+      newItemPath = `${currentItem.id}.new${type}`
     }
 
-    JSONUtil.set({ obj: json, keyPath: id, value: item })
-    setJson(structuredClone(json))
+    setJson(result)
+    setCurrentItem({ id: currentItem.id, data: newData })
 
     setRightNavTab(TAB.PROPERTIES)
     setSelectedItemIds({ [newItemPath]: true })

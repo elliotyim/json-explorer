@@ -9,7 +9,7 @@ import {
   MenubarShortcut,
   MenubarTrigger,
 } from '@/components/ui/menubar'
-import { useCommands } from '@/hooks/useCommands'
+import { useCommandStore } from '@/store/command'
 import { useDialogStore } from '@/store/dialog'
 import { useJsonStore } from '@/store/json'
 
@@ -20,7 +20,7 @@ interface Props {
 const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
   const { json, setJson } = useJsonStore()
   const { setDialog: setDialogOpen } = useDialogStore()
-  const { commandManager } = useCommands()
+  const { execute, undo, undoList, redo, redoList } = useCommandStore()
 
   const alert = (
     title: string,
@@ -33,7 +33,7 @@ const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
   const handleImport = async () => {
     const command = new ImportCommand(structuredClone(json))
     try {
-      const result = await commandManager.execute(command)
+      const result = await execute(command)
       setJson(result)
     } catch (e: unknown) {
       if (e instanceof Error) alert(e.message)
@@ -43,16 +43,16 @@ const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
 
   const handleExport = async () => {
     const command = new ExportCommand(JSON.stringify(json))
-    await commandManager.execute(command)
+    await execute(command)
   }
 
   const handleUndo = async () => {
-    const result = await commandManager.undo()
+    const result = await undo()
     if (result) setJson(result)
   }
 
   const handleRedo = async () => {
-    const result = await commandManager.redo()
+    const result = await redo()
     if (result) setJson(result)
   }
 
@@ -68,16 +68,10 @@ const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
       <MenubarMenu>
         <MenubarTrigger>Edit</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem
-            disabled={!commandManager.undoList.length}
-            onSelect={handleUndo}
-          >
+          <MenubarItem disabled={!undoList.length} onSelect={handleUndo}>
             Undo <MenubarShortcut>⌘Z</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem
-            disabled={!commandManager.redoList.length}
-            onSelect={handleRedo}
-          >
+          <MenubarItem disabled={!redoList.length} onSelect={handleRedo}>
             Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
