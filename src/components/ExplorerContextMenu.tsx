@@ -1,5 +1,6 @@
 import { CopyItemCommand } from '@/commands/CopyItemCommand'
 import { CreateItemCommand } from '@/commands/CreateItemCommand'
+import { CutItemCommand } from '@/commands/CutItemCommand'
 import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
 import { PasteItemCommand } from '@/commands/PasteItemCommand'
 import {
@@ -54,8 +55,10 @@ const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
     setJson(result)
   }
 
-  const handleItemCut = (selectedItems: string[]) => {
-    const result = JSONUtil.cutItems(json, selectedItems)
+  const handleItemCut = async (ids: string[]) => {
+    const command = new CutItemCommand(structuredClone(json), { ids })
+    const result = await execute(command)
+
     setJson(result)
     setSelectedItemIds({})
   }

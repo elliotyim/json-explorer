@@ -23,6 +23,7 @@ import { useCommandStore } from '@/store/command'
 import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
 import { CopyItemCommand } from '@/commands/CopyItemCommand'
 import { PasteItemCommand } from '@/commands/PasteItemCommand'
+import { CutItemCommand } from '@/commands/CutItemCommand'
 
 interface Props {
   containerWidth: number
@@ -171,10 +172,10 @@ export const useKeyboardAction = ({
       return
     }
 
-    const itemIds = Object.keys(selectedItemIds)
+    const ids = Object.keys(selectedItemIds)
     if (e.key === 'a') {
       e.preventDefault()
-      if (itemIds.length !== displayItems.length) {
+      if (ids.length !== displayItems.length) {
         const allSelectedItems: Record<string, boolean> = {}
         displayItems.forEach((item) => (allSelectedItems[item.id] = true))
         setSelectedItemIds(allSelectedItems)
@@ -182,17 +183,17 @@ export const useKeyboardAction = ({
       return
     }
 
-    if (!itemIds.length) return
+    if (!ids.length) return
 
     if (e.key === 'c') {
-      const ids = Object.keys(selectedItemIds)
       const command = new CopyItemCommand(structuredClone(json), { ids })
       await execute(command)
       return
     }
 
     if (e.key === 'x') {
-      const result = JSONUtil.cutItems(json, itemIds)
+      const command = new CutItemCommand(structuredClone(json), { ids })
+      const result = await execute(command)
       setJson(result)
       clearSelect()
       return
@@ -200,7 +201,6 @@ export const useKeyboardAction = ({
 
     if (e.key === 'd') {
       e.preventDefault()
-      const ids = itemIds
       const command = new DeleteItemCommand(structuredClone(json), { ids })
       const result = await execute(command)
       setJson(result)
