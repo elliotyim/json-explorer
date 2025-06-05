@@ -1,3 +1,4 @@
+import ExplorerMenuBar from '@/components/menu-bar/ExplorerMenuBar'
 import { FaGithub } from 'react-icons/fa6'
 
 const TopNavigationBar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
@@ -9,7 +10,7 @@ const TopNavigationBar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
         <a href="https://github.com/elliotyim/json-explorer">
           <FaGithub size={24} />
         </a>
-        {/* <ExplorerMenuBar className="flex" />Z */}
+        <ExplorerMenuBar />
       </div>
     </div>
   )
