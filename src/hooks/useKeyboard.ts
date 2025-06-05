@@ -22,6 +22,7 @@ import { useHistory } from './useHistory'
 import { useCommandStore } from '@/store/command'
 import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
 import { CopyItemCommand } from '@/commands/CopyItemCommand'
+import { PasteItemCommand } from '@/commands/PasteItemCommand'
 
 interface Props {
   containerWidth: number
@@ -162,7 +163,10 @@ export const useKeyboardAction = ({
     }
 
     if (e.key === 'v' && sessionStorage.getItem('copyPaste')) {
-      const result = JSONUtil.pastItems(json, currentItem.id)
+      const command = new PasteItemCommand(structuredClone(json), {
+        currentItemId: currentItem.id,
+      })
+      const result = await execute(command)
       setJson(result)
       return
     }
