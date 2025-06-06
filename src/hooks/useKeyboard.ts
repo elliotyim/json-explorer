@@ -24,6 +24,7 @@ import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
 import { CopyItemCommand } from '@/commands/CopyItemCommand'
 import { PasteItemCommand } from '@/commands/PasteItemCommand'
 import { CutItemCommand } from '@/commands/CutItemCommand'
+import { useAreaDraggingStore } from '@/store/dragging'
 
 interface Props {
   containerWidth: number
@@ -61,6 +62,7 @@ export const useKeyboardAction = ({
   const { goBackward } = useHistory()
   const { itemAreas } = useItemAreaStore()
   const { execute, redo, undo } = useCommandStore()
+  const { isAreaDragging } = useAreaDraggingStore()
 
   const getItemIndex = useCallback(
     (id: string): number => {
@@ -315,12 +317,12 @@ export const useKeyboardAction = ({
 
   useEffect(() => {
     const itemIds = Object.keys(selectedItemIds)
-    if (itemIds.length === 1) {
+    if (itemIds.length === 1 && !isAreaDragging) {
       const id = itemIds[0]
       focusedItemIdRef.current = id
       setItemIndex(getItemIndex(id))
     }
-  }, [getItemIndex, selectedItemIds])
+  }, [getItemIndex, isAreaDragging, selectedItemIds])
 
   useEffect(() => {
     if (!focusedItemIdRef.current || !scrollRef?.current) return

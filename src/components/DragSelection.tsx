@@ -1,5 +1,6 @@
 import { MOUSE_CLICK } from '@/constants/mouse'
 import { useAutoScroll } from '@/hooks/useScrollTheLad'
+import { useAreaDraggingStore } from '@/store/dragging'
 import { DOMUtil, DOMVector } from '@/utils/dom'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -50,7 +51,7 @@ const DragSelection: React.FC<Props> = ({
 
   const [dragVector, setDragVector] = useState<DOMVector | null>(null)
   const [scrollVector, setScrollVector] = useState<DOMVector | null>(null)
-  const [isAreaDragging, setIsAreaDragging] = useState<boolean>(false)
+  const { isAreaDragging, setIsAreaDragging } = useAreaDraggingStore()
 
   const selectionAreaRef = useRef<DOMRect>(null)
 
@@ -60,7 +61,7 @@ const DragSelection: React.FC<Props> = ({
     setScrollVector(null)
     setIsAreaDragging(false)
     selectionAreaRef.current = null
-  }, [])
+  }, [setIsAreaDragging])
 
   const onPointerMove = useCallback(
     (event: PointerEvent) => {
@@ -107,6 +108,7 @@ const DragSelection: React.FC<Props> = ({
       onSelectionChange,
       scrollRef,
       scrollVector,
+      setIsAreaDragging,
     ],
   )
 
