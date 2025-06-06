@@ -2,7 +2,6 @@ interface CompileProps {
   input: unknown
   name?: string
   path?: string
-  parentPath?: string
   depth?: number
 }
 
@@ -187,7 +186,6 @@ export class JSONUtil {
     input,
     name,
     path = 'root',
-    parentPath = 'root',
     depth = Number.MAX_SAFE_INTEGER,
   }: CompileProps): Data[] {
     const result: Data[] = []
@@ -211,7 +209,6 @@ export class JSONUtil {
             input: value,
             name,
             path: childPath,
-            parentPath: this.getParentPath(path),
             depth: depth - 1,
           }),
         )
@@ -236,7 +233,6 @@ export class JSONUtil {
             name,
             input: value,
             path: childPath,
-            parentPath: this.getParentPath(path),
             depth: depth - 1,
           }),
         )
