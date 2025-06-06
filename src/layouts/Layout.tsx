@@ -3,29 +3,29 @@ import MainContent from '@/layouts/MainContent'
 import RightNav from '@/layouts/RightNav'
 import { useEffect, useRef } from 'react'
 
+import { MoveItemCommand } from '@/commands/MoveItemCommand'
+import ExplorerDialog from '@/components/ExplorerDialog'
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
+import { useHistory } from '@/hooks/useHistory'
 import AddressBar from '@/layouts/AddressBar'
 import TopNavigationBar from '@/layouts/TopNavigationBar'
-import { useBackHistoryStore } from '@/store/history'
+import { useCommandStore } from '@/store/command'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 import { TreeApi } from 'react-arborist'
-import ExplorerDialog from '@/components/ExplorerDialog'
-import { useCommandStore } from '@/store/command'
-import { MoveItemCommand } from '@/commands/MoveItemCommand'
 
 const Layout = () => {
   const treeRef = useRef<TreeApi<Data>>(null)
 
   const { json, setJson } = useJsonStore()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
-  const { setBackHistories } = useBackHistoryStore()
   const { execute } = useCommandStore()
+  const { goTo } = useHistory()
 
   const handleOnInputSubmit = (currentPath: string) => {
     const id = currentPath
@@ -84,16 +84,9 @@ const Layout = () => {
   }
 
   const enterFolder = (itemId: string) => {
-    if (itemId === currentItem.id) return
-
+    goTo(itemId)
     const paths = JSONUtil.getTrailingPaths(itemId)
     paths.forEach((path) => treeRef.current?.open(path))
-
-    const data = JSONUtil.getByPath(json, itemId) as Record<string, unknown>
-    const parentPath = JSONUtil.getParentPath(itemId)
-
-    setCurrentItem({ id: itemId, data })
-    setBackHistories((prev) => [...prev, parentPath])
   }
 
   useEffect(() => {
