@@ -14,14 +14,14 @@ export class CutItemCommand implements Command<JSONObj['type']> {
     this.value = value
   }
 
-  execute(): Promise<JSONObj['type'] | null> {
+  execute(): Promise<JSONObj['type']> {
     const json = structuredClone(this.prev)
     const { ids } = this.value
     const result = JSONUtil.cutItems(json, ids)
     return new Promise((res) => res(result))
   }
 
-  undo(): Promise<JSONObj['type'] | null> {
+  undo(): Promise<JSONObj['type']> {
     return new Promise((res) => res(this.prev))
   }
 }

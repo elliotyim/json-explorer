@@ -53,8 +53,6 @@ const Layout = () => {
     })
     const result = await execute(command)
 
-    if (!result) return
-
     setJson(result)
   }
 
@@ -81,8 +79,6 @@ const Layout = () => {
       targetIndex,
     })
     const result = await execute(command)
-
-    if (!result) return
 
     setJson(result)
   }

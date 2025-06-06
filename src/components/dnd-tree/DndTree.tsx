@@ -107,8 +107,6 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
     })
     const result = await execute(command)
 
-    if (!result) return
-
     setJson(result)
     setSelectedItemIds({})
   }
