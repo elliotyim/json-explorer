@@ -1,3 +1,4 @@
+import { ModifyItemCommand } from '@/commands/ModifyItemCommand'
 import CodeEditor from '@/components/code-editor/CodeEditor'
 import { TypeIcon } from '@/components/dnd-tree/TypeIcon'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { useCommandStore } from '@/store/command'
 import { useItemEditingStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
@@ -26,6 +28,8 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   const { json, setJson } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
   const { isItemEditing, setIsItemEditing } = useItemEditingStore()
+
+  const { execute } = useCommandStore()
 
   const selectedItems = useMemo<Data[]>(
     () =>
@@ -62,12 +66,21 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     setIsItemEditing(false)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (singleItem == null || editedValue == null) return
 
-    const parent = JSONUtil.getByPath(json, singleItem.parentPath)
-    const value = JSON.parse(editedValue)
+    const command = new ModifyItemCommand(structuredClone(json), {
+      id: singleItem.id,
+      parentId: singleItem.parentPath,
+      changedKey: itemKey,
+      changedValue: editedValue,
+    })
+    const result = await execute(command)
 
+    setJson(result)
+    setIsItemEditing(false)
+
+    const parent = JSONUtil.getByPath(json, singleItem.parentPath)
     const originalId = singleItem.id
 
     let newId
@@ -77,11 +90,6 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
       newId = JSONUtil.replaceLastKey(originalId, `${itemKey}`)
     }
 
-    JSONUtil.set({ obj: json, keyPath: newId, value })
-    if (originalId !== newId) JSONUtil.remove(parent, originalId)
-
-    setJson(structuredClone(json))
-    setIsItemEditing(false)
     setSelectedItemIds({ [newId]: true })
   }
 
@@ -94,6 +102,9 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
           <Input
             ref={inputRef}
             value={itemKey}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSubmit()
+            }}
             onChange={(e) => setItemKey(e.target.value)}
           />
         )

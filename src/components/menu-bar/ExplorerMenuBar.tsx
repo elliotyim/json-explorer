@@ -1,3 +1,5 @@
+import { ExportCommand } from '@/commands/ExportCommand'
+import { ImportCommand } from '@/commands/ImportCommand'
 import {
   Menubar,
   MenubarContent,
@@ -7,7 +9,7 @@ import {
   MenubarShortcut,
   MenubarTrigger,
 } from '@/components/ui/menubar'
-import { UPLOAD_LIMIT } from '@/constants/file'
+import { useCommandStore } from '@/store/command'
 import { useDialogStore } from '@/store/dialog'
 import { useJsonStore } from '@/store/json'
 
@@ -17,8 +19,8 @@ interface Props {
 
 const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
   const { json, setJson } = useJsonStore()
-
   const { setDialog: setDialogOpen } = useDialogStore()
+  const { execute, undo, undoList, redo, redoList } = useCommandStore()
 
   const alert = (
     title: string,
@@ -28,54 +30,30 @@ const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
     setDialogOpen({ open: true, title, content, cancelButton })
   }
 
-  const convert = (bytes: number, decimalPlaces = 0): string => {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-    let index = 0
-    let size = bytes
-    while (size >= 1024) {
-      size /= 1024
-      index++
+  const handleImport = async () => {
+    const command = new ImportCommand(structuredClone(json))
+    try {
+      const result = await execute(command)
+      setJson(result)
+    } catch (e: unknown) {
+      if (e instanceof Error) alert(e.message)
+      else if (typeof e === 'string') alert(e)
     }
-    return `${size.toFixed(decimalPlaces)} ${units[index]}`
   }
 
-  const exportJSON = (jsonString: string) => {
-    const blob = new Blob([jsonString], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'output.json'
-    a.click()
+  const handleExport = async () => {
+    const command = new ExportCommand(JSON.stringify(json))
+    await execute(command)
   }
 
-  const importJSON = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'application/json, .json'
-    input.onchange = (e) => {
-      const target = e.target as HTMLInputElement
-      if (target.files?.length === 1) {
-        const file = target.files[0]
-        if (file.size > UPLOAD_LIMIT) {
-          alert(`File size exceeds ${convert(UPLOAD_LIMIT)}`)
-          return
-        }
+  const handleUndo = async () => {
+    const result = await undo()
+    if (result) setJson(result)
+  }
 
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          try {
-            const content = event.target?.result as string
-            setJson(JSON.parse(content))
-          } catch {
-            alert('Invalid JSON file has been provided')
-          }
-        }
-        reader.onerror = () => alert('Failed to read the file')
-        reader.readAsText(file)
-      }
-    }
-    input.click()
+  const handleRedo = async () => {
+    const result = await redo()
+    if (result) setJson(result)
   }
 
   return (
@@ -83,19 +61,17 @@ const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
       <MenubarMenu>
         <MenubarTrigger>File</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem onSelect={() => importJSON()}>Import</MenubarItem>
-          <MenubarItem onSelect={() => exportJSON(JSON.stringify(json))}>
-            Export
-          </MenubarItem>
+          <MenubarItem onSelect={handleImport}>Import</MenubarItem>
+          <MenubarItem onSelect={handleExport}>Export</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
       <MenubarMenu>
         <MenubarTrigger>Edit</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem disabled>
+          <MenubarItem disabled={!undoList.length} onSelect={handleUndo}>
             Undo <MenubarShortcut>⌘Z</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem disabled>
+          <MenubarItem disabled={!redoList.length} onSelect={handleRedo}>
             Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />

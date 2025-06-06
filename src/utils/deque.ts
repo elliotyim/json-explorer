@@ -2,53 +2,57 @@ export class Deque<T = unknown> {
   private data: Record<number, T> = {}
   private left: number = 0
   private right: number = 1
-  private length: number = 0
+  private _length: number = 0
 
   constructor(initialData?: T[]) {
     if (initialData?.length) {
-      for (const data of initialData) this.append(data)
+      for (const data of initialData) this.push(data)
     }
   }
 
-  append(value: T) {
-    this.data[this.right++] = value
-    this.length++
+  public get length(): number {
+    return this._length
   }
 
-  appendleft(value: T) {
+  push(value: T) {
+    this.data[this.right++] = value
+    this._length++
+  }
+
+  pushFront(value: T) {
     this.data[this.left--] = value
-    this.length++
+    this._length++
   }
 
   pop(): T | undefined {
-    if (!this.length) return
+    if (!this._length) return
 
     const value = this.data[--this.right]
     delete this.data[this.right]
 
-    this.length--
+    this._length--
 
     return value
   }
 
-  popleft(): T | undefined {
-    if (!this.length) return
+  popFront(): T | undefined {
+    if (!this._length) return
 
     const value = this.data[++this.left]
     delete this.data[this.left]
 
-    this.length--
+    this._length--
 
     return value
   }
 
   peek(): T | undefined {
-    if (!this.length) return
+    if (!this._length) return
     return this.data[this.right - 1]
   }
 
-  peekleft(): T | undefined {
-    if (!this.length) return
+  peekFront(): T | undefined {
+    if (!this._length) return
     return this.data[this.left + 1]
   }
 
@@ -56,10 +60,14 @@ export class Deque<T = unknown> {
     this.data = {}
     this.left = 0
     this.right = 1
-    this.length = 0
+    this._length = 0
   }
 
-  size(): number {
-    return this.length
+  toArray(): T[] {
+    const result: T[] = []
+    for (let i = this.left + 1; i < this.right; i++) {
+      result.push(this.data[i])
+    }
+    return result
   }
 }
