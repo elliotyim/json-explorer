@@ -25,13 +25,7 @@ import GridCard from './GridCard'
 interface Props {
   items: Data[]
   currentItemId: string
-  onItemRelocation?: (
-    targetIndex: number,
-    selectedNodes: {
-      index: number
-      item: Data
-    }[],
-  ) => void
+  onItemRelocation?: (targetIndex: number, selectedNodes: Data[]) => void
   onItemMove?: (
     source: HTMLElement,
     target: HTMLElement,
@@ -82,16 +76,12 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   const handleItemRelocation = (targetIndex: number) => {
     if (onItemRelocation) {
-      const selectedNodes = []
-      for (const [index, item] of items.entries()) {
-        if (
+      const selectedNodes = items.filter(
+        (item) =>
           selectedItemIds[item.id] ||
           extraItemIds[item.id] ||
-          draggingItems[item.id]
-        ) {
-          selectedNodes.push({ index, item })
-        }
-      }
+          draggingItems[item.id],
+      )
       onItemRelocation(targetIndex, selectedNodes)
       setSelectedItemIds({})
       setExtraItemIds({})

@@ -16,6 +16,8 @@ import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 import { TreeApi } from 'react-arborist'
 import ExplorerDialog from '@/components/ExplorerDialog'
+import { useCommandStore } from '@/store/command'
+import { MoveItemCommand } from '@/commands/MoveItemCommand'
 
 const Layout = () => {
   const treeRef = useRef<TreeApi<Data>>(null)
@@ -23,6 +25,7 @@ const Layout = () => {
   const { json, setJson } = useJsonStore()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setBackHistories } = useBackHistoryStore()
+  const { execute } = useCommandStore()
 
   const handleOnInputSubmit = (currentPath: string) => {
     const id = currentPath
@@ -34,43 +37,28 @@ const Layout = () => {
     setCurrentItem({ id, data })
   }
 
-  const handleItemRelocation = (
+  const handleItemRelocation = async (
     targetIndex: number,
-    selectedNodes: { index: number; item: Data }[],
+    selectedNodes: Data[],
   ) => {
-    if (!selectedNodes.length) return
+    const parentPath = selectedNodes.at(0)?.parentPath
+    if (!selectedNodes.length || parentPath == null) return
 
-    const parentPath = selectedNodes?.[0]?.item.parentPath
-    if (!parentPath || typeof parentPath !== 'string') return
+    const targetNode = JSONUtil.inspect({ obj: json, path: parentPath })
 
-    const parent = JSONUtil.getByPath(json, parentPath) as unknown[]
-    const toBeChanged = new Set(selectedNodes.map((node) => node.index))
-    const values = []
-
-    for (const [index, value] of parent.entries()) {
-      if (index === targetIndex) {
-        selectedNodes.forEach((node) => values.push(node.item.value))
-      }
-      if (!toBeChanged.has(index)) {
-        values.push(value)
-      }
-    }
-
-    if (targetIndex === parent.length) {
-      selectedNodes.forEach((node) => values.push(node.item.value))
-    }
-
-    const result = JSONUtil.set({
-      obj: json,
-      keyPath: parentPath,
-      value: values,
+    const command = new MoveItemCommand(structuredClone(json), {
+      selectedNodes,
+      targetNode,
+      targetIndex,
     })
+    const result = await execute(command)
 
-    const newJSON = Array.isArray(result) ? [...result] : { ...result }
-    setJson(newJSON)
+    if (!result) return
+
+    setJson(result)
   }
 
-  const handleItemMove = (
+  const handleItemMove = async (
     source: HTMLElement,
     target: HTMLElement,
     selectedNodes: Data[],
@@ -85,21 +73,18 @@ const Layout = () => {
 
     if (wrongTarget || sourceId == null || targetId == null) return
 
-    selectedNodes.forEach((node) => {
-      JSONUtil.copy({
-        obj: json,
-        from: node.id,
-        to: targetId,
-        targetIndex,
-      })
-    })
+    const targetNode = JSONUtil.inspect({ obj: json, path: targetId })
 
-    selectedNodes.reverse().forEach((node) => {
-      const parent = JSONUtil.getByPath(json, node.parentPath)
-      JSONUtil.remove(parent, node.id)
+    const command = new MoveItemCommand(structuredClone(json), {
+      selectedNodes,
+      targetNode,
+      targetIndex,
     })
+    const result = await execute(command)
 
-    setJson(structuredClone(json))
+    if (!result) return
+
+    setJson(result)
   }
 
   const enterFolder = (itemId: string) => {

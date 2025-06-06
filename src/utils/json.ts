@@ -198,7 +198,7 @@ export class JSONUtil {
         name: name ?? path,
         value: input,
         type: 'array',
-        parentPath,
+        parentPath: this.getParentPath(path),
         children: [],
       }
 
@@ -211,7 +211,7 @@ export class JSONUtil {
             input: value,
             name,
             path: childPath,
-            parentPath,
+            parentPath: this.getParentPath(path),
             depth: depth - 1,
           }),
         )
@@ -224,7 +224,7 @@ export class JSONUtil {
         name: name ?? path,
         value: input,
         type: 'object',
-        parentPath,
+        parentPath: this.getParentPath(path),
         children: [],
       }
 
@@ -236,7 +236,7 @@ export class JSONUtil {
             name,
             input: value,
             path: childPath,
-            parentPath,
+            parentPath: this.getParentPath(path),
             depth: depth - 1,
           }),
         )
@@ -246,6 +246,7 @@ export class JSONUtil {
     } else {
       const id = path
       const value = input
+      const parentPath = this.getParentPath(id)
 
       name = name ?? path
 

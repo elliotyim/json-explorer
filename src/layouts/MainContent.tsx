@@ -7,13 +7,7 @@ import { useEffect } from 'react'
 interface Props {
   json: Record<string, unknown> | unknown[]
   currentItem: CurrentItem
-  onItemRelocation?: (
-    targetIndex: number,
-    selectedNodes: {
-      index: number
-      item: Data
-    }[],
-  ) => void
+  onItemRelocation?: (targetIndex: number, selectedNodes: Data[]) => void
   onItemMove?: (
     source: HTMLElement,
     target: HTMLElement,

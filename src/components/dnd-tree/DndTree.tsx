@@ -1,7 +1,9 @@
+import { MoveItemCommand } from '@/commands/MoveItemCommand'
 import TreeNode from '@/components/dnd-tree/TreeNode'
 import ExplorerContextMenu from '@/components/ExplorerContextMenu'
 import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
+import { useCommandStore } from '@/store/command'
 import { useCurrentItemStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useSearchKeywordState } from '@/store/search'
@@ -26,6 +28,8 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setRightNavTab } = useRightNavTabStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
+
+  const { execute } = useCommandStore()
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') treeRef?.current?.deselectAll()
@@ -85,100 +89,28 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
     }
   }
 
-  const handleItemMove: MoveHandler<Data> = ({
+  const handleItemMove: MoveHandler<Data> = async ({
     dragNodes,
     parentId,
     parentNode,
   }) => {
-    if (parentId == null) return
-
-    let newJSON = structuredClone(json)
+    if (parentId == null || parentNode == null) return
 
     let targetIndex: number
     if (parentNode?.data.type !== 'array') targetIndex = -1
     else targetIndex = treeRef?.current?.dragDestinationIndex ?? -1
 
-    const trailingParentIds = new Set(JSONUtil.getTrailingPaths(parentId))
-    const folders = new Set()
-
-    const filteredNodes = [...dragNodes]
-      .filter(
-        (node) =>
-          !(
-            node.parent?.id === parentId && node.parent?.data.type === 'object'
-          ),
-      )
-      .sort((a, b) => a.id.length - b.id.length)
-      .filter((node) => !trailingParentIds.has(node.id)) // Remove improper folders
-      .filter((node) => {
-        if (node.data.type !== 'value') folders.add(node.id)
-        return !folders.has(node.parent?.id) // Remove subordinate items in selected folders
-      })
-
-    const sortedNodes = filteredNodes.sort((a, b) => {
-      const parentIdA = a.parent?.id ?? ''
-      const parentIdB = b.parent?.id ?? ''
-
-      if (parentIdA.length > parentIdB.length) return 1
-      if (parentIdA.length < parentIdB.length) return -1
-      if (parentIdA.localeCompare(parentIdB) > 0) return 1
-      if (parentIdA.localeCompare(parentIdB) < 0) return -1
-      return a.id.localeCompare(b.id)
+    const command = new MoveItemCommand(structuredClone(json), {
+      selectedNodes: dragNodes.map((node) => node.data),
+      targetNode: parentNode.data,
+      targetIndex,
     })
+    const result = await execute(command)
 
-    sortedNodes.forEach((node) =>
-      JSONUtil.copy({ obj: newJSON, from: node.id, to: parentId }),
-    )
+    if (!result) return
 
-    let destination = parentId
-    const reversed = [...sortedNodes].reverse()
-
-    reversed.forEach((node) => {
-      const parent = JSONUtil.getByPath(newJSON, node.parent?.id ?? '')
-
-      const lastKey = JSONUtil.getSplitPaths({ path: node.id }).at(-1)
-      if (
-        destination === node.parent?.id &&
-        lastKey != null &&
-        +lastKey < targetIndex
-      ) {
-        targetIndex--
-      }
-
-      JSONUtil.remove(parent, node.id)
-      if (node.parent?.data.type === 'array') {
-        destination = JSONUtil.adjustArrayPath(node.id, destination)
-      }
-    })
-
-    if (parentNode?.data.type === 'array') {
-      const parentObj = JSONUtil.getByPath(newJSON, destination)
-      if (!Array.isArray(parentObj)) return
-
-      const start = parentObj.length - sortedNodes.length
-      const selectedNodes: { index: number; data: Data }[] = sortedNodes.map(
-        (node, i) => {
-          const type = node.parent?.data.type === 'object' ? 'object' : 'value'
-          const index = start + i
-          const id = `${destination}[${start + i}]`
-          const name = type === 'object' ? node.data.name : `${index}`
-          const parentPath = destination
-          const value = node.data.value
-
-          const data = { id, name, parentPath, type: type as 'value', value }
-          const source = { index, data }
-          return source
-        },
-      )
-      newJSON = JSONUtil.relocate(
-        newJSON,
-        targetIndex,
-        selectedNodes,
-      ) as unknown[]
-    }
-
-    setJson(newJSON)
-    enterFolder(destination)
+    setJson(result)
+    setSelectedItemIds({})
   }
 
   const handleItemClick = (
