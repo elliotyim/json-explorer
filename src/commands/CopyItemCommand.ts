@@ -14,13 +14,13 @@ export class CopyItemCommand implements Command<JSONObj['type']> {
     this.value = value
   }
 
-  execute(): Promise<JSONObj['type'] | null> {
+  execute(): Promise<JSONObj['type']> {
     const json = structuredClone(this.prev)
     const { ids } = this.value
     JSONUtil.copyItems(json, ids)
-    return new Promise((res) => res(null))
+    return new Promise((res) => res(this.prev))
   }
-  undo(): Promise<JSONObj['type'] | null> {
+  undo(): Promise<JSONObj['type']> {
     throw Error("This method shouldn't be called!")
   }
 }

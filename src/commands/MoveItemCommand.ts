@@ -86,7 +86,7 @@ export class MoveItemCommand implements Command<JSONObj['type']> {
     return JSONUtil.relocate(obj, targetIndex, selectedNodes)
   }
 
-  execute(): Promise<JSONObj['type'] | null> {
+  execute(): Promise<JSONObj['type']> {
     let json = structuredClone(this.prev)
     const { selectedNodes, targetNode } = this.value
 
@@ -128,13 +128,12 @@ export class MoveItemCommand implements Command<JSONObj['type']> {
         destination,
         targetIndex,
       )
-      if (!result) return new Promise((res) => res(null))
-      json = result
+      if (result) json = result
     }
 
     return new Promise((res) => res(json))
   }
-  undo(): Promise<JSONObj['type'] | null> {
+  undo(): Promise<JSONObj['type']> {
     return new Promise((res) => res(structuredClone(this.prev)))
   }
 }

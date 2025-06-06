@@ -4,9 +4,9 @@ import { create } from 'zustand'
 interface CommandStore {
   undoList: Deque<Command>
   redoList: Deque<Command>
-  execute: (command: Command) => Promise<JSONObj['type'] | null>
-  undo: () => Promise<JSONObj['type'] | null>
-  redo: () => Promise<JSONObj['type'] | null>
+  execute: (command: Command) => Promise<JSONObj['type']>
+  undo: () => Promise<JSONObj['type'] | undefined>
+  redo: () => Promise<JSONObj['type'] | undefined>
 }
 
 export const useCommandStore = create<CommandStore>((set, get) => ({
@@ -27,7 +27,7 @@ export const useCommandStore = create<CommandStore>((set, get) => ({
 
   undo: async () => {
     const { undoList, redoList } = get()
-    if (!undoList.length) return null
+    if (!undoList.length) return
 
     const command = undoList.pop()!
     const newRedoList = new Deque<Command>(redoList.toArray())
@@ -40,7 +40,7 @@ export const useCommandStore = create<CommandStore>((set, get) => ({
 
   redo: async () => {
     const { redoList, undoList } = get()
-    if (!redoList.length) return null
+    if (!redoList.length) return
 
     const command = redoList.pop()!
     const newUndoList = new Deque<Command>(undoList.toArray())
