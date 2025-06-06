@@ -17,12 +17,12 @@ export class ExportCommand implements Command<JSONObj['type']> {
     a.click()
   }
 
-  execute(): Promise<JSONObj['type']> {
+  execute(): Promise<JSONObj['type'] | null> {
     this.exportJSON(this.value)
     return new Promise((res) => res(this.prev))
   }
 
-  undo(): Promise<JSONObj['type']> {
+  undo(): Promise<JSONObj['type'] | null> {
     throw Error("This method shouldn't be called!")
   }
 }

@@ -14,7 +14,7 @@ export class PasteItemCommand implements Command<JSONObj['type']> {
     this.value = value
   }
 
-  execute(): Promise<JSONObj['type']> {
+  execute(): Promise<JSONObj['type'] | null> {
     if (!sessionStorage.getItem('copyPaste')) {
       return new Promise((res) => res([]))
     }
@@ -25,7 +25,7 @@ export class PasteItemCommand implements Command<JSONObj['type']> {
     return new Promise((res) => res(result))
   }
 
-  undo(): Promise<JSONObj['type']> {
+  undo(): Promise<JSONObj['type'] | null> {
     return new Promise((res) => res(this.prev))
   }
 }

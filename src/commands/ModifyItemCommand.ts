@@ -17,7 +17,7 @@ export class ModifyItemCommand implements Command<JSONObj['type']> {
     this.value = value
   }
 
-  execute(): Promise<JSONObj['type']> {
+  execute(): Promise<JSONObj['type'] | null> {
     const json = structuredClone(this.prev)
     const { parentId, id, changedKey, changedValue } = this.value
 
@@ -37,7 +37,7 @@ export class ModifyItemCommand implements Command<JSONObj['type']> {
     return new Promise((res) => res(result))
   }
 
-  undo(): Promise<JSONObj['type']> {
+  undo(): Promise<JSONObj['type'] | null> {
     return new Promise((res) => res(this.prev))
   }
 }

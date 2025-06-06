@@ -43,7 +43,7 @@ export class ImportCommand implements Command<JSONObj['type']> {
     })
   }
 
-  async execute(): Promise<JSONObj['type']> {
+  async execute(): Promise<JSONObj['type'] | null> {
     const cacheExists = Object.keys(this.value).length != 0
     if (cacheExists) return new Promise((res) => res(this.value))
 
@@ -53,7 +53,7 @@ export class ImportCommand implements Command<JSONObj['type']> {
     return new Promise((res) => res(result))
   }
 
-  async undo(): Promise<JSONObj['type']> {
+  async undo(): Promise<JSONObj['type'] | null> {
     return new Promise((res) => res(this.prev))
   }
 }
