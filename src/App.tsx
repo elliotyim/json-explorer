@@ -38,7 +38,7 @@ function App() {
     }
   }, [handleResize, handleSearchTrigger, setIsAppReady])
 
-  return windowRect.width >= 1280 ? <Layout /> : <NotSupported />
+  return windowRect.width >= 1024 ? <Layout /> : <NotSupported />
 }
 
 export default App

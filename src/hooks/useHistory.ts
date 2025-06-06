@@ -1,9 +1,11 @@
-import { useBackHistoryStore, useForwardHistoryStore } from '@/store/history'
+import { HistoryCommand } from '@/commands/HistoryCommand'
+import { useHistoryCommandStore } from '@/store/history-command'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 
 interface ReturnProps {
+  goTo: (path: string) => void
   goBackward: () => void
   goForward: () => void
   goPrev: () => void
@@ -13,48 +15,47 @@ export const useHistory = (): ReturnProps => {
   const { json } = useJsonStore()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
 
-  const { backHistories, setBackHistories } = useBackHistoryStore()
-  const { forwardHistories, setForwardHistories } = useForwardHistoryStore()
+  const { execute, undo, redo } = useHistoryCommandStore()
+
+  const goTo = (path: string) => {
+    if (path === currentItem.id) return
+
+    const prev = currentItem.id
+    const next = path
+
+    const command = new HistoryCommand(prev, next)
+
+    const id = execute(command)
+    const data = JSONUtil.getByPath(json, id) as JSONObj['type']
+    setCurrentItem({ id, data })
+  }
 
   const goBackward = () => {
-    if (!backHistories.length) return
-
-    const prev = backHistories.pop() ?? ''
-    const prevItem = JSONUtil.getByPath(json, prev)
-
-    setBackHistories([...backHistories])
-    setForwardHistories((prev) => [...prev, currentItem.id])
-    setCurrentItem({
-      id: prev,
-      data: prevItem as Record<string, unknown>,
-    })
+    const id = undo()
+    if (id) {
+      const data = JSONUtil.getByPath(json, id) as JSONObj['type']
+      setCurrentItem({ id, data })
+    }
   }
 
   const goForward = () => {
-    if (!forwardHistories.length) return
-
-    const next = forwardHistories.pop() ?? ''
-    const nextItem = JSONUtil.getByPath(json, next)
-
-    setBackHistories((prev) => [...prev, currentItem.id])
-    setForwardHistories([...forwardHistories])
-    setCurrentItem({
-      id: next,
-      data: nextItem as Record<string, unknown>,
-    })
+    const id = redo()
+    if (id) {
+      const data = JSONUtil.getByPath(json, id) as JSONObj['type']
+      setCurrentItem({ id, data })
+    }
   }
 
   const goPrev = () => {
-    const parentPath = JSONUtil.getParentPath(currentItem.id)
-    const item = JSONUtil.getByPath(json, parentPath)
+    const prev = currentItem.id
+    const next = JSONUtil.getParentPath(prev)
 
-    setCurrentItem({
-      id: parentPath,
-      data: item as Record<string, unknown>,
-    })
-    setBackHistories((prev) => [...prev, currentItem.id])
-    setForwardHistories([])
+    const command = new HistoryCommand(prev, next)
+
+    const id = execute(command)
+    const data = JSONUtil.getByPath(json, id) as JSONObj['type']
+    setCurrentItem({ id, data })
   }
 
-  return { goBackward, goForward, goPrev }
+  return { goTo, goBackward, goForward, goPrev }
 }

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BUTTON } from '@/constants/button'
 import { useHistory } from '@/hooks/useHistory'
-import { useBackHistoryStore, useForwardHistoryStore } from '@/store/history'
+import { useHistoryCommandStore } from '@/store/history-command'
 import { useCurrentItemStore } from '@/store/item'
 import { useEffect, useState } from 'react'
 import {
@@ -26,10 +26,9 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   const { currentItem } = useCurrentItemStore()
 
-  const { backHistories } = useBackHistoryStore()
-  const { forwardHistories } = useForwardHistoryStore()
-
   const { goBackward, goForward, goPrev } = useHistory()
+
+  const { undoList, redoList } = useHistoryCommandStore()
 
   useEffect(() => {
     if (currentPath) setInputValue(currentPath)
@@ -40,14 +39,14 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       <div className="flex gap-2">
         <Button
           variant={'outline'}
-          disabled={!backHistories.length}
+          disabled={!undoList.length}
           onClick={goBackward}
         >
           <FaArrowLeft size={BUTTON.SIZE} />
         </Button>
         <Button
           variant={'outline'}
-          disabled={!forwardHistories.length}
+          disabled={!redoList.length}
           onClick={goForward}
         >
           <FaArrowRight size={BUTTON.SIZE} />
