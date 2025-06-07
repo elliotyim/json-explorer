@@ -21,6 +21,10 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
 import DragSelection from '../DragSelection'
 import GridCard from './GridCard'
+import {
+  useMainContainerStore,
+  useScrollContainerStore,
+} from '@/store/container'
 
 interface Props {
   items: Data[]
@@ -44,10 +48,12 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   ...props
 }) => {
   const outerContainerRef = useRef<HTMLDivElement>(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const { container, setContainer } = useMainContainerStore()
+  const { scrollContainer, setScrollContainer } = useScrollContainerStore()
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
-  const [isReady, setIsReady] = useState<boolean>(false)
+  const [isContainerReady, setIsContainerReady] = useState<boolean>(false)
   const [enabled, setEnabled] = useState<boolean>(false)
 
   const [isFocusDone, setIsFocusDone] = useState<boolean>(false)
@@ -67,9 +73,9 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   )
 
   const { focusedItemIdRef, onKeyDown, onKeyUp } = useKeyboardAction({
-    isReady,
-    containerRef: outerContainerRef,
-    scrollRef: scrollContainerRef,
+    isContainerReady,
+    container,
+    scrollContainer,
     containerWidth,
     onItemEnter,
   })
@@ -184,15 +190,13 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         <AutoSizer
           onResize={({ width }) => {
             setContainerWidth(width)
-
-            if (!scrollContainerRef.current) {
-              const id = requestAnimationFrame(() => {
-                scrollContainerRef.current = DOMUtil.getNthFirstChild(
-                  outerContainerRef.current,
-                  2,
-                ) as HTMLDivElement
-                setIsReady(true)
-                cancelAnimationFrame(id)
+            if (!container || !scrollContainer) {
+              const handle = requestAnimationFrame(() => {
+                const container = outerContainerRef.current
+                setContainer(container)
+                setScrollContainer(DOMUtil.getNthFirstChild(container, 2))
+                setIsContainerReady(true)
+                cancelAnimationFrame(handle)
               })
             }
           }}
@@ -212,9 +216,9 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         </AutoSizer>
 
         <DragSelection
-          containerRef={outerContainerRef}
-          scrollRef={scrollContainerRef}
-          isReady={isReady}
+          container={container}
+          scrollContainer={scrollContainer}
+          isContainerReady={isContainerReady}
           enabled={enabled}
           onSelectionStart={({ event: e, x, y, scrollX, scrollY }) => {
             const selectedPoint = new DOMRect(x + scrollX, y + scrollY, 0, 0)

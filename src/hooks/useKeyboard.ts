@@ -28,9 +28,9 @@ import { useAreaDraggingStore } from '@/store/dragging'
 
 interface Props {
   containerWidth: number
-  isReady: boolean
-  containerRef: React.RefObject<HTMLDivElement | null> | null
-  scrollRef?: React.RefObject<HTMLDivElement | null> | null
+  isContainerReady: boolean
+  container: HTMLElement | null
+  scrollContainer?: HTMLElement | null
   onItemEnter?: (itemId: string) => void
 }
 
@@ -42,9 +42,9 @@ interface ReturnProps {
 }
 
 export const useKeyboardAction = ({
-  isReady,
-  containerRef,
-  scrollRef,
+  isContainerReady,
+  container,
+  scrollContainer,
   containerWidth,
   onItemEnter,
 }: Props): ReturnProps => {
@@ -93,9 +93,7 @@ export const useKeyboardAction = ({
 
   const scrollIntoView = useCallback(
     (y: number, height: number) => {
-      if (!scrollRef?.current) return
-      const scrollContainer = scrollRef.current
-
+      if (!scrollContainer) return
       const handle = requestAnimationFrame(() => {
         const currentHeight = containerRect.height + scrollContainer.scrollTop
 
@@ -111,7 +109,7 @@ export const useKeyboardAction = ({
         cancelAnimationFrame(handle)
       })
     },
-    [containerRect.height, scrollRef],
+    [containerRect.height, scrollContainer],
   )
 
   const handleArrowKeys = (e: React.KeyboardEvent<HTMLDivElement>): number => {
@@ -220,7 +218,7 @@ export const useKeyboardAction = ({
       e.key === 'ArrowDown' ||
       e.key === 'ArrowLeft'
     ) {
-      if (!scrollRef?.current) return
+      if (!scrollContainer) return
 
       const selected =
         focusedItemIdRef.current != null ? [focusedItemIdRef.current] : []
@@ -311,9 +309,9 @@ export const useKeyboardAction = ({
   }
 
   useEffect(() => {
-    if (!containerRef?.current || !scrollRef?.current) return
-    setContainerRect(containerRef.current.getBoundingClientRect())
-  }, [containerRef, isReady, scrollRef])
+    if (!container || !scrollContainer) return
+    setContainerRect(container.getBoundingClientRect())
+  }, [container, isContainerReady, scrollContainer])
 
   useEffect(() => {
     const itemIds = Object.keys(selectedItemIds)
@@ -325,13 +323,12 @@ export const useKeyboardAction = ({
   }, [getItemIndex, isAreaDragging, selectedItemIds])
 
   useEffect(() => {
-    if (!focusedItemIdRef.current || !scrollRef?.current) return
+    if (!focusedItemIdRef.current || !scrollContainer) return
 
     const itemArea = itemAreas[focusedItemIdRef.current]
     if (!itemArea) return
 
     const { y, height } = itemArea
-    const scrollContainer = scrollRef.current
     const currentHeight = containerRect.height + scrollContainer.scrollTop
 
     if (
@@ -340,7 +337,7 @@ export const useKeyboardAction = ({
     ) {
       scrollIntoView(y, height)
     }
-  }, [itemIndex, itemAreas, containerRect, scrollRef, scrollIntoView])
+  }, [itemIndex, itemAreas, containerRect, scrollContainer, scrollIntoView])
 
   return { focusedItemIdRef, pushedKeysRef, onKeyDown, onKeyUp }
 }
