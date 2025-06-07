@@ -1,5 +1,15 @@
+import { CopyItemCommand } from '@/commands/CopyItemCommand'
+import { CutItemCommand } from '@/commands/CutItemCommand'
+import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
+import { PasteItemCommand } from '@/commands/PasteItemCommand'
 import { ITEM } from '@/constants/item'
 import { TAB } from '@/constants/tab'
+import { useCommandStore } from '@/store/command'
+import {
+  useMainContainerStore,
+  useScrollContainerStore,
+} from '@/store/container'
+import { useAreaDraggingStore } from '@/store/dragging'
 import {
   useCurrentItemStore,
   useDisplayItemsStore,
@@ -19,37 +29,33 @@ import {
   useState,
 } from 'react'
 import { useHistory } from './useHistory'
-import { useCommandStore } from '@/store/command'
-import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
-import { CopyItemCommand } from '@/commands/CopyItemCommand'
-import { PasteItemCommand } from '@/commands/PasteItemCommand'
-import { CutItemCommand } from '@/commands/CutItemCommand'
-import { useAreaDraggingStore } from '@/store/dragging'
 
 interface Props {
-  containerWidth: number
-  isContainerReady: boolean
-  container: HTMLElement | null
-  scrollContainer?: HTMLElement | null
   onItemEnter?: (itemId: string) => void
 }
 
 interface ReturnProps {
-  focusedItemIdRef: RefObject<string | null>
   pushedKeysRef: RefObject<Record<string, boolean>>
+  focusedItemRef: RefObject<string | null>
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
   onKeyUp: (e: React.KeyboardEvent<HTMLDivElement>) => void
+  undoAction: (e: React.KeyboardEvent<HTMLElement>) => Promise<void>
+  redoAction: (e: React.KeyboardEvent<HTMLElement>) => Promise<void>
+  selectAction: (e: React.KeyboardEvent<HTMLElement>) => void
+  selectAllAction: (e: React.KeyboardEvent<HTMLElement>) => void
+  cancelSelectionAtion: (e: React.KeyboardEvent<HTMLElement>) => void
+  enterAction: (e: React.KeyboardEvent<HTMLElement>) => void
+  goBackwardAction: (e: React.KeyboardEvent<HTMLElement>) => void
+  contextMenuAction: (e: React.KeyboardEvent<HTMLElement>) => void
+  copyItemAction: (e: React.KeyboardEvent<HTMLElement>) => Promise<void>
+  pastItemAction: (e: React.KeyboardEvent<HTMLElement>) => Promise<void>
+  cutItemAction: (e: React.KeyboardEvent<HTMLElement>) => Promise<void>
+  deleteItemAction: (e: React.KeyboardEvent<HTMLElement>) => Promise<void>
 }
 
-export const useKeyboardAction = ({
-  isContainerReady,
-  container,
-  scrollContainer,
-  containerWidth,
-  onItemEnter,
-}: Props): ReturnProps => {
-  const focusedItemIdRef = useRef<string>(null)
+export const useKeyboardAction = ({ onItemEnter }: Props): ReturnProps => {
   const pushedKeysRef = useRef<Record<string, boolean>>({})
+  const focusedItemRef = useRef<string | null>(null)
 
   const [itemIndex, setItemIndex] = useState<number>(-1)
   const [containerRect, setContainerRect] = useState<DOMRect>(new DOMRect())
@@ -63,6 +69,14 @@ export const useKeyboardAction = ({
   const { itemAreas } = useItemAreaStore()
   const { execute, redo, undo } = useCommandStore()
   const { isAreaDragging } = useAreaDraggingStore()
+
+  const { container } = useMainContainerStore()
+  const { scrollContainer } = useScrollContainerStore()
+
+  const ids = Object.keys(selectedItemIds)
+
+  const controlPressed = (e: React.KeyboardEvent<HTMLElement>) =>
+    e.ctrlKey || e.metaKey
 
   const getItemIndex = useCallback(
     (id: string): number => {
@@ -88,7 +102,7 @@ export const useKeyboardAction = ({
   const clearSelect = () => {
     setSelectedItemIds({})
     setItemIndex(-1)
-    focusedItemIdRef.current = null
+    focusedItemRef.current = null
   }
 
   const scrollIntoView = useCallback(
@@ -112,155 +126,85 @@ export const useKeyboardAction = ({
     [containerRect.height, scrollContainer],
   )
 
-  const handleArrowKeys = (e: React.KeyboardEvent<HTMLDivElement>): number => {
-    e.preventDefault()
-
-    const columnOffset = MathUtil.countColumn(containerWidth)
-
-    let nextIndex = itemIndex
-    let nextItemId = ''
-
-    const current = nextIndex % columnOffset
-    if (e.key === 'ArrowUp') {
-      nextIndex = Math.max(0, nextIndex - columnOffset)
-      nextItemId = displayItems[nextIndex].id
-    } else if (e.key === 'ArrowRight') {
-      const next = ((nextIndex + 1) % displayItems.length) % columnOffset
-      if (current < next) nextIndex += 1
-      nextItemId = displayItems[nextIndex].id
-    } else if (e.key === 'ArrowDown') {
-      nextIndex = Math.min(nextIndex + columnOffset, displayItems.length - 1)
-      nextItemId = displayItems[nextIndex].id
-    } else if (e.key === 'ArrowLeft') {
-      const next = Math.abs(nextIndex - 1) % columnOffset
-      if (current > next) nextIndex -= 1
-      nextItemId = displayItems[nextIndex].id
-    }
-
-    if (itemIndex === nextIndex) return nextIndex
-
-    if (nextIndex > -1 && nextItemId) {
-      startTransition(() => {
-        setItemIndex(nextIndex)
-        focusedItemIdRef.current = nextItemId
-      })
-    }
-    return nextIndex
-  }
-
-  const handleFunctionKeys = async (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'y' || e.key === 'Z') {
-      e.preventDefault()
-      const result = await redo()
-      if (result) setJson(result)
-      return
-    }
-
-    if (e.key === 'z') {
-      e.preventDefault()
-      const result = await undo()
-      if (result) setJson(result)
-      return
-    }
-
-    if (e.key === 'v' && sessionStorage.getItem('copyPaste')) {
-      const command = new PasteItemCommand(structuredClone(json), {
-        currentItemId: currentItem.id,
-      })
-      const result = await execute(command)
-      setJson(result)
-      return
-    }
-
-    const ids = Object.keys(selectedItemIds)
-    if (e.key === 'a') {
-      e.preventDefault()
-      if (ids.length !== displayItems.length) {
-        const allSelectedItems: Record<string, boolean> = {}
-        displayItems.forEach((item) => (allSelectedItems[item.id] = true))
-        setSelectedItemIds(allSelectedItems)
-      }
-      return
-    }
-
-    if (!ids.length) return
-
-    if (e.key === 'c') {
-      const command = new CopyItemCommand(structuredClone(json), { ids })
-      await execute(command)
-      return
-    }
-
-    if (e.key === 'x') {
-      const command = new CutItemCommand(structuredClone(json), { ids })
-      const result = await execute(command)
-      setJson(result)
-      clearSelect()
-      return
-    }
-
-    if (e.key === 'd') {
-      e.preventDefault()
-      const command = new DeleteItemCommand(structuredClone(json), { ids })
-      const result = await execute(command)
-      setJson(result)
-      clearSelect()
-      return
-    }
-  }
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!pushedKeysRef.current[e.key]) pushedKeysRef.current[e.key] = true
-
+  const arrowKeyAction = (e: React.KeyboardEvent<HTMLDivElement>): boolean => {
     if (
       e.key === 'ArrowUp' ||
       e.key === 'ArrowRight' ||
       e.key === 'ArrowDown' ||
       e.key === 'ArrowLeft'
     ) {
-      if (!scrollContainer) return
+      e.preventDefault()
+
+      if (!container || !scrollContainer) {
+        throw Error('Containers are not loaded!')
+      }
 
       const selected =
-        focusedItemIdRef.current != null ? [focusedItemIdRef.current] : []
-      const nextIndex = handleArrowKeys(e)
-      const nextItemId = displayItems[nextIndex].id
+        focusedItemRef.current != null ? [focusedItemRef.current] : []
+
+      const containerWidth = container.getBoundingClientRect().width
+      const columnOffset = MathUtil.countColumn(containerWidth)
+
+      let nextIndex = itemIndex
+      let nextItemId = ''
+
+      const current = nextIndex % columnOffset
+      if (e.key === 'ArrowUp') {
+        nextIndex = Math.max(0, nextIndex - columnOffset)
+      } else if (e.key === 'ArrowRight') {
+        const next = ((nextIndex + 1) % displayItems.length) % columnOffset
+        if (current < next) nextIndex += 1
+      } else if (e.key === 'ArrowDown') {
+        nextIndex = Math.min(nextIndex + columnOffset, displayItems.length - 1)
+      } else if (e.key === 'ArrowLeft') {
+        const next = Math.abs(nextIndex - 1) % columnOffset
+        if (current > next) nextIndex -= 1
+      }
+
+      nextItemId = displayItems[nextIndex].id
+
+      if (nextIndex > -1 && nextItemId) {
+        startTransition(() => {
+          setItemIndex(nextIndex)
+          focusedItemRef.current = nextItemId
+        })
+      }
+
       selected.push(nextItemId)
 
       if (e.shiftKey) select(selected, true)
-
-      return
+      return true
     }
+    return false
+  }
 
-    if (e.key === 'Enter') {
-      if (focusedItemIdRef.current) {
-        const type = JSONUtil.getItemType(json, focusedItemIdRef.current)
-        if (type === 'value') {
-          setSelectedItemIds({ [focusedItemIdRef.current]: true })
-          setRightNavTab(TAB.PROPERTIES)
-        } else if (onItemEnter) {
-          onItemEnter(focusedItemIdRef.current)
-          clearSelect()
-        }
-      }
-      return
-    }
-
-    if (e.key === 'Escape') {
+  const undoAction = async (e: React.KeyboardEvent<HTMLElement>) => {
+    if (controlPressed(e) && e.key === 'z') {
       e.preventDefault()
-      setSelectedItemIds({})
-      return
+      const result = await undo()
+      if (result) setJson(result)
     }
+  }
 
-    if (e.key === ' ' && focusedItemIdRef.current) {
+  const redoAction = async (e: React.KeyboardEvent<HTMLElement>) => {
+    if (controlPressed(e) && (e.key === 'y' || e.key === 'Z')) {
       e.preventDefault()
-      const selected = [focusedItemIdRef.current]
+      const result = await redo()
+      if (result) setJson(result)
+    }
+  }
+
+  const selectAction = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === ' ' && focusedItemRef.current != null) {
+      e.preventDefault()
+      const selected = [focusedItemRef.current]
       let multi = false
 
       if (e.ctrlKey || e.metaKey) {
-        if (selectedItemIds[focusedItemIdRef.current]) {
+        if (selectedItemIds[focusedItemRef.current]) {
           selected.pop()
           const newSelectedItemIds = structuredClone(selectedItemIds)
-          delete newSelectedItemIds[focusedItemIdRef.current]
+          delete newSelectedItemIds[focusedItemRef.current]
           selected.push(...Object.keys(newSelectedItemIds))
         } else {
           multi = true
@@ -268,40 +212,131 @@ export const useKeyboardAction = ({
       }
 
       select([...selected], multi)
-      return
     }
+  }
 
+  const selectAllAction = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (controlPressed(e) && e.key === 'a') {
+      e.preventDefault()
+      e.stopPropagation()
+      const ids = Object.keys(selectedItemIds)
+      if (ids.length !== displayItems.length) {
+        const allSelectedItems: Record<string, boolean> = {}
+        displayItems.forEach((item) => (allSelectedItems[item.id] = true))
+        setSelectedItemIds(allSelectedItems)
+      }
+    }
+  }
+
+  const cancelSelectionAtion = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      setSelectedItemIds({})
+
+      if (
+        document.activeElement?.getAttribute('tabindex') === '-1' &&
+        document.activeElement !== container
+      ) {
+        ;(document.activeElement as HTMLElement).blur()
+      }
+    }
+  }
+
+  const enterAction = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === 'Enter') {
+      if (focusedItemRef.current != null) {
+        const type = JSONUtil.getItemType(json, focusedItemRef.current)
+        if (type === 'value') {
+          setSelectedItemIds({ [focusedItemRef.current]: true })
+          setRightNavTab(TAB.PROPERTIES)
+        } else if (onItemEnter) {
+          onItemEnter(focusedItemRef.current)
+          clearSelect()
+        }
+      }
+    }
+  }
+
+  const goBackwardAction = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === 'Backspace') {
       goBackward()
       clearSelect()
-      return
     }
+  }
 
-    if (e.key === 'Delete') {
-      e.preventDefault()
-      const result = JSONUtil.deleteItems(json, Object.keys(selectedItemIds))
-      setJson(result)
-      clearSelect()
-      return
-    }
-
+  const contextMenuAction = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === 'ContextMenu') {
       if (
-        focusedItemIdRef.current &&
-        !selectedItemIds[focusedItemIdRef.current]
+        focusedItemRef.current != null &&
+        !selectedItemIds[focusedItemRef.current]
       ) {
         setSelectedItemIds((prev) => ({
           ...prev,
-          [focusedItemIdRef.current!]: true,
+          [focusedItemRef.current!]: true,
         }))
-        return
       }
     }
+  }
 
-    if (e.ctrlKey || e.metaKey) {
-      handleFunctionKeys(e)
-      return
+  const copyItemAction = async (e: React.KeyboardEvent<HTMLElement>) => {
+    if (controlPressed(e) && e.key === 'c' && ids.length) {
+      const command = new CopyItemCommand(structuredClone(json), { ids })
+      await execute(command)
     }
+  }
+
+  const cutItemAction = async (e: React.KeyboardEvent<HTMLElement>) => {
+    if (controlPressed(e) && e.key === 'x' && ids.length) {
+      const command = new CutItemCommand(structuredClone(json), { ids })
+      const result = await execute(command)
+      setJson(result)
+      clearSelect()
+    }
+  }
+
+  const pastItemAction = async (e: React.KeyboardEvent<HTMLElement>) => {
+    const itemInClipboard = sessionStorage.getItem('copyPaste')
+    if (controlPressed(e) && e.key === 'v' && itemInClipboard) {
+      const command = new PasteItemCommand(structuredClone(json), {
+        currentItemId: currentItem.id,
+      })
+      const result = await execute(command)
+      setJson(result)
+    }
+  }
+
+  const deleteItemAction = async (e: React.KeyboardEvent<HTMLElement>) => {
+    if (
+      ((controlPressed(e) && e.key === 'd') || e.key === 'Delete') &&
+      ids.length
+    ) {
+      e.preventDefault()
+      const command = new DeleteItemCommand(structuredClone(json), { ids })
+      const result = await execute(command)
+      setJson(result)
+      clearSelect()
+    }
+  }
+
+  const onKeyDown = async (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!pushedKeysRef.current[e.key]) pushedKeysRef.current[e.key] = true
+
+    const moved = arrowKeyAction(e)
+    if (moved) return
+
+    await undoAction(e)
+    await redoAction(e)
+    selectAction(e)
+    selectAllAction(e)
+    cancelSelectionAtion(e)
+    enterAction(e)
+    goBackwardAction(e)
+    contextMenuAction(e)
+    await copyItemAction(e)
+    await pastItemAction(e)
+    await cutItemAction(e)
+    await deleteItemAction(e)
   }
 
   const onKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -311,21 +346,21 @@ export const useKeyboardAction = ({
   useEffect(() => {
     if (!container || !scrollContainer) return
     setContainerRect(container.getBoundingClientRect())
-  }, [container, isContainerReady, scrollContainer])
+  }, [container, scrollContainer])
 
   useEffect(() => {
     const itemIds = Object.keys(selectedItemIds)
     if (itemIds.length === 1 && !isAreaDragging) {
       const id = itemIds[0]
-      focusedItemIdRef.current = id
+      focusedItemRef.current = id
       setItemIndex(getItemIndex(id))
     }
   }, [getItemIndex, isAreaDragging, selectedItemIds])
 
   useEffect(() => {
-    if (!focusedItemIdRef.current || !scrollContainer) return
+    if (focusedItemRef.current == null || !scrollContainer) return
 
-    const itemArea = itemAreas[focusedItemIdRef.current]
+    const itemArea = itemAreas[focusedItemRef.current]
     if (!itemArea) return
 
     const { y, height } = itemArea
@@ -339,5 +374,22 @@ export const useKeyboardAction = ({
     }
   }, [itemIndex, itemAreas, containerRect, scrollContainer, scrollIntoView])
 
-  return { focusedItemIdRef, pushedKeysRef, onKeyDown, onKeyUp }
+  return {
+    pushedKeysRef,
+    focusedItemRef,
+    onKeyDown,
+    onKeyUp,
+    undoAction,
+    redoAction,
+    selectAction,
+    selectAllAction,
+    cancelSelectionAtion,
+    enterAction,
+    goBackwardAction,
+    contextMenuAction,
+    copyItemAction,
+    pastItemAction,
+    cutItemAction,
+    deleteItemAction,
+  }
 }

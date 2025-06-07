@@ -18,6 +18,7 @@ import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 import { TreeApi } from 'react-arborist'
+import { useKeyboardAction } from '@/hooks/useKeyboard'
 
 const Layout = () => {
   const treeRef = useRef<TreeApi<Data>>(null)
@@ -89,13 +90,40 @@ const Layout = () => {
     paths.forEach((path) => treeRef.current?.open(path))
   }
 
+  const {
+    onKeyUp,
+    undoAction,
+    redoAction,
+    selectAllAction,
+    cancelSelectionAtion,
+    copyItemAction,
+    pastItemAction,
+    cutItemAction,
+    deleteItemAction,
+  } = useKeyboardAction({
+    onItemEnter: enterFolder,
+  })
+
   useEffect(() => {
     if (!currentItem.id) setCurrentItem({ id: 'root', data: json })
   }, [currentItem.id, json, setCurrentItem])
 
   return (
     <div className="flex h-screen w-full">
-      <div className="m-20 flex w-full flex-col rounded-xl border border-slate-300">
+      <div
+        className="m-20 flex w-full flex-col rounded-xl border border-slate-300"
+        onKeyDown={async (e) => {
+          await undoAction(e)
+          await redoAction(e)
+          selectAllAction(e)
+          cancelSelectionAtion(e)
+          await copyItemAction(e)
+          await pastItemAction(e)
+          await cutItemAction(e)
+          await deleteItemAction(e)
+        }}
+        onKeyUp={onKeyUp}
+      >
         <TopNavigationBar className="rounded-t-xl bg-slate-100 px-4 py-1" />
         <AddressBar
           className="flex items-center gap-4 border-b-2 px-4 py-2"

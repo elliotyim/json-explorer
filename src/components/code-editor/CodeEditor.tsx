@@ -35,8 +35,11 @@ const CodeEditor: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   return (
     <div {...props}>
-      <div className="flex h-full flex-col gap-2">
-        <Card className="h-full overflow-auto p-0">
+      <div className="flex h-full flex-col gap-2 pb-1">
+        <Card
+          className="h-full overflow-auto p-0"
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <Editor
             height="100%"
             value={code}

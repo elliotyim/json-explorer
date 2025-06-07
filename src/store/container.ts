@@ -1,5 +1,20 @@
 import { create } from 'zustand'
 
+interface ContainerState {
+  isContainerReady: boolean
+  setIsContainerReady: (updater: boolean | ((prev: boolean) => boolean)) => void
+}
+
+export const useContainerStore = create<ContainerState>((set) => ({
+  isContainerReady: false,
+  setIsContainerReady: (updater) =>
+    set((prev) =>
+      typeof updater === 'function'
+        ? { isContainerReady: updater(prev.isContainerReady) }
+        : { isContainerReady: updater },
+    ),
+}))
+
 interface MainContainerState {
   container: HTMLElement | null
   setContainer: (

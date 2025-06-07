@@ -1,7 +1,11 @@
 import { ITEM } from '@/constants/item'
 import { MOUSE_CLICK } from '@/constants/mouse'
 import { TAB } from '@/constants/tab'
-import { useKeyboardAction } from '@/hooks/useKeyboard'
+import {
+  useContainerStore,
+  useMainContainerStore,
+  useScrollContainerStore,
+} from '@/store/container'
 import { useContextMenuOpenStore } from '@/store/contextmenu'
 import {
   useDraggingItemStore,
@@ -21,10 +25,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
 import DragSelection from '../DragSelection'
 import GridCard from './GridCard'
-import {
-  useMainContainerStore,
-  useScrollContainerStore,
-} from '@/store/container'
+import { useKeyboardAction } from '@/hooks/useKeyboard'
 
 interface Props {
   items: Data[]
@@ -49,11 +50,11 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 }) => {
   const outerContainerRef = useRef<HTMLDivElement>(null)
 
+  const { isContainerReady, setIsContainerReady } = useContainerStore()
   const { container, setContainer } = useMainContainerStore()
   const { scrollContainer, setScrollContainer } = useScrollContainerStore()
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
-  const [isContainerReady, setIsContainerReady] = useState<boolean>(false)
   const [enabled, setEnabled] = useState<boolean>(false)
 
   const [isFocusDone, setIsFocusDone] = useState<boolean>(false)
@@ -72,11 +73,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     {},
   )
 
-  const { focusedItemIdRef, onKeyDown, onKeyUp } = useKeyboardAction({
-    isContainerReady,
-    container,
-    scrollContainer,
-    containerWidth,
+  const { onKeyDown, onKeyUp, focusedItemRef } = useKeyboardAction({
     onItemEnter,
   })
 
@@ -129,7 +126,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         selectedItemIds={selectedItemIds}
         extraItemIds={extraItemIds}
         draggingItems={draggingItems}
-        focusedItemIdRef={focusedItemIdRef}
+        focusedItemRef={focusedItemRef}
         style={style}
         onDropEnd={() => setDraggingItems({})}
         onItemMove={handleItemMove}
@@ -190,15 +187,13 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         <AutoSizer
           onResize={({ width }) => {
             setContainerWidth(width)
-            if (!container || !scrollContainer) {
-              const handle = requestAnimationFrame(() => {
-                const container = outerContainerRef.current
-                setContainer(container)
-                setScrollContainer(DOMUtil.getNthFirstChild(container, 2))
-                setIsContainerReady(true)
-                cancelAnimationFrame(handle)
-              })
-            }
+            const handle = requestAnimationFrame(() => {
+              const container = outerContainerRef.current
+              setContainer(container)
+              setScrollContainer(DOMUtil.getNthFirstChild(container, 2))
+              setIsContainerReady(true)
+              cancelAnimationFrame(handle)
+            })
           }}
         >
           {({ height, width }) => (

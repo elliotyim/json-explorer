@@ -29,8 +29,8 @@ interface Props {
   index: number
   selectedItemIds: Record<string, boolean>
   extraItemIds: Record<string, boolean>
-  focusedItemIdRef: RefObject<string | null>
   draggingItems: Record<string, boolean>
+  focusedItemRef: RefObject<string | null>
   style: React.CSSProperties
   onDropEnd?: () => void
   onItemRelocation?: (targetIndex: number) => void
@@ -52,8 +52,8 @@ const GridCard = React.memo(
         onItemMove,
         selectedItemIds,
         extraItemIds,
-        focusedItemIdRef,
         draggingItems,
+        focusedItemRef,
         style,
         ...props
       },
@@ -246,11 +246,11 @@ const GridCard = React.memo(
             height: ITEM.SIZE + ITEM.GAP_SIZE * 2,
             padding: `${ITEM.GAP_SIZE}px`,
             background:
-              focusedItemIdRef.current == item.id
+              focusedItemRef.current == item.id
                 ? 'var(--color-blue-200)'
                 : undefined,
             borderRadius:
-              focusedItemIdRef.current == item.id
+              focusedItemRef.current == item.id
                 ? 'calc(var(--radius)'
                 : undefined,
           }}

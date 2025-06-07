@@ -22,10 +22,14 @@ const TreeSearchInput = () => {
   }, [isSearchTriggered, setIsSearchTriggered])
 
   return (
-    <div className="flex w-full items-center gap-2 border-b-2 border-slate-200 px-3 py-2">
+    <div
+      className="flex w-full items-center gap-2 border-b-2 border-slate-200 px-3 py-2"
+      tabIndex={-1}
+    >
       <FaMagnifyingGlass size={20} className="flex-shrink-0" />
       <Input
         ref={inputRef}
+        onKeyDown={(e) => e.stopPropagation()}
         onChange={(e) => debouncedValueChange(e.target.value)}
       />
     </div>

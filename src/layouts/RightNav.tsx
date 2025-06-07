@@ -17,13 +17,13 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { rightNavTab, setRightNavTab } = useRightNavTabStore()
 
   return (
-    <div {...props}>
+    <div {...props} tabIndex={-1}>
       <Tabs
         className="h-full p-2"
         value={rightNavTab ?? TAB.JSON}
         onValueChange={(val) => setRightNavTab(val)}
       >
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2 select-none">
           <TabsTrigger value={TAB.JSON} className="cursor-pointer">
             JSON
           </TabsTrigger>

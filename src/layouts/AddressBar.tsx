@@ -35,7 +35,7 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   }, [currentPath])
 
   return (
-    <div {...props}>
+    <div {...props} tabIndex={-1}>
       <div className="flex gap-2">
         <Button
           variant={'outline'}
@@ -64,6 +64,7 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => {
+            e.stopPropagation()
             if (!inputValue || !onInputSubmit) return
             if (e.key === 'Enter') onInputSubmit(inputValue)
           }}

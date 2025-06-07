@@ -103,6 +103,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
             ref={inputRef}
             value={itemKey}
             onKeyDown={(e) => {
+              e.stopPropagation()
               if (e.key === 'Enter') handleSubmit()
             }}
             onChange={(e) => setItemKey(e.target.value)}
@@ -149,7 +150,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
         <CardDescription>{renderDescription()}</CardDescription>
       </CardHeader>
       <CardContent className="h-full overflow-auto">
-        <div className="flex h-full flex-col gap-2">
+        <div className="flex h-full flex-col gap-2 pb-1">
           <CodeEditor
             readOnly={!isItemEditing}
             className="h-full overflow-auto"
