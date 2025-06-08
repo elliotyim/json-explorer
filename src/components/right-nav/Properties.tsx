@@ -1,4 +1,4 @@
-import { ModifyItemCommand } from '@/commands/ModifyItemCommand'
+import { ModifyItemCommand } from '@/commands/item/ModifyItemCommand'
 import CodeEditor from '@/components/code-editor/CodeEditor'
 import { TypeIcon } from '@/components/dnd-tree/TypeIcon'
 import { Button } from '@/components/ui/button'

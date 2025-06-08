@@ -1,6 +1,8 @@
 import { ITEM } from '@/constants/item'
 import { MOUSE_CLICK } from '@/constants/mouse'
 import { TAB } from '@/constants/tab'
+import { useItemAction } from '@/hooks/useItemAction'
+import { useKeyboardAction } from '@/hooks/useKeyboardAction'
 import {
   useContainerStore,
   useMainContainerStore,
@@ -25,7 +27,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
 import DragSelection from '../DragSelection'
 import GridCard from './GridCard'
-import { useKeyboardAction } from '@/hooks/useKeyboard'
 
 interface Props {
   items: Data[]
@@ -37,7 +38,6 @@ interface Props {
     selectedNodes: Data[],
     targetIndex?: number,
   ) => void
-  onItemEnter?: (itemId: string) => void
 }
 
 const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
@@ -45,7 +45,6 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   currentItemId,
   onItemRelocation,
   onItemMove,
-  onItemEnter,
   ...props
 }) => {
   const outerContainerRef = useRef<HTMLDivElement>(null)
@@ -73,9 +72,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     {},
   )
 
-  const { onKeyDown, onKeyUp, focusedItemRef } = useKeyboardAction({
-    onItemEnter,
-  })
+  const { onKeyDown, onKeyUp, focusedItemRef } = useKeyboardAction()
+  const { enterItem } = useItemAction()
 
   const handleItemRelocation = (targetIndex: number) => {
     if (onItemRelocation) {
@@ -172,10 +170,10 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           const clickCount = e.detail
           if (clickCount === 2) {
             const itemIds = Object.keys(selectedItemIds)
-            if (itemIds.length === 1 && onItemEnter) {
+            if (itemIds.length === 1) {
               const item = JSONUtil.inspect({ obj: json, path: itemIds[0] })
               if (item.type === 'value') setRightNavTab(TAB.PROPERTIES)
-              else onItemEnter(itemIds[0])
+              else enterItem(itemIds[0])
             }
           }
         }}

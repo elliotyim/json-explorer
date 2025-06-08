@@ -1,8 +1,8 @@
-import { CopyItemCommand } from '@/commands/CopyItemCommand'
-import { CreateItemCommand } from '@/commands/CreateItemCommand'
-import { CutItemCommand } from '@/commands/CutItemCommand'
-import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
-import { PasteItemCommand } from '@/commands/PasteItemCommand'
+import { CopyItemCommand } from '@/commands/item/CopyItemCommand'
+import { CreateItemCommand } from '@/commands/item/CreateItemCommand'
+import { CutItemCommand } from '@/commands/item/CutItemCommand'
+import { DeleteItemCommand } from '@/commands/item/DeleteItemCommand'
+import { PasteItemCommand } from '@/commands/item/PasteItemCommand'
 import {
   ContextMenu,
   ContextMenuContent,

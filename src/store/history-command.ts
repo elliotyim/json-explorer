@@ -1,4 +1,4 @@
-import { HistoryCommand } from '@/commands/HistoryCommand'
+import { HistoryCommand } from '@/commands/history/HistoryCommand'
 import { create } from 'zustand'
 
 interface HistoryCommandStore {

@@ -1,7 +1,7 @@
-import { CopyItemCommand } from '@/commands/CopyItemCommand'
-import { CutItemCommand } from '@/commands/CutItemCommand'
-import { DeleteItemCommand } from '@/commands/DeleteItemCommand'
-import { PasteItemCommand } from '@/commands/PasteItemCommand'
+import { CopyItemCommand } from '@/commands/item/CopyItemCommand'
+import { CutItemCommand } from '@/commands/item/CutItemCommand'
+import { DeleteItemCommand } from '@/commands/item/DeleteItemCommand'
+import { PasteItemCommand } from '@/commands/item/PasteItemCommand'
 import { ITEM } from '@/constants/item'
 import { TAB } from '@/constants/tab'
 import { useCommandStore } from '@/store/command'
@@ -28,11 +28,8 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useItemAction } from './useItemAction'
 import { useHistory } from './useHistory'
-
-interface Props {
-  onItemEnter?: (itemId: string) => void
-}
 
 interface ReturnProps {
   pushedKeysRef: RefObject<Record<string, boolean>>
@@ -53,7 +50,7 @@ interface ReturnProps {
   deleteItemAction: (e: React.KeyboardEvent<HTMLElement>) => Promise<void>
 }
 
-export const useKeyboardAction = ({ onItemEnter }: Props): ReturnProps => {
+export const useKeyboardAction = (): ReturnProps => {
   const pushedKeysRef = useRef<Record<string, boolean>>({})
   const focusedItemRef = useRef<string | null>(null)
 
@@ -69,14 +66,14 @@ export const useKeyboardAction = ({ onItemEnter }: Props): ReturnProps => {
   const { itemAreas } = useItemAreaStore()
   const { execute, redo, undo } = useCommandStore()
   const { isAreaDragging } = useAreaDraggingStore()
+  const { enterItem } = useItemAction()
 
   const { container } = useMainContainerStore()
   const { scrollContainer } = useScrollContainerStore()
 
   const ids = Object.keys(selectedItemIds)
 
-  const controlPressed = (e: React.KeyboardEvent<HTMLElement>) =>
-    e.ctrlKey || e.metaKey
+  const controlPressed = (e: React.KeyboardEvent) => e.ctrlKey || e.metaKey
 
   const getItemIndex = useCallback(
     (id: string): number => {
@@ -250,8 +247,8 @@ export const useKeyboardAction = ({ onItemEnter }: Props): ReturnProps => {
         if (type === 'value') {
           setSelectedItemIds({ [focusedItemRef.current]: true })
           setRightNavTab(TAB.PROPERTIES)
-        } else if (onItemEnter) {
-          onItemEnter(focusedItemRef.current)
+        } else {
+          enterItem(focusedItemRef.current)
           clearSelect()
         }
       }
