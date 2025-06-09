@@ -48,6 +48,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   ...props
 }) => {
   const outerContainerRef = useRef<HTMLDivElement>(null)
+  const shiftIndex = useRef<number | null>(null)
 
   const { isContainerReady, setIsContainerReady } = useContainerStore()
   const { container, setContainer } = useMainContainerStore()
@@ -72,7 +73,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     {},
   )
 
-  const { onKeyDown, onKeyUp, focusedItemRef } = useKeyboardAction()
+  const { focusedItemRef, onKeyDown, onKeyUp } = useKeyboardAction()
   const { enterItem } = useItemAction()
 
   const handleItemRelocation = (targetIndex: number) => {
@@ -222,6 +223,26 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
               if (e.ctrlKey || e.metaKey) {
                 setExtraItemIds((prev) => ({ ...prev, ...newItem }))
               } else {
+                if (e.shiftKey) {
+                  if (shiftIndex.current == null) {
+                    const indexes: number[] = []
+                    items.forEach((item, index) => {
+                      if (selectedItemIds[item.id]) indexes.push(index)
+                    })
+                    indexes.sort()
+                    if (indexes.length) shiftIndex.current = indexes[0]
+                  }
+                  if (shiftIndex.current != null) {
+                    const id = Object.keys(newItem)[0]
+                    const nextIndex = items.findIndex((item) => item.id == id)
+                    const start = Math.min(shiftIndex.current, nextIndex)
+                    const end = Math.max(shiftIndex.current, nextIndex)
+                    const extraIds = items
+                      .slice(start, end + 1)
+                      .map((node) => node.id)
+                    extraIds.forEach((id) => (newItem[id] = true))
+                  }
+                }
                 if (Object.keys(selectedItemIds).length > 1) {
                   setDraggingItems(structuredClone(selectedItemIds))
                 }
@@ -231,16 +252,18 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
             return anyItemClicked
           }}
-          onSelectionChange={({ event, selectionArea }) => {
+          onSelectionChange={({ event: e, selectionArea }) => {
             const newItem = DOMUtil.getItems(selectionArea, itemAreas)
             const handle = requestAnimationFrame(() => {
-              if (event.ctrlKey || event.metaKey) setExtraItemIds(newItem)
+              if (e.ctrlKey || e.metaKey) setExtraItemIds(newItem)
               else setSelectedItemIds(newItem)
               cancelAnimationFrame(handle)
             })
           }}
-          onSelectionEnd={({ event, selectionArea }) => {
-            const point = new DOMRect(event.x, event.y, 0, 0)
+          onSelectionEnd={({ event: e, selectionArea }) => {
+            if (!e.shiftKey) shiftIndex.current = null
+
+            const point = new DOMRect(e.x, e.y, 0, 0)
             const containerRect =
               outerContainerRef.current?.getBoundingClientRect()
             if (!containerRect) return
@@ -251,7 +274,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             const newItem = DOMUtil.getItems(selectionArea, itemAreas)
 
             const handle = requestAnimationFrame(() => {
-              if (event.button === MOUSE_CLICK.RIGHT) {
+              if (e.button === MOUSE_CLICK.RIGHT) {
                 setSelectedItemIds((prev) => ({ ...prev, ...newItem }))
                 return
               }
@@ -265,10 +288,10 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
                 selectionArea.width == 0 && selectionArea.height == 0
 
               if (isClick) {
-                if (draggingItemId == null) {
+                if (draggingItemId == null && !e.shiftKey) {
                   const itemId = Object.keys(newItem)[0]
                   if (selectedItemIds[itemId]) {
-                    if (event.ctrlKey) {
+                    if (e.ctrlKey) {
                       delete extraItemIds[itemId]
                       delete selectedItemIds[itemId]
                       setExtraItemIds({ ...extraItemIds })
@@ -277,12 +300,12 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
                       setExtraItemIds({})
                       setSelectedItemIds(newItem)
                     }
-                  } else if (!event.ctrlKey && !isContextOpen) {
+                  } else if (!e.ctrlKey && !isContextOpen) {
                     setExtraItemIds({})
                     setSelectedItemIds(newItem)
                   }
                 }
-              } else if (!event.ctrlKey && !isContextOpen) {
+              } else if (!e.ctrlKey && !isContextOpen) {
                 setExtraItemIds({})
                 setSelectedItemIds(newItem)
               }
