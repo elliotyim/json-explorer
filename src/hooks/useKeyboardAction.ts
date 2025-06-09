@@ -28,8 +28,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useItemAction } from './useItemAction'
 import { useHistory } from './useHistory'
+import { useItemAction } from './useItemAction'
 
 interface ReturnProps {
   pushedKeysRef: RefObject<Record<string, boolean>>
@@ -53,6 +53,7 @@ interface ReturnProps {
 export const useKeyboardAction = (): ReturnProps => {
   const pushedKeysRef = useRef<Record<string, boolean>>({})
   const focusedItemRef = useRef<string | null>(null)
+  const shiftIndex = useRef<number | null>(null)
 
   const [itemIndex, setItemIndex] = useState<number>(-1)
   const [containerRect, setContainerRect] = useState<DOMRect>(new DOMRect())
@@ -136,8 +137,9 @@ export const useKeyboardAction = (): ReturnProps => {
         throw Error('Containers are not loaded!')
       }
 
-      const selected =
-        focusedItemRef.current != null ? [focusedItemRef.current] : []
+      if (e.shiftKey && shiftIndex.current == null) {
+        shiftIndex.current = itemIndex
+      }
 
       const containerWidth = container.getBoundingClientRect().width
       const columnOffset = MathUtil.countColumn(containerWidth)
@@ -167,9 +169,12 @@ export const useKeyboardAction = (): ReturnProps => {
         })
       }
 
-      selected.push(nextItemId)
-
-      if (e.shiftKey) select(selected, true)
+      if (e.shiftKey && shiftIndex.current != null) {
+        const start = Math.min(shiftIndex.current, nextIndex)
+        const end = Math.max(shiftIndex.current, nextIndex)
+        const items = displayItems.slice(start, end + 1).map((node) => node.id)
+        select(items)
+      }
       return true
     }
     return false
@@ -338,6 +343,7 @@ export const useKeyboardAction = (): ReturnProps => {
 
   const onKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
     delete pushedKeysRef.current[e.key]
+    if (!e.shiftKey) shiftIndex.current = null
   }
 
   useEffect(() => {
@@ -347,7 +353,7 @@ export const useKeyboardAction = (): ReturnProps => {
 
   useEffect(() => {
     const itemIds = Object.keys(selectedItemIds)
-    if (itemIds.length === 1 && !isAreaDragging) {
+    if (itemIds.length === 1 && !isAreaDragging && shiftIndex.current == null) {
       const id = itemIds[0]
       focusedItemRef.current = id
       setItemIndex(getItemIndex(id))
