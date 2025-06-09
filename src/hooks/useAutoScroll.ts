@@ -2,20 +2,20 @@ import { DOMVector } from '@/utils/dom'
 import { useEffect } from 'react'
 
 interface Props {
-  containerRef: React.RefObject<HTMLDivElement | null> | null
-  scrollRef: React.RefObject<HTMLDivElement | null> | null
+  container: HTMLElement | null
+  scrollContainer: HTMLElement | null
   dragVector: DOMVector | null
-  isDragging: boolean
+  isAreaDragging: boolean
 }
 
 export const useAutoScroll = ({
-  containerRef,
-  scrollRef,
+  container,
+  scrollContainer,
   dragVector,
-  isDragging,
+  isAreaDragging,
 }: Props) => {
   useEffect(() => {
-    if (!isDragging) return
+    if (!isAreaDragging) return
 
     let handle = requestAnimationFrame(scrollTheLad)
 
@@ -26,10 +26,10 @@ export const useAutoScroll = ({
     }
 
     function scrollTheLad() {
-      if (!containerRef?.current || !scrollRef?.current || !dragVector) return
+      if (!container || !scrollContainer || !dragVector) return
 
       const currentPointer = dragVector.toTerminalPoint()
-      const containerRect = containerRef.current.getBoundingClientRect()
+      const containerRect = container.getBoundingClientRect()
 
       const offset = 100
 
@@ -50,9 +50,9 @@ export const useAutoScroll = ({
         return
       }
 
-      scrollRef?.current?.scrollBy({ top })
+      scrollContainer?.scrollBy({ top })
 
       handle = requestAnimationFrame(scrollTheLad)
     }
-  }, [containerRef, dragVector, isDragging, scrollRef])
+  }, [container, dragVector, isAreaDragging, scrollContainer])
 }

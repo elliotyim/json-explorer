@@ -1,4 +1,4 @@
-import { HistoryCommand } from '@/commands/HistoryCommand'
+import { HistoryCommand } from '@/commands/history/HistoryCommand'
 import { useHistoryCommandStore } from '@/store/history-command'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'

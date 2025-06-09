@@ -1,7 +1,13 @@
 import { ITEM } from '@/constants/item'
 import { MOUSE_CLICK } from '@/constants/mouse'
 import { TAB } from '@/constants/tab'
-import { useKeyboardAction } from '@/hooks/useKeyboard'
+import { useItemAction } from '@/hooks/useItemAction'
+import { useKeyboardAction } from '@/hooks/useKeyboardAction'
+import {
+  useContainerStore,
+  useMainContainerStore,
+  useScrollContainerStore,
+} from '@/store/container'
 import { useContextMenuOpenStore } from '@/store/contextmenu'
 import {
   useDraggingItemStore,
@@ -32,7 +38,6 @@ interface Props {
     selectedNodes: Data[],
     targetIndex?: number,
   ) => void
-  onItemEnter?: (itemId: string) => void
 }
 
 const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
@@ -40,14 +45,15 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   currentItemId,
   onItemRelocation,
   onItemMove,
-  onItemEnter,
   ...props
 }) => {
   const outerContainerRef = useRef<HTMLDivElement>(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const { isContainerReady, setIsContainerReady } = useContainerStore()
+  const { container, setContainer } = useMainContainerStore()
+  const { scrollContainer, setScrollContainer } = useScrollContainerStore()
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
-  const [isReady, setIsReady] = useState<boolean>(false)
   const [enabled, setEnabled] = useState<boolean>(false)
 
   const [isFocusDone, setIsFocusDone] = useState<boolean>(false)
@@ -66,13 +72,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     {},
   )
 
-  const { focusedItemIdRef, onKeyDown, onKeyUp } = useKeyboardAction({
-    isReady,
-    containerRef: outerContainerRef,
-    scrollRef: scrollContainerRef,
-    containerWidth,
-    onItemEnter,
-  })
+  const { onKeyDown, onKeyUp, focusedItemRef } = useKeyboardAction()
+  const { enterItem } = useItemAction()
 
   const handleItemRelocation = (targetIndex: number) => {
     if (onItemRelocation) {
@@ -123,7 +124,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         selectedItemIds={selectedItemIds}
         extraItemIds={extraItemIds}
         draggingItems={draggingItems}
-        focusedItemIdRef={focusedItemIdRef}
+        focusedItemRef={focusedItemRef}
         style={style}
         onDropEnd={() => setDraggingItems({})}
         onItemMove={handleItemMove}
@@ -169,10 +170,10 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           const clickCount = e.detail
           if (clickCount === 2) {
             const itemIds = Object.keys(selectedItemIds)
-            if (itemIds.length === 1 && onItemEnter) {
+            if (itemIds.length === 1) {
               const item = JSONUtil.inspect({ obj: json, path: itemIds[0] })
               if (item.type === 'value') setRightNavTab(TAB.PROPERTIES)
-              else onItemEnter(itemIds[0])
+              else enterItem(itemIds[0])
             }
           }
         }}
@@ -184,17 +185,13 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         <AutoSizer
           onResize={({ width }) => {
             setContainerWidth(width)
-
-            if (!scrollContainerRef.current) {
-              const id = requestAnimationFrame(() => {
-                scrollContainerRef.current = DOMUtil.getNthFirstChild(
-                  outerContainerRef.current,
-                  2,
-                ) as HTMLDivElement
-                setIsReady(true)
-                cancelAnimationFrame(id)
-              })
-            }
+            const handle = requestAnimationFrame(() => {
+              const container = outerContainerRef.current
+              setContainer(container)
+              setScrollContainer(DOMUtil.getNthFirstChild(container, 2))
+              setIsContainerReady(true)
+              cancelAnimationFrame(handle)
+            })
           }}
         >
           {({ height, width }) => (
@@ -212,9 +209,9 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         </AutoSizer>
 
         <DragSelection
-          containerRef={outerContainerRef}
-          scrollRef={scrollContainerRef}
-          isReady={isReady}
+          container={container}
+          scrollContainer={scrollContainer}
+          isContainerReady={isContainerReady}
           enabled={enabled}
           onSelectionStart={({ event: e, x, y, scrollX, scrollY }) => {
             const selectedPoint = new DOMRect(x + scrollX, y + scrollY, 0, 0)

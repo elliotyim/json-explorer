@@ -1,5 +1,6 @@
 import { MOUSE_CLICK } from '@/constants/mouse'
-import { useAutoScroll } from '@/hooks/useScrollTheLad'
+import { useAutoScroll } from '@/hooks/useAutoScroll'
+import { useAreaDraggingStore } from '@/store/dragging'
 import { DOMUtil, DOMVector } from '@/utils/dom'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -22,10 +23,10 @@ interface SelectionEndProps {
 }
 
 interface Props {
-  isReady: boolean
+  isContainerReady: boolean
   enabled: boolean
-  containerRef: React.RefObject<HTMLDivElement | null> | null
-  scrollRef?: React.RefObject<HTMLDivElement | null> | null
+  container: HTMLElement | null
+  scrollContainer?: HTMLElement | null
   onSelectionStart?: ({
     event,
     x,
@@ -38,10 +39,10 @@ interface Props {
 }
 
 const DragSelection: React.FC<Props> = ({
-  isReady,
+  isContainerReady,
   enabled,
-  containerRef,
-  scrollRef = containerRef,
+  container: container,
+  scrollContainer = container,
   onSelectionStart,
   onSelectionChange,
   onSelectionEnd,
@@ -50,7 +51,7 @@ const DragSelection: React.FC<Props> = ({
 
   const [dragVector, setDragVector] = useState<DOMVector | null>(null)
   const [scrollVector, setScrollVector] = useState<DOMVector | null>(null)
-  const [isAreaDragging, setIsAreaDragging] = useState<boolean>(false)
+  const { isAreaDragging, setIsAreaDragging } = useAreaDraggingStore()
 
   const selectionAreaRef = useRef<DOMRect>(null)
 
@@ -60,13 +61,17 @@ const DragSelection: React.FC<Props> = ({
     setScrollVector(null)
     setIsAreaDragging(false)
     selectionAreaRef.current = null
-  }, [])
+  }, [setIsAreaDragging])
 
   const onPointerMove = useCallback(
     (event: PointerEvent) => {
-      const container = containerRef?.current
-      const scroller = scrollRef?.current
-      if (!container || !scroller || !dragVector || !scrollVector || !enabled) {
+      if (
+        !container ||
+        !scrollContainer ||
+        !dragVector ||
+        !scrollVector ||
+        !enabled
+      ) {
         return
       }
 
@@ -83,7 +88,7 @@ const DragSelection: React.FC<Props> = ({
 
       const selectionArea = nextDragVector.add(scrollVector).toDOMRect()
 
-      const { scrollLeft, scrollTop } = scroller
+      const { scrollLeft, scrollTop } = scrollContainer
 
       const visualArea = new DOMRect(
         selectionArea.x - scrollLeft,
@@ -101,23 +106,23 @@ const DragSelection: React.FC<Props> = ({
       }
     },
     [
-      containerRef,
+      container,
       dragVector,
       enabled,
       onSelectionChange,
-      scrollRef,
+      scrollContainer,
       scrollVector,
+      setIsAreaDragging,
     ],
   )
 
   const onPointerUp = useCallback(
     (e: PointerEvent) => {
-      const container = containerRef?.current
-      if (!container || !scrollRef?.current || !enabled) return
+      if (!container || !scrollContainer || !enabled) return
 
       const { x, y } = DOMUtil.getCurrentPoint(container, e)
-      const scrollX = scrollRef.current.scrollLeft
-      const scrollY = scrollRef.current.scrollTop
+      const scrollX = scrollContainer.scrollLeft
+      const scrollY = scrollContainer.scrollTop
 
       let selectionArea
       if (dragVector && scrollVector) {
@@ -132,30 +137,29 @@ const DragSelection: React.FC<Props> = ({
     },
     [
       clearAll,
-      containerRef,
+      container,
       dragVector,
       enabled,
       onSelectionEnd,
-      scrollRef,
+      scrollContainer,
       scrollVector,
     ],
   )
 
   const onPointerDown = useCallback(
     (e: PointerEvent) => {
-      const container = containerRef?.current
       if (
         e.button !== MOUSE_CLICK.LEFT ||
         !container ||
-        !scrollRef?.current ||
+        !scrollContainer ||
         !enabled
       ) {
         return
       }
 
       const { x, y } = DOMUtil.getCurrentPoint(container, e)
-      const scrollX = scrollRef.current.scrollLeft
-      const scrollY = scrollRef.current.scrollTop
+      const scrollX = scrollContainer.scrollLeft
+      const scrollY = scrollContainer.scrollTop
 
       if (onSelectionStart) {
         const shouldStop = onSelectionStart({
@@ -180,7 +184,7 @@ const DragSelection: React.FC<Props> = ({
 
       document.body.style.userSelect = 'none'
     },
-    [clearAll, containerRef, enabled, onSelectionStart, scrollRef],
+    [clearAll, container, enabled, onSelectionStart, scrollContainer],
   )
 
   const onScroll = useCallback(
@@ -217,9 +221,6 @@ const DragSelection: React.FC<Props> = ({
   )
 
   useEffect(() => {
-    const container = containerRef?.current
-    const scrollContainer = scrollRef?.current
-
     if (!container || !scrollContainer) return
 
     container.onpointerdown = onPointerDown
@@ -236,21 +237,16 @@ const DragSelection: React.FC<Props> = ({
       scrollContainer.onscroll = null
     }
   }, [
-    isReady,
-    containerRef,
+    isContainerReady,
+    container,
     onPointerDown,
     onPointerMove,
     onPointerUp,
     onScroll,
-    scrollRef,
+    scrollContainer,
   ])
 
-  useAutoScroll({
-    containerRef,
-    scrollRef,
-    isDragging: isAreaDragging,
-    dragVector,
-  })
+  useAutoScroll({ container, scrollContainer, isAreaDragging, dragVector })
 
   return (
     <div

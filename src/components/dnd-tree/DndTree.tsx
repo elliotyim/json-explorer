@@ -1,27 +1,26 @@
-import { MoveItemCommand } from '@/commands/MoveItemCommand'
+import { MoveItemCommand } from '@/commands/item/MoveItemCommand'
 import TreeNode from '@/components/dnd-tree/TreeNode'
 import ExplorerContextMenu from '@/components/ExplorerContextMenu'
 import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
+import { useItemAction } from '@/hooks/useItemAction'
 import { useCommandStore } from '@/store/command'
 import { useCurrentItemStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useSearchKeywordState } from '@/store/search'
 import { useRightNavTabStore } from '@/store/tab'
+import { useTreeRefStore } from '@/store/tree'
 import { JSONUtil } from '@/utils/json'
 import React, { useEffect, useRef, useState } from 'react'
 import { MoveHandler, NodeApi, Tree, TreeApi } from 'react-arborist'
 import { AutoSizer } from 'react-virtualized'
 
-interface Props {
-  treeRef: React.RefObject<TreeApi<Data> | null>
-  enterFolder: (id: string) => void
-}
-
-const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
+const DndTree = () => {
+  const ref = useRef<TreeApi<Data> | null>(null)
   const pushedKeys = useRef<Record<string, boolean>>({})
 
   const [data, setData] = useState<Data[]>()
+  const { treeRef, setTreeRef } = useTreeRefStore()
 
   const { json, setJson } = useJsonStore()
   const { term } = useSearchKeywordState()
@@ -30,6 +29,7 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
 
   const { execute } = useCommandStore()
+  const { enterItem } = useItemAction()
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') treeRef?.current?.deselectAll()
@@ -79,8 +79,8 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
             clearTimeout(timer)
           }, 0)
         }
-      } else if (enterFolder) {
-        enterFolder(node.id)
+      } else {
+        enterItem(node.id)
       }
     } else {
       const items: Record<string, boolean> = {}
@@ -120,7 +120,7 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
       if (clickCount === 2) {
         if (node.parent) {
           treeRef.current?.open(node.parent?.data.id ?? '')
-          enterFolder(node.parent?.data.id ?? '')
+          enterItem(node.parent?.data.id ?? '')
         }
 
         const timer = setTimeout(() => {
@@ -136,11 +136,14 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
       !pushedKeys.current['Meta']
     ) {
       treeRef.current?.open(node.id)
-      enterFolder(node.id)
+      enterItem(node.id)
       setSelectedItemIds({ [node.id]: true })
     }
   }
 
+  useEffect(() => {
+    if (!treeRef?.current) setTreeRef(ref)
+  }, [setTreeRef, treeRef])
   useEffect(() => treeRef.current?.open('root'), [treeRef])
   useEffect(() => setData(JSONUtil.compile({ input: json })), [json])
 
@@ -157,7 +160,7 @@ const DndTree: React.FC<Props> = ({ treeRef, enterFolder }) => {
           <div className="overflow-auto" style={{ width, height }}>
             <ExplorerContextMenu selectedItems={items}>
               <Tree<Data>
-                ref={treeRef}
+                ref={ref}
                 data={data}
                 width="100%"
                 height={height}

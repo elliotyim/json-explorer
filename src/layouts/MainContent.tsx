@@ -14,7 +14,6 @@ interface Props {
     selectedNodes: Data[],
     targetIndex?: number,
   ) => void
-  onItemEnter?: (itemId: string) => void
 }
 
 const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
@@ -22,7 +21,6 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   currentItem,
   onItemRelocation,
   onItemMove,
-  onItemEnter,
   ...props
 }) => {
   const { selectedItemIds } = useSelectedItemIdsStore()
@@ -51,7 +49,6 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           currentItemId={currentItem.id}
           onItemRelocation={onItemRelocation}
           onItemMove={onItemMove}
-          onItemEnter={onItemEnter}
         />
       </ExplorerContextMenu>
     </div>
