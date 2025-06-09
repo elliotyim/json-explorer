@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import pokemon from '@/fixtures/pokomen.json'
 
 interface JsonState {
   json: Record<string, unknown> | unknown[]
@@ -6,10 +7,6 @@ interface JsonState {
 }
 
 export const useJsonStore = create<JsonState>((set) => ({
-  json: {
-    key: 'value',
-    array: ['value2', 'value3'],
-    object: { key2: 'value4' },
-  },
+  json: pokemon,
   setJson: (json) => set(() => ({ json })),
 }))

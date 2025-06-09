@@ -1,0 +1,19 @@
+{
+  "Red": [
+    "Poliwhirl",
+    "Venusaur",
+    "Pikachu",
+    "Gyarados",
+    "Snorlax",
+    "Aerodactyl"
+  ],
+  "Green": ["Charizard", "Scyther", "Golduck", "Porygon", "Machamp", "Rhydon"],
+  "Blue": [
+    "Blastoise",
+    "Wigglytuff",
+    "Ditto",
+    "Snubbull",
+    "Nidoqueen",
+    "Clefable"
+  ]
+}
