@@ -5,17 +5,17 @@
 
 <div align="center">
 
-**JSON Explorer** is the simple JSON editor with powerful UI for you
+**JSON Explorer** is a simple JSON editor with a powerful UI for you
 
 </div>
 
 ## Main Features
 
-- Explore JSON with simple UI
+- Explore JSON with a simple UI
   - Drag to select
   - Shift, Ctrl(Command) key for multi selection/deselection
 - CRUD items: object, array or any value supported in JSON
-- Search any item you need
+- Search for any item you need
 - Import & Export JSON files
 - Undo & Redo features for some mistakes
 - Keyboard inputs are also supported
