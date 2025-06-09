@@ -516,7 +516,11 @@ export class JSONUtil {
     }
 
     if (targetIndex === parent.length) {
-      selectedNodes.forEach((node) => values.push(node.data.value))
+      selectedNodes.forEach((node) => {
+        const data = node.data
+        if (data.type === 'object') values.push({ [data.name]: data.value })
+        else values.push(data.value)
+      })
     }
 
     const result = JSONUtil.set({
