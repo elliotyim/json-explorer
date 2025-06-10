@@ -1,5 +1,5 @@
-import { ExportCommand } from '@/commands/item/ExportCommand'
-import { ImportCommand } from '@/commands/item/ImportCommand'
+import { ExportJSONCommand } from '@/commands/json/ExportJSONCommand'
+import { ImportJSONCommand } from '@/commands/json/ImportJSONCommand'
 import {
   Menubar,
   MenubarContent,
@@ -31,7 +31,7 @@ const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
   }
 
   const handleImport = async () => {
-    const command = new ImportCommand(structuredClone(json))
+    const command = new ImportJSONCommand(structuredClone(json))
     try {
       const result = await execute(command)
       setJson(result)
@@ -42,7 +42,7 @@ const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
   }
 
   const handleExport = async () => {
-    const command = new ExportCommand(JSON.stringify(json))
+    const command = new ExportJSONCommand(JSON.stringify(json))
     await execute(command)
   }
 

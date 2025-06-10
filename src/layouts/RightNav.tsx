@@ -1,20 +1,33 @@
+import { ReplaceJSONCommand } from '@/commands/json/ReplaceJSONCommand'
 import CodeEditor from '@/components/code-editor/CodeEditor'
 import Properties from '@/components/right-nav/Properties'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TAB } from '@/constants/tab'
+import { useCommandStore } from '@/store/command'
+import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 
 interface Props {
   json: Record<string, unknown> | unknown[]
-  onValueChange: (value: string) => void
 }
 
 const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   json,
-  onValueChange,
   ...props
 }) => {
   const { rightNavTab, setRightNavTab } = useRightNavTabStore()
+
+  const { setJson } = useJsonStore()
+  const { execute } = useCommandStore()
+
+  const handleJSONChange = async (code: string) => {
+    const command = new ReplaceJSONCommand(
+      structuredClone(json),
+      JSON.parse(code),
+    )
+    const result = await execute(command)
+    setJson(result)
+  }
 
   return (
     <div {...props} tabIndex={-1}>
@@ -38,7 +51,7 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         >
           <CodeEditor
             jsonString={JSON.stringify(json, null, 2)}
-            onValueChange={onValueChange}
+            onValueChange={handleJSONChange}
             className="h-full"
             withButtons
           />
