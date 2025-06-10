@@ -1,3 +1,4 @@
+import { useAreaDraggingStore } from '@/store/dragging'
 import { DOMVector } from '@/utils/dom'
 import { useEffect } from 'react'
 
@@ -5,17 +6,17 @@ interface Props {
   container: HTMLElement | null
   scrollContainer: HTMLElement | null
   dragVector: DOMVector | null
-  isAreaDragging: boolean
 }
 
 export const useAutoScroll = ({
   container,
   scrollContainer,
   dragVector,
-  isAreaDragging,
 }: Props) => {
+  const { isAreaDraggingRef } = useAreaDraggingStore()
+
   useEffect(() => {
-    if (!isAreaDragging) return
+    if (!isAreaDraggingRef.current) return
 
     let handle = requestAnimationFrame(scrollTheLad)
 
@@ -54,5 +55,5 @@ export const useAutoScroll = ({
 
       handle = requestAnimationFrame(scrollTheLad)
     }
-  }, [container, dragVector, isAreaDragging, scrollContainer])
+  }, [container, dragVector, isAreaDraggingRef, scrollContainer])
 }

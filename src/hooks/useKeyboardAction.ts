@@ -66,7 +66,7 @@ export const useKeyboardAction = (): ReturnProps => {
   const { goBackward } = useHistory()
   const { itemAreas } = useItemAreaStore()
   const { execute, redo, undo } = useCommandStore()
-  const { isAreaDragging } = useAreaDraggingStore()
+  const { isAreaDraggingRef } = useAreaDraggingStore()
   const { enterItem } = useItemAction()
 
   const { container } = useMainContainerStore()
@@ -353,12 +353,13 @@ export const useKeyboardAction = (): ReturnProps => {
 
   useEffect(() => {
     const itemIds = Object.keys(selectedItemIds)
+    const isAreaDragging = isAreaDraggingRef.current
     if (itemIds.length === 1 && !isAreaDragging && shiftIndex.current == null) {
       const id = itemIds[0]
       focusedItemRef.current = id
       setItemIndex(getItemIndex(id))
     }
-  }, [getItemIndex, isAreaDragging, selectedItemIds])
+  }, [getItemIndex, isAreaDraggingRef, selectedItemIds])
 
   useEffect(() => {
     if (focusedItemRef.current == null || !scrollContainer) return
