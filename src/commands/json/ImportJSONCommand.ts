@@ -1,7 +1,7 @@
 import { UPLOAD_LIMIT } from '@/constants/file'
 import { FileUtil } from '@/utils/file'
 
-export class ImportCommand implements Command<JSONObj['type']> {
+export class ImportJSONCommand implements Command<JSONObj['type']> {
   prev: JSONObj['type'] = {}
   value: JSONObj['type'] = {}
   isReversible: boolean = true as const

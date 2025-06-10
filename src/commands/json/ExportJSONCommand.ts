@@ -1,4 +1,4 @@
-export class ExportCommand implements Command<JSONObj['type']> {
+export class ExportJSONCommand implements Command<JSONObj['type']> {
   prev: JSONObj['type'] = {}
   value: string = ''
   isReversible: boolean = false

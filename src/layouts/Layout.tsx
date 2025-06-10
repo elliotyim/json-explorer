@@ -138,7 +138,6 @@ const Layout = () => {
             <RightNav
               className="flex h-full w-full flex-col overflow-auto rounded-br-xl"
               json={json}
-              onValueChange={(value) => setJson(JSON.parse(value))}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
