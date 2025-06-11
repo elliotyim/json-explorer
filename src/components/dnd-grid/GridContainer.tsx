@@ -1,3 +1,5 @@
+import DragSelection from '@/components/DragSelection'
+import GridCard from '@/components/dnd-grid/GridCard'
 import { ITEM } from '@/constants/item'
 import { MOUSE_CLICK } from '@/constants/mouse'
 import { TAB } from '@/constants/tab'
@@ -21,12 +23,11 @@ import { useRightNavTabStore } from '@/store/tab'
 import { DOMUtil } from '@/utils/dom'
 import { JSONUtil } from '@/utils/json'
 import { MathUtil } from '@/utils/math'
-import { useEffect, useRef, useState } from 'react'
+import _ from 'lodash'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
-import DragSelection from '../DragSelection'
-import GridCard from './GridCard'
 
 interface Props {
   items: Data[]
@@ -76,63 +77,93 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { focusedItemRef, onKeyDown, onKeyUp } = useKeyboardAction()
   const { enterItem } = useItemAction()
 
-  const handleItemRelocation = (targetIndex: number) => {
-    if (onItemRelocation) {
-      const selectedNodes = items.filter(
-        (item) =>
-          selectedItemIds[item.id] ||
-          extraItemIds[item.id] ||
-          draggingItems[item.id],
-      )
-      onItemRelocation(targetIndex, selectedNodes)
-      setSelectedItemIds({})
-      setExtraItemIds({})
-    }
-  }
+  const handleItemRelocation = useCallback(
+    (targetIndex: number) => {
+      if (onItemRelocation) {
+        const selectedNodes = items.filter(
+          (item) =>
+            selectedItemIds[item.id] ||
+            extraItemIds[item.id] ||
+            draggingItems[item.id],
+        )
+        onItemRelocation(targetIndex, selectedNodes)
+        setSelectedItemIds({})
+        setExtraItemIds({})
+      }
+    },
+    [
+      draggingItems,
+      extraItemIds,
+      items,
+      onItemRelocation,
+      selectedItemIds,
+      setExtraItemIds,
+      setSelectedItemIds,
+    ],
+  )
 
-  const handleItemMove = (
-    source: HTMLElement,
-    target: HTMLElement,
-    targetIndex?: number,
-  ) => {
-    if (onItemMove) {
-      const selectedNodes = items.filter(
-        (item) =>
-          selectedItemIds[item.id] ||
-          extraItemIds[item.id] ||
-          draggingItems[item.id],
-      )
-      onItemMove(source, target, selectedNodes, targetIndex)
-      setSelectedItemIds({})
-      setExtraItemIds({})
-    }
-  }
+  const handleItemMove = useCallback(
+    (source: HTMLElement, target: HTMLElement, targetIndex?: number) => {
+      if (onItemMove) {
+        const selectedNodes = items.filter(
+          (item) =>
+            selectedItemIds[item.id] ||
+            extraItemIds[item.id] ||
+            draggingItems[item.id],
+        )
+        onItemMove(source, target, selectedNodes, targetIndex)
+        setSelectedItemIds({})
+        setExtraItemIds({})
+      }
+    },
+    [
+      draggingItems,
+      extraItemIds,
+      items,
+      onItemMove,
+      selectedItemIds,
+      setExtraItemIds,
+      setSelectedItemIds,
+    ],
+  )
 
-  const cellRenderer = ({
-    columnIndex,
-    rowIndex,
-    style,
-    parent,
-  }: GridCellProps) => {
-    const i = MathUtil.countColumn(parent.props.width) * rowIndex + columnIndex
-    const item = items[i]
+  const onDropItemEnd = useCallback(() => setDraggingItems({}), [])
 
-    return item ? (
-      <GridCard
-        key={item.id}
-        item={item}
-        index={i}
-        selectedItemIds={selectedItemIds}
-        extraItemIds={extraItemIds}
-        draggingItems={draggingItems}
-        focusedItemRef={focusedItemRef}
-        style={style}
-        onDropEnd={() => setDraggingItems({})}
-        onItemMove={handleItemMove}
-        onItemRelocation={handleItemRelocation}
-      />
-    ) : null
-  }
+  const cellRenderer = useCallback(
+    ({ columnIndex, rowIndex, style, parent }: GridCellProps) => {
+      const i =
+        MathUtil.countColumn(parent.props.width) * rowIndex + columnIndex
+      const item = items[i]
+
+      return item ? (
+        <GridCard
+          key={item.id}
+          item={item}
+          index={i}
+          isSelected={
+            !!selectedItemIds[item.id] ||
+            !!extraItemIds[item.id] ||
+            !!draggingItems[item.id]
+          }
+          isFocused={focusedItemRef.current === item.id}
+          style={style}
+          onDropEnd={onDropItemEnd}
+          onItemMove={handleItemMove}
+          onItemRelocation={handleItemRelocation}
+        />
+      ) : null
+    },
+    [
+      draggingItems,
+      extraItemIds,
+      focusedItemRef,
+      handleItemMove,
+      handleItemRelocation,
+      items,
+      onDropItemEnd,
+      selectedItemIds,
+    ],
+  )
 
   useEffect(() => {
     if (isAppReady && !isFocusDone && outerContainerRef) {
@@ -205,6 +236,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
               columnCount={MathUtil.countColumn(width)}
               cellRenderer={cellRenderer}
               containerStyle={{ width, minWidth: width, minHeight: height }}
+              overscanRowCount={2}
+              overscanColumnCount={2}
             />
           )}
         </AutoSizer>
@@ -254,11 +287,11 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           }}
           onSelectionChange={({ event: e, selectionArea }) => {
             const newItem = DOMUtil.getItems(selectionArea, itemAreas)
-            const handle = requestAnimationFrame(() => {
-              if (e.ctrlKey || e.metaKey) setExtraItemIds(newItem)
-              else setSelectedItemIds(newItem)
-              cancelAnimationFrame(handle)
-            })
+            if (e.ctrlKey || e.metaKey) {
+              setExtraItemIds(newItem)
+            } else if (!_.isEqual(selectedItemIds, newItem)) {
+              setSelectedItemIds(newItem)
+            }
           }}
           onSelectionEnd={({ event: e, selectionArea }) => {
             if (!e.shiftKey) shiftIndex.current = null

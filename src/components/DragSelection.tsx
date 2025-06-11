@@ -51,7 +51,7 @@ const DragSelection: React.FC<Props> = ({
 
   const [dragVector, setDragVector] = useState<DOMVector | null>(null)
   const [scrollVector, setScrollVector] = useState<DOMVector | null>(null)
-  const { isAreaDragging, setIsAreaDragging } = useAreaDraggingStore()
+  const { isAreaDraggingRef } = useAreaDraggingStore()
 
   const selectionAreaRef = useRef<DOMRect>(null)
 
@@ -59,9 +59,9 @@ const DragSelection: React.FC<Props> = ({
     document.body.style.removeProperty('user-select')
     setDragVector(null)
     setScrollVector(null)
-    setIsAreaDragging(false)
+    isAreaDraggingRef.current = false
     selectionAreaRef.current = null
-  }, [setIsAreaDragging])
+  }, [isAreaDraggingRef])
 
   const onPointerMove = useCallback(
     (event: PointerEvent) => {
@@ -83,7 +83,7 @@ const DragSelection: React.FC<Props> = ({
 
       if (nextDragVector.getDiagonalLength() < 10) return
 
-      setIsAreaDragging(true)
+      isAreaDraggingRef.current = true
       setDragVector(nextDragVector)
 
       const selectionArea = nextDragVector.add(scrollVector).toDOMRect()
@@ -109,10 +109,10 @@ const DragSelection: React.FC<Props> = ({
       container,
       dragVector,
       enabled,
+      isAreaDraggingRef,
       onSelectionChange,
       scrollContainer,
       scrollVector,
-      setIsAreaDragging,
     ],
   )
 
@@ -246,7 +246,7 @@ const DragSelection: React.FC<Props> = ({
     scrollContainer,
   ])
 
-  useAutoScroll({ container, scrollContainer, isAreaDragging, dragVector })
+  useAutoScroll({ container, scrollContainer, dragVector })
 
   return (
     <div
@@ -257,7 +257,7 @@ const DragSelection: React.FC<Props> = ({
         left: selectionAreaRef.current?.x,
         width: selectionAreaRef.current?.width,
         height: selectionAreaRef.current?.height,
-        visibility: isAreaDragging ? 'visible' : 'hidden',
+        visibility: isAreaDraggingRef.current ? 'visible' : 'hidden',
       }}
     />
   )

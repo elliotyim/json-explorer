@@ -1,16 +1,11 @@
 import { create } from 'zustand'
 
 interface AreaDraggingState {
-  isAreaDragging: boolean
-  setIsAreaDragging: (updater: boolean | ((prev: boolean) => boolean)) => void
+  isAreaDraggingRef: React.RefObject<boolean>
+  setIsAreaDragging: (isAreaDraggingRef: React.RefObject<boolean>) => void
 }
 
 export const useAreaDraggingStore = create<AreaDraggingState>((set) => ({
-  isAreaDragging: false,
-  setIsAreaDragging: (updater) =>
-    set((prev) =>
-      typeof updater === 'function'
-        ? { isAreaDragging: updater(prev.isAreaDragging) }
-        : { isAreaDragging: updater },
-    ),
+  isAreaDraggingRef: { current: false },
+  setIsAreaDragging: (isAreaDraggingRef) => set(() => ({ isAreaDraggingRef })),
 }))

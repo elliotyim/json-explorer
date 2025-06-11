@@ -1,8 +1,8 @@
 import {
   forwardRef,
-  RefObject,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -27,10 +27,8 @@ import React from 'react'
 interface Props {
   item: Data
   index: number
-  selectedItemIds: Record<string, boolean>
-  extraItemIds: Record<string, boolean>
-  draggingItems: Record<string, boolean>
-  focusedItemRef: RefObject<string | null>
+  isSelected: boolean
+  isFocused: boolean
   style: React.CSSProperties
   onDropEnd?: () => void
   onItemRelocation?: (targetIndex: number) => void
@@ -50,10 +48,8 @@ const GridCard = React.memo(
         onDropEnd,
         onItemRelocation,
         onItemMove,
-        selectedItemIds,
-        extraItemIds,
-        draggingItems,
-        focusedItemRef,
+        isSelected,
+        isFocused,
         style,
         ...props
       },
@@ -73,6 +69,18 @@ const GridCard = React.memo(
       const [onRight, setOnRight] = useState<boolean>(false)
       const [onLeft, setOnLeft] = useState<boolean>(false)
 
+      const memoizedStyle = useMemo(
+        () => ({
+          width: ITEM.SIZE + ITEM.GAP_SIZE * 2,
+          height: ITEM.SIZE + ITEM.GAP_SIZE * 2,
+          padding: `${ITEM.GAP_SIZE}px`,
+          background: isFocused ? 'var(--color-blue-200)' : undefined,
+          borderRadius: isFocused ? 'calc(var(--radius))' : undefined,
+          ...style,
+        }),
+        [isFocused, style],
+      )
+
       const itemType = (itemId: string) => {
         const item = JSONUtil.getByPath(json, itemId)
 
@@ -82,11 +90,6 @@ const GridCard = React.memo(
       }
 
       const parentType: Data['type'] = itemType(item.parentPath)
-
-      const isSelected =
-        selectedItemIds?.[item.id] ||
-        extraItemIds?.[item.id] ||
-        draggingItems?.[item.id]
 
       const truncate = (title: string) => {
         const len = 9
@@ -237,24 +240,7 @@ const GridCard = React.memo(
       drag(drop(ref))
 
       return (
-        <div
-          ref={ref}
-          data-handler-id={handlerId}
-          style={{
-            ...style,
-            width: ITEM.SIZE + ITEM.GAP_SIZE * 2,
-            height: ITEM.SIZE + ITEM.GAP_SIZE * 2,
-            padding: `${ITEM.GAP_SIZE}px`,
-            background:
-              focusedItemRef.current == item.id
-                ? 'var(--color-blue-200)'
-                : undefined,
-            borderRadius:
-              focusedItemRef.current == item.id
-                ? 'calc(var(--radius)'
-                : undefined,
-          }}
-        >
+        <div ref={ref} data-handler-id={handlerId} style={memoizedStyle}>
           <Card
             data-item={item.id}
             data-index={index}
@@ -298,6 +284,15 @@ const GridCard = React.memo(
       )
     },
   ),
+  (prev, next) => {
+    return (
+      prev.item.id === next.item.id &&
+      prev.isSelected === next.isSelected &&
+      prev.isFocused === next.isFocused &&
+      prev.style.top === next.style.top &&
+      prev.style.left === next.style.left
+    )
+  },
 )
 
 export default GridCard
