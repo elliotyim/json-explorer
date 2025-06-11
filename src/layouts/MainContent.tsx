@@ -7,20 +7,11 @@ import { useEffect } from 'react'
 interface Props {
   json: Record<string, unknown> | unknown[]
   currentItem: CurrentItem
-  onItemRelocation?: (targetIndex: number, selectedNodes: Data[]) => void
-  onItemMove?: (
-    source: HTMLElement,
-    target: HTMLElement,
-    selectedNodes: Data[],
-    targetIndex?: number,
-  ) => void
 }
 
 const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   json,
   currentItem,
-  onItemRelocation,
-  onItemMove,
   ...props
 }) => {
   const { selectedItemIds } = useSelectedItemIdsStore()
@@ -44,12 +35,7 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   return (
     <div {...props}>
       <ExplorerContextMenu selectedItems={items}>
-        <GridContainer
-          items={displayItems}
-          currentItemId={currentItem.id}
-          onItemRelocation={onItemRelocation}
-          onItemMove={onItemMove}
-        />
+        <GridContainer items={displayItems} currentItemId={currentItem.id} />
       </ExplorerContextMenu>
     </div>
   )

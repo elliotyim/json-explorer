@@ -1,10 +1,8 @@
-import { MoveItemCommand } from '@/commands/item/MoveItemCommand'
 import TreeNode from '@/components/dnd-tree/TreeNode'
 import ExplorerContextMenu from '@/components/ExplorerContextMenu'
 import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
 import { useItemAction } from '@/hooks/useItemAction'
-import { useCommandStore } from '@/store/command'
 import { useCurrentItemStore, useSelectedItemIdsStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useSearchKeywordState } from '@/store/search'
@@ -22,14 +20,13 @@ const DndTree = () => {
   const [data, setData] = useState<Data[]>()
   const { treeRef, setTreeRef } = useTreeRefStore()
 
-  const { json, setJson } = useJsonStore()
+  const { json } = useJsonStore()
   const { term } = useSearchKeywordState()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setRightNavTab } = useRightNavTabStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
 
-  const { execute } = useCommandStore()
-  const { enterItem } = useItemAction()
+  const { enterItem, moveItems } = useItemAction()
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') treeRef?.current?.deselectAll()
@@ -89,7 +86,7 @@ const DndTree = () => {
     }
   }
 
-  const handleItemMove: MoveHandler<Data> = async ({
+  const onItemMove: MoveHandler<Data> = async ({
     dragNodes,
     parentId,
     parentNode,
@@ -100,15 +97,11 @@ const DndTree = () => {
     if (parentNode?.data.type !== 'array') targetIndex = -1
     else targetIndex = treeRef?.current?.dragDestinationIndex ?? -1
 
-    const command = new MoveItemCommand(structuredClone(json), {
-      selectedNodes: dragNodes.map((node) => node.data),
-      targetNode: parentNode.data,
+    await moveItems(
+      dragNodes.map((node) => node.data),
+      parentNode.data,
       targetIndex,
-    })
-    const result = await execute(command)
-
-    setJson(result)
-    setSelectedItemIds({})
+    )
   }
 
   const handleItemClick = (
@@ -170,7 +163,7 @@ const DndTree = () => {
                 searchTerm={term}
                 searchMatch={handleSearch}
                 onSelect={handleItemSelect}
-                onMove={handleItemMove}
+                onMove={onItemMove}
                 openByDefault={false}
               >
                 {(props) => (

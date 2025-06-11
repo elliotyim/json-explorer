@@ -284,15 +284,6 @@ const GridCard = React.memo(
       )
     },
   ),
-  (prev, next) => {
-    return (
-      prev.item.id === next.item.id &&
-      prev.isSelected === next.isSelected &&
-      prev.isFocused === next.isFocused &&
-      prev.style.top === next.style.top &&
-      prev.style.left === next.style.left
-    )
-  },
 )
 
 export default GridCard
