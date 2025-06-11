@@ -4,6 +4,7 @@ import Properties from '@/components/right-nav/Properties'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TAB } from '@/constants/tab'
 import { useCommandStore } from '@/store/command'
+import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 
@@ -18,6 +19,7 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { rightNavTab, setRightNavTab } = useRightNavTabStore()
 
   const { setJson } = useJsonStore()
+  const { setCurrentItem } = useCurrentItemStore()
   const { execute } = useCommandStore()
 
   const handleJSONChange = async (code: string) => {
@@ -27,6 +29,7 @@ const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     )
     const result = await execute(command)
     setJson(result)
+    setCurrentItem({ id: 'root', data: json })
   }
 
   return (

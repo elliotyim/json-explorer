@@ -102,6 +102,9 @@ const DndTree = () => {
       parentNode.data,
       targetIndex,
     )
+
+    const targetNode = JSONUtil.getByPath(json, parentId) as JSONObj['type']
+    setCurrentItem({ id: parentNode.id, data: targetNode })
   }
 
   const handleItemClick = (
