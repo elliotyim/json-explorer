@@ -108,7 +108,15 @@ const DndTree = () => {
     node: NodeApi<Data>,
     e: React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
-    if (node.data.type === 'value') {
+    if (e.ctrlKey && !e.metaKey) {
+      e.stopPropagation()
+
+      const newItem = { ...selectedItemIds, [node.id]: true }
+      if (selectedItemIds[node.id]) delete newItem[node.id]
+      setSelectedItemIds(newItem)
+
+      treeRef.current?.focus(node)
+    } else if (node.data.type === 'value') {
       const clickCount = e.detail
       if (clickCount === 2) {
         if (node.parent) {
@@ -123,11 +131,7 @@ const DndTree = () => {
           clearTimeout(timer)
         }, 0)
       }
-    } else if (
-      !pushedKeys.current['Shift'] &&
-      !pushedKeys.current['Control'] &&
-      !pushedKeys.current['Meta']
-    ) {
+    } else if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
       treeRef.current?.open(node.id)
       enterItem(node.id)
       setSelectedItemIds({ [node.id]: true })
