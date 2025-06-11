@@ -134,7 +134,6 @@ const DndTree = () => {
     } else if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
       treeRef.current?.open(node.id)
       enterItem(node.id)
-      setSelectedItemIds({ [node.id]: true })
     }
   }
 
