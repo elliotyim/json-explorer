@@ -97,29 +97,15 @@ const DndTree = () => {
     if (parentNode?.data.type !== 'array') targetIndex = -1
     else targetIndex = treeRef?.current?.dragDestinationIndex ?? -1
 
-    await moveItems(
-      dragNodes.map((node) => node.data),
-      parentNode.data,
-      targetIndex,
-    )
-
-    const targetNode = JSONUtil.getByPath(json, parentId) as JSONObj['type']
-    setCurrentItem({ id: parentNode.id, data: targetNode })
+    const selectedNodes = dragNodes.map((node) => node.data)
+    await moveItems(selectedNodes, parentNode.data, targetIndex)
   }
 
   const handleItemClick = (
     node: NodeApi<Data>,
     e: React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
-    if (e.ctrlKey && !e.metaKey) {
-      e.stopPropagation()
-
-      const newItem = { ...selectedItemIds, [node.id]: true }
-      if (selectedItemIds[node.id]) delete newItem[node.id]
-      setSelectedItemIds(newItem)
-
-      treeRef.current?.focus(node)
-    } else if (node.data.type === 'value') {
+    if (node.data.type === 'value') {
       const clickCount = e.detail
       if (clickCount === 2) {
         if (node.parent) {
