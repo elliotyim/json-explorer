@@ -92,13 +92,13 @@ export class JSONUtil {
     }
   }
 
-  private static getLastKey(path: string): string {
+  static getLastKey(path: string): string {
     const lastKey = this.getSplitPaths({ path }).at(-1)
     if (!lastKey) throw Error(`Invalid path provided: ${path}`)
     return lastKey
   }
 
-  private static getLastIndex(parh: string): number {
+  static getLastIndex(parh: string): number {
     const match = Array.from(parh.matchAll(/\[(\d+)\]/g))
     return parseInt(match[match.length - 1][1], 10)
   }

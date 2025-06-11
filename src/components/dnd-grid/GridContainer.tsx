@@ -32,20 +32,11 @@ import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
 interface Props {
   items: Data[]
   currentItemId: string
-  onItemRelocation?: (targetIndex: number, selectedNodes: Data[]) => void
-  onItemMove?: (
-    source: HTMLElement,
-    target: HTMLElement,
-    selectedNodes: Data[],
-    targetIndex?: number,
-  ) => void
 }
 
 const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   items,
   currentItemId,
-  onItemRelocation,
-  onItemMove,
   ...props
 }) => {
   const outerContainerRef = useRef<HTMLDivElement>(null)
@@ -75,56 +66,53 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   )
 
   const { focusedItemRef, onKeyDown, onKeyUp } = useKeyboardAction()
-  const { enterItem } = useItemAction()
+  const { enterItem, moveItems } = useItemAction()
 
-  const handleItemRelocation = useCallback(
-    (targetIndex: number) => {
-      if (onItemRelocation) {
-        const selectedNodes = items.filter(
-          (item) =>
-            selectedItemIds[item.id] ||
-            extraItemIds[item.id] ||
-            draggingItems[item.id],
-        )
-        onItemRelocation(targetIndex, selectedNodes)
-        setSelectedItemIds({})
-        setExtraItemIds({})
-      }
+  const onItemRelocation = useCallback(
+    async (targetIndex: number) => {
+      const selectedNodes = items.filter(
+        (item) =>
+          selectedItemIds[item.id] ||
+          extraItemIds[item.id] ||
+          draggingItems[item.id],
+      )
+
+      if (!selectedNodes.length) return
+
+      const targetNode = JSONUtil.inspect({
+        obj: json,
+        path: selectedNodes[0].parentPath,
+      })
+      await moveItems(selectedNodes, targetNode, targetIndex)
     },
-    [
-      draggingItems,
-      extraItemIds,
-      items,
-      onItemRelocation,
-      selectedItemIds,
-      setExtraItemIds,
-      setSelectedItemIds,
-    ],
+    [draggingItems, extraItemIds, moveItems, items, json, selectedItemIds],
   )
 
-  const handleItemMove = useCallback(
-    (source: HTMLElement, target: HTMLElement, targetIndex?: number) => {
-      if (onItemMove) {
-        const selectedNodes = items.filter(
-          (item) =>
-            selectedItemIds[item.id] ||
-            extraItemIds[item.id] ||
-            draggingItems[item.id],
-        )
-        onItemMove(source, target, selectedNodes, targetIndex)
-        setSelectedItemIds({})
-        setExtraItemIds({})
-      }
+  const onItemMove = useCallback(
+    async (source: HTMLElement, target: HTMLElement, targetIndex?: number) => {
+      const selectedNodes = items.filter(
+        (item) =>
+          selectedItemIds[item.id] ||
+          extraItemIds[item.id] ||
+          draggingItems[item.id],
+      )
+
+      if (!selectedNodes.length) return
+
+      const sourceId = source.dataset.item
+      const targetId = target.dataset.item
+
+      const wrongTarget = selectedNodes.filter(
+        (node) => node.id !== sourceId && node.id === targetId,
+      ).length
+
+      if (wrongTarget || sourceId == null || targetId == null) return
+
+      const targetNode = JSONUtil.inspect({ obj: json, path: targetId })
+
+      await moveItems(selectedNodes, targetNode, targetIndex)
     },
-    [
-      draggingItems,
-      extraItemIds,
-      items,
-      onItemMove,
-      selectedItemIds,
-      setExtraItemIds,
-      setSelectedItemIds,
-    ],
+    [draggingItems, extraItemIds, moveItems, items, json, selectedItemIds],
   )
 
   const onDropItemEnd = useCallback(() => setDraggingItems({}), [])
@@ -148,8 +136,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           isFocused={focusedItemRef.current === item.id}
           style={style}
           onDropEnd={onDropItemEnd}
-          onItemMove={handleItemMove}
-          onItemRelocation={handleItemRelocation}
+          onItemMove={onItemMove}
+          onItemRelocation={onItemRelocation}
         />
       ) : null
     },
@@ -157,8 +145,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
       draggingItems,
       extraItemIds,
       focusedItemRef,
-      handleItemMove,
-      handleItemRelocation,
+      onItemMove,
+      onItemRelocation,
       items,
       onDropItemEnd,
       selectedItemIds,

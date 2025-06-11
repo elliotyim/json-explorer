@@ -3,7 +3,6 @@ import MainContent from '@/layouts/MainContent'
 import RightNav from '@/layouts/RightNav'
 import { useEffect } from 'react'
 
-import { MoveItemCommand } from '@/commands/item/MoveItemCommand'
 import ExplorerDialog from '@/components/ExplorerDialog'
 import {
   ResizableHandle,
@@ -13,73 +12,12 @@ import {
 import { useKeyboardAction } from '@/hooks/useKeyboardAction'
 import AddressBar from '@/layouts/AddressBar'
 import TopNavigationBar from '@/layouts/TopNavigationBar'
-import { useCommandStore } from '@/store/command'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
-import { useTreeRefStore } from '@/store/tree'
-import { JSONUtil } from '@/utils/json'
 
 const Layout = () => {
-  const { json, setJson } = useJsonStore()
-  const { treeRef } = useTreeRefStore()
+  const { json } = useJsonStore()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
-  const { execute } = useCommandStore()
-
-  const handleOnInputSubmit = (currentPath: string) => {
-    const id = currentPath
-    const paths = JSONUtil.getTrailingPaths(id)
-
-    paths.forEach((path) => treeRef.current?.open(path))
-
-    const data = JSONUtil.getByPath(json, id) as Record<string, unknown>
-    setCurrentItem({ id, data })
-  }
-
-  const handleItemRelocation = async (
-    targetIndex: number,
-    selectedNodes: Data[],
-  ) => {
-    const parentPath = selectedNodes.at(0)?.parentPath
-    if (!selectedNodes.length || parentPath == null) return
-
-    const targetNode = JSONUtil.inspect({ obj: json, path: parentPath })
-
-    const command = new MoveItemCommand(structuredClone(json), {
-      selectedNodes,
-      targetNode,
-      targetIndex,
-    })
-    const result = await execute(command)
-
-    setJson(result)
-  }
-
-  const handleItemMove = async (
-    source: HTMLElement,
-    target: HTMLElement,
-    selectedNodes: Data[],
-    targetIndex?: number,
-  ) => {
-    const sourceId = source.dataset.item
-    const targetId = target.dataset.item
-
-    const wrongTarget = selectedNodes.filter(
-      (node) => node.id !== sourceId && node.id === targetId,
-    ).length
-
-    if (wrongTarget || sourceId == null || targetId == null) return
-
-    const targetNode = JSONUtil.inspect({ obj: json, path: targetId })
-
-    const command = new MoveItemCommand(structuredClone(json), {
-      selectedNodes,
-      targetNode,
-      targetIndex,
-    })
-    const result = await execute(command)
-
-    setJson(result)
-  }
 
   const {
     onKeyUp,
@@ -117,7 +55,6 @@ const Layout = () => {
         <AddressBar
           className="flex items-center gap-4 border-b-2 px-4 py-2"
           currentPath={currentItem.id}
-          onInputSubmit={handleOnInputSubmit}
         />
         <ResizablePanelGroup direction="horizontal" className="w-full">
           <ResizablePanel defaultSize={15} minSize={10}>
@@ -129,8 +66,6 @@ const Layout = () => {
               className="h-full w-full overflow-auto border-x-2"
               json={json}
               currentItem={currentItem}
-              onItemRelocation={handleItemRelocation}
-              onItemMove={handleItemMove}
             />
           </ResizablePanel>
           <ResizableHandle />

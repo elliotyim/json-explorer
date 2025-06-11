@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BUTTON } from '@/constants/button'
 import { useHistory } from '@/hooks/useHistory'
+import { useItemAction } from '@/hooks/useItemAction'
 import { useHistoryCommandStore } from '@/store/history-command'
 import { useCurrentItemStore } from '@/store/item'
 import { useEffect, useState } from 'react'
@@ -14,21 +15,18 @@ import {
 
 interface Props {
   currentPath: string
-  onInputSubmit?: (currentPath: string) => void
 }
 
 const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   currentPath,
-  onInputSubmit,
   ...props
 }) => {
   const [inputValue, setInputValue] = useState<string>('')
 
   const { currentItem } = useCurrentItemStore()
-
   const { goBackward, goForward, goPrev } = useHistory()
-
   const { undoList, redoList } = useHistoryCommandStore()
+  const { enterItem } = useItemAction()
 
   useEffect(() => {
     if (currentPath) setInputValue(currentPath)
@@ -65,8 +63,7 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => {
             e.stopPropagation()
-            if (!inputValue || !onInputSubmit) return
-            if (e.key === 'Enter') onInputSubmit(inputValue)
+            if (e.key === 'Enter' && inputValue) enterItem(inputValue)
           }}
         />
       </div>
@@ -74,7 +71,7 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
         variant={'outline'}
         disabled={!inputValue}
         onClick={() => {
-          if (inputValue && onInputSubmit) onInputSubmit(inputValue)
+          if (inputValue) enterItem(inputValue)
         }}
       >
         <FaArrowTurnDown className="rotate-90" size={BUTTON.SIZE} />

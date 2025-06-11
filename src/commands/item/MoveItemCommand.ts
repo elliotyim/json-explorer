@@ -104,13 +104,9 @@ export class MoveItemCommand implements Command<JSONObj['type']> {
     const reversed = [...sortedNodes].reverse()
     reversed.forEach((node) => {
       const parent = JSONUtil.getByPath(json, node.parentPath)
-      const lastKey = JSONUtil.getSplitPaths({ path: node.id }).at(-1)
+      const lastKey = JSONUtil.getLastKey(node.id)
 
-      if (
-        destination === node.parentPath &&
-        lastKey != null &&
-        +lastKey < targetIndex
-      ) {
+      if (destination === node.parentPath && +lastKey < targetIndex) {
         targetIndex--
       }
 
