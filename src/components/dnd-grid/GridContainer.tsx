@@ -20,6 +20,7 @@ import {
 import { useJsonStore } from '@/store/json'
 import { useInitialFocus } from '@/store/settings'
 import { useRightNavTabStore } from '@/store/tab'
+import { useTreeRefStore } from '@/store/tree'
 import { DOMUtil } from '@/utils/dom'
 import { JSONUtil } from '@/utils/json'
 import { MathUtil } from '@/utils/math'
@@ -54,6 +55,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { isAppReady } = useInitialFocus()
   const { setRightNavTab } = useRightNavTabStore()
   const { isContextOpen } = useContextMenuOpenStore()
+  const { treeRef } = useTreeRefStore()
 
   const { json } = useJsonStore()
   const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
@@ -191,6 +193,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
           if (clickCount === 2) {
             const itemIds = Object.keys(selectedItemIds)
             if (itemIds.length === 1) {
+              const paths = JSONUtil.getTrailingPaths(itemIds[0])
+              paths.forEach((path) => treeRef.current?.open(path))
               const item = JSONUtil.inspect({ obj: json, path: itemIds[0] })
               if (item.type === 'value') setRightNavTab(TAB.PROPERTIES)
               else enterItem(itemIds[0])

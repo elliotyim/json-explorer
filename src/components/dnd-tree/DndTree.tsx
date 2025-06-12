@@ -97,11 +97,8 @@ const DndTree = () => {
     if (parentNode?.data.type !== 'array') targetIndex = -1
     else targetIndex = treeRef?.current?.dragDestinationIndex ?? -1
 
-    await moveItems(
-      dragNodes.map((node) => node.data),
-      parentNode.data,
-      targetIndex,
-    )
+    const selectedNodes = dragNodes.map((node) => node.data)
+    await moveItems(selectedNodes, parentNode.data, targetIndex)
   }
 
   const handleItemClick = (
@@ -123,14 +120,9 @@ const DndTree = () => {
           clearTimeout(timer)
         }, 0)
       }
-    } else if (
-      !pushedKeys.current['Shift'] &&
-      !pushedKeys.current['Control'] &&
-      !pushedKeys.current['Meta']
-    ) {
+    } else if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
       treeRef.current?.open(node.id)
       enterItem(node.id)
-      setSelectedItemIds({ [node.id]: true })
     }
   }
 

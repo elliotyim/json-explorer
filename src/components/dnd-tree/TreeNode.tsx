@@ -1,6 +1,6 @@
 import { TypeIcon } from '@/components/dnd-tree/TypeIcon'
 import { cn } from '@/lib/utils'
-import { useCurrentItemStore } from '@/store/item'
+import { useCurrentItemStore, useSelectedItemIdsStore } from '@/store/item'
 import React from 'react'
 import { NodeApi, NodeRendererProps } from 'react-arborist'
 import { FaCaretRight } from 'react-icons/fa6'
@@ -20,6 +20,7 @@ const TreeNode: React.FC<NodeRendererProps<Data> & Props> = ({
   onItemClick,
 }) => {
   const { currentItem } = useCurrentItemStore()
+  const { selectedItemIds } = useSelectedItemIdsStore()
 
   const onCaretClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -31,7 +32,7 @@ const TreeNode: React.FC<NodeRendererProps<Data> & Props> = ({
     let className = ''
     if (node.id === currentItem.id) className = 'bg-blue-300'
     else if (node.isFocused) className = 'bg-gray-400'
-    else if (node.isSelected) className = 'bg-gray-300'
+    else if (selectedItemIds[node.id]) className = 'bg-gray-300'
     return className
   }
 
