@@ -43,21 +43,6 @@ export class MoveItemCommand implements Command<JSONObj['type']> {
     return filteredNodes
   }
 
-  private sortNodes(nodes: Data[]) {
-    const sortedNodes = [...nodes].sort((a, b) => {
-      const parentIdA = a.parentPath
-      const parentIdB = b.parentPath
-
-      if (parentIdA.length > parentIdB.length) return 1
-      if (parentIdA.length < parentIdB.length) return -1
-      if (parentIdA.localeCompare(parentIdB) > 0) return 1
-      if (parentIdA.localeCompare(parentIdB) < 0) return -1
-      return a.id.localeCompare(b.id)
-    })
-
-    return sortedNodes
-  }
-
   private relocateNodes(
     obj: JSONObj['type'],
     sourceNodes: Data[],
@@ -93,7 +78,7 @@ export class MoveItemCommand implements Command<JSONObj['type']> {
     let targetIndex = this.value.targetIndex ?? -1
 
     const filteredNodes = this.filterNodes(selectedNodes, targetNode)
-    const sortedNodes = this.sortNodes(filteredNodes)
+    const sortedNodes = JSONUtil.sortNodesByLeaf(filteredNodes)
 
     sortedNodes.forEach((node) =>
       JSONUtil.copy({ obj: json, from: node.id, to: targetNode.id }),

@@ -5,7 +5,7 @@ import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 
 interface ReturnProps {
-  goTo: (path: string) => void
+  goTo: (path: string, newJSON?: JSONObj['type']) => void
   goBackward: () => void
   goForward: () => void
   goPrev: () => void
@@ -17,7 +17,7 @@ export const useHistory = (): ReturnProps => {
 
   const { execute, undo, redo } = useHistoryCommandStore()
 
-  const goTo = (path: string) => {
+  const goTo = (path: string, newJSON: JSONObj['type'] = json) => {
     if (path === currentItem.id) return
 
     const prev = currentItem.id
@@ -26,7 +26,7 @@ export const useHistory = (): ReturnProps => {
     const command = new HistoryCommand(prev, next)
 
     const id = execute(command)
-    const data = JSONUtil.getByPath(json, id) as JSONObj['type']
+    const data = JSONUtil.getByPath(newJSON, id) as JSONObj['type']
     setCurrentItem({ id, data })
   }
 

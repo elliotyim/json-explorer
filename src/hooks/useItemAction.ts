@@ -7,12 +7,12 @@ import { useCommandStore } from '@/store/command'
 import { useExtraItemIdsStore, useSelectedItemIdsStore } from '@/store/item'
 
 interface ReturnProps {
-  enterItem: (itemId: string) => void
+  enterItem: (itemId: string, newJSON?: JSONObj['type']) => void
   moveItems: (
     selectedNodes: Data[],
     targetNode: Data,
     targetIndex?: number,
-  ) => Promise<void>
+  ) => Promise<JSONObj['type']>
 }
 
 export const useItemAction = (): ReturnProps => {
@@ -23,8 +23,8 @@ export const useItemAction = (): ReturnProps => {
   const { setSelectedItemIds } = useSelectedItemIdsStore()
   const { setExtraItemIds } = useExtraItemIdsStore()
 
-  const enterItem = (itemId: string) => {
-    goTo(itemId)
+  const enterItem = (itemId: string, newJSON: JSONObj['type'] = json) => {
+    goTo(itemId, newJSON)
     const paths = JSONUtil.getTrailingPaths(itemId)
     paths.forEach((path) => treeRef.current?.open(path))
   }
@@ -33,7 +33,7 @@ export const useItemAction = (): ReturnProps => {
     selectedNodes: Data[],
     targetNode: Data,
     targetIndex: number = -1,
-  ) => {
+  ): Promise<JSONObj['type']> => {
     const command = new MoveItemCommand(structuredClone(json), {
       selectedNodes,
       targetNode,
@@ -44,6 +44,7 @@ export const useItemAction = (): ReturnProps => {
     setJson(result)
     setSelectedItemIds({})
     setExtraItemIds({})
+    return result
   }
 
   return { enterItem, moveItems }
