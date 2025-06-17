@@ -566,6 +566,9 @@ export class JSONUtil {
   }
 
   static isJsonValid(jsonString: string) {
+    const str = jsonString.trim()
+    if (!str.startsWith('{') && !str.startsWith('[')) return false
+
     try {
       JSON.parse(jsonString)
       return true
@@ -580,5 +583,70 @@ export class JSONUtil {
     if (Array.isArray(item)) return 'array'
     else if (typeof item === 'object' && item !== null) return 'object'
     return 'value'
+  }
+
+  static sortNodesByLeaf(nodes: Data[]) {
+    const sortedNodes = [...nodes].sort((a, b) => {
+      const parentIdA = a.parentPath
+      const parentIdB = b.parentPath
+
+      if (parentIdA.length > parentIdB.length) return 1
+      if (parentIdA.length < parentIdB.length) return -1
+      if (parentIdA.localeCompare(parentIdB) > 0) return 1
+      if (parentIdA.localeCompare(parentIdB) < 0) return -1
+      return a.id.localeCompare(b.id)
+    })
+
+    return sortedNodes
+  }
+
+  static adjustedTargetId(selectedNodes: Data[], targetNode: Data): string {
+    const targetId = this.getSplitPaths({
+      path: targetNode.id,
+      removeArrayBracket: false,
+    })
+
+    const originalId = targetNode.id
+    const originalPaths = this.getSplitPaths({
+      path: originalId,
+      removeArrayBracket: false,
+    })
+
+    const sortedNodes = this.sortNodesByLeaf(selectedNodes)
+    for (const node of sortedNodes) {
+      if (originalId.length < node.id.length) continue
+
+      const paths = this.getSplitPaths({
+        path: node.id,
+        removeArrayBracket: false,
+      })
+
+      for (let i = 0; i < paths.length; i++) {
+        const originalPath = originalPaths[i]
+        const nodePath = paths[i]
+
+        if (originalPath !== nodePath && originalPath.startsWith('[')) {
+          try {
+            const originalIndex = +originalPath.slice(1, -1)
+            const nodeIndex = +nodePath.slice(1, -1)
+
+            if (nodeIndex < originalIndex) {
+              const targetIndex = +targetId[i].slice(1, -1)
+              targetId[i] = `[${targetIndex - 1}]`
+            }
+          } catch {
+            // Do nothing about keys like: `[someStringKeyLikeThis]`
+          }
+        }
+      }
+    }
+
+    const result: string = targetId.reduce((acc, val, idx) => {
+      if (idx === 0) return val
+      if (val.startsWith('[') && val.endsWith(']')) return acc + val
+      else return `${acc}.${val}`
+    }, '')
+
+    return result
   }
 }

@@ -139,7 +139,10 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   }, [isItemEditing])
 
   return (
-    <Card className={cn('h-full', props.className)} {...props}>
+    <Card
+      className={cn('h-full overflow-x-hidden', props.className)}
+      {...props}
+    >
       <CardHeader>
         <CardTitle>
           <div className="flex items-center gap-2">
