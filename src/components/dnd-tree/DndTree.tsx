@@ -30,6 +30,18 @@ const DndTree = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') treeRef?.current?.deselectAll()
+
+    if (e.key === 'Enter') {
+      const node = treeRef.current?.focusedNode
+      if (node != null && node.parent != null) {
+        const data = JSONUtil.getByPath(json, node.parent.id) as JSONObj['type']
+        setCurrentItem({ id: node.parent.id, data })
+        const handle = requestAnimationFrame(() => {
+          setSelectedItemIds({ [node.id]: true })
+          cancelAnimationFrame(handle)
+        })
+      }
+    }
     pushedKeys.current[e.key] = true
   }
 
