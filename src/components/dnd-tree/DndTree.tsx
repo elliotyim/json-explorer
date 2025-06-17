@@ -80,7 +80,7 @@ const DndTree = () => {
       if (node.data.type === 'value') {
         if (currentItem.id !== node.parent?.id) {
           const parentId = node.parent?.id ?? ''
-          const data = JSONUtil.getByPath(json, parentId) as unknown[]
+          const data = JSONUtil.getByPath(json, parentId) as JSONObj['type']
 
           setCurrentItem({ id: parentId, data })
           const timer = setTimeout(() => {
@@ -88,8 +88,6 @@ const DndTree = () => {
             clearTimeout(timer)
           }, 0)
         }
-      } else {
-        enterItem(node.id)
       }
     } else {
       const items: Record<string, boolean> = {}
@@ -119,28 +117,36 @@ const DndTree = () => {
     }
   }
 
+  const showProperties = (node: NodeApi<Data>) => {
+    if (!node.parent || !treeRef.current) return
+
+    treeRef.current?.open(node.parent.data.id)
+    enterItem(node.parent.data.id)
+
+    const timer = setTimeout(() => {
+      treeRef.current?.focus(node)
+      setSelectedItemIds({ [node.id]: true })
+      setRightNavTab(TAB.PROPERTIES)
+      clearTimeout(timer)
+    }, 0)
+  }
+
+  const toggleFolder = (id: string) => {
+    if (!treeRef.current) return
+    if (treeRef.current.isOpen(id)) treeRef.current.close(id)
+    else treeRef.current.open(id)
+  }
+
   const handleItemClick = (
     node: NodeApi<Data>,
     e: React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
     if (node.data.type === 'value') {
       const clickCount = e.detail
-      if (clickCount === 2) {
-        if (node.parent) {
-          treeRef.current?.open(node.parent?.data.id ?? '')
-          enterItem(node.parent?.data.id ?? '')
-        }
-
-        const timer = setTimeout(() => {
-          treeRef.current?.focus(node)
-          setSelectedItemIds({ [node.id]: true })
-          setRightNavTab(TAB.PROPERTIES)
-          clearTimeout(timer)
-        }, 0)
-      }
+      if (clickCount === 2) showProperties(node)
     } else if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-      treeRef.current?.open(node.id)
-      enterItem(node.id)
+      toggleFolder(node.id)
+      setSelectedItemIds({ [node.id]: true })
     }
   }
 

@@ -566,6 +566,9 @@ export class JSONUtil {
   }
 
   static isJsonValid(jsonString: string) {
+    const str = jsonString.trim()
+    if (!str.startsWith('{') && !str.startsWith('[')) return false
+
     try {
       JSON.parse(jsonString)
       return true
