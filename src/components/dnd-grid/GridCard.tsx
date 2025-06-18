@@ -23,7 +23,6 @@ import { DOMUtil } from '@/utils/dom'
 import { JSONUtil } from '@/utils/json'
 import { Identifier } from 'dnd-core'
 import React from 'react'
-import _ from 'lodash'
 
 interface Props {
   item: Data
