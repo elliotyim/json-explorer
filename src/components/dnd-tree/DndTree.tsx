@@ -34,8 +34,14 @@ const DndTree = () => {
     if (e.key === 'Enter') {
       const node = treeRef.current?.focusedNode
       if (node != null && node.parent != null) {
-        const data = JSONUtil.getByPath(json, node.parent.id) as JSONObj['type']
-        setCurrentItem({ id: node.parent.id, data })
+        const parentId = node.parent.id
+        if (node.data.type === 'value') {
+          enterItem(node.parent.id)
+        } else {
+          const data = JSONUtil.getByPath(json, parentId) as JSONObj['type']
+          setCurrentItem({ id: parentId, data })
+        }
+
         const handle = requestAnimationFrame(() => {
           setSelectedItemIds({ [node.id]: true })
           cancelAnimationFrame(handle)
@@ -80,9 +86,8 @@ const DndTree = () => {
       if (node.data.type === 'value') {
         if (currentItem.id !== node.parent?.id) {
           const parentId = node.parent?.id ?? ''
-          const data = JSONUtil.getByPath(json, parentId) as JSONObj['type']
+          enterItem(parentId)
 
-          setCurrentItem({ id: parentId, data })
           const timer = setTimeout(() => {
             setSelectedItemIds({ [node.data.id]: true })
             clearTimeout(timer)

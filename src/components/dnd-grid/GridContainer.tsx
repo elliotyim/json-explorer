@@ -62,7 +62,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   const { extraItemIds, setExtraItemIds } = useExtraItemIdsStore()
   const { itemAreas, setItemAreas } = useItemAreaStore()
 
-  const { draggingItemId } = useDraggingItemStore()
+  const draggingItemId = useDraggingItemStore((state) => state.draggingItemId)
   const [draggingItems, setDraggingItems] = useState<Record<string, boolean>>(
     {},
   )
@@ -185,7 +185,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     <DndProvider backend={HTML5Backend}>
       <div
         ref={outerContainerRef}
-        className="h-full w-full overflow-hidden"
+        className="relative h-full w-full overflow-hidden"
         onFocus={() => setEnabled(true)}
         onBlur={() => setEnabled(false)}
         onClick={(e) => {

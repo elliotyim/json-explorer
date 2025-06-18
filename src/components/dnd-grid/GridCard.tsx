@@ -226,8 +226,11 @@ const GridCard = React.memo(
       })
 
       useEffect(() => {
-        if (isDragging) setDraggingItemId(item.id)
-        else setDraggingItemId(null)
+        setDraggingItemId((prev) => {
+          const nextId = isDragging ? item.id : null
+          if (prev === nextId) return prev
+          return nextId
+        })
       }, [isDragging, item.id, setDraggingItemId])
 
       useEffect(() => {
@@ -284,6 +287,19 @@ const GridCard = React.memo(
       )
     },
   ),
+  // TODO: Item Relocation doesn't work after memoization
+  // (prev, next) => {
+  //   return (
+  //     prev.index === next.index &&
+  //     prev.item.id === next.item.id &&
+  //     prev.item.value === next.item.value &&
+  //     prev.item.type === next.item.type &&
+  //     prev.item.parentPath === next.item.parentPath &&
+  //     prev.isFocused === next.isFocused &&
+  //     prev.isSelected === next.isSelected &&
+  //     _.isEqual(prev.style, next.style)
+  //   )
+  // },
 )
 
 export default GridCard
