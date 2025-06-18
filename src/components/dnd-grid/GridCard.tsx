@@ -288,17 +288,19 @@ const GridCard = React.memo(
       )
     },
   ),
-  (prev, next) => {
-    return (
-      prev.item.id === next.item.id &&
-      prev.item.value === next.item.value &&
-      prev.item.type === next.item.type &&
-      prev.item.parentPath === next.item.parentPath &&
-      prev.isFocused === next.isFocused &&
-      prev.isSelected === next.isSelected &&
-      _.isEqual(prev.style, next.style)
-    )
-  },
+  // TODO: Item Relocation doesn't work after memoization
+  // (prev, next) => {
+  //   return (
+  //     prev.index === next.index &&
+  //     prev.item.id === next.item.id &&
+  //     prev.item.value === next.item.value &&
+  //     prev.item.type === next.item.type &&
+  //     prev.item.parentPath === next.item.parentPath &&
+  //     prev.isFocused === next.isFocused &&
+  //     prev.isSelected === next.isSelected &&
+  //     _.isEqual(prev.style, next.style)
+  //   )
+  // },
 )
 
 export default GridCard
