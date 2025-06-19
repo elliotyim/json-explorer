@@ -146,10 +146,14 @@ const DndTree = () => {
     node: NodeApi<Data>,
     e: React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
-    if (node.data.type === 'value') {
+    if (e.ctrlKey || e.metaKey) {
+      e.stopPropagation()
+      if (node.isSelected) node.deselect()
+      else node.selectMulti()
+    } else if (node.data.type === 'value') {
       const clickCount = e.detail
       if (clickCount === 2) showProperties(node)
-    } else if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+    } else if (!e.shiftKey) {
       toggleFolder(node.id)
       setSelectedItemIds({ [node.id]: true })
     }
