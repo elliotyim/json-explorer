@@ -5,14 +5,14 @@ import { useSearchKeywordState, useSearchTriggerStore } from '@/store/search'
 import { useDebouncedCallback } from 'use-debounce'
 
 const TreeSearchInput = () => {
-  const inputRef = useRef<HTMLInputElement>(null)
-
   const { setTerm } = useSearchKeywordState()
   const { isSearchTriggered, setIsSearchTriggered } = useSearchTriggerStore()
 
   const debouncedValueChange = useDebouncedCallback((value) => {
     setTerm(value)
   }, 300)
+
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isSearchTriggered) {

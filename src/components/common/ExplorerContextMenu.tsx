@@ -25,22 +25,27 @@ import {
 import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 import { JSONUtil } from '@/utils/json'
+import { useMemo } from 'react'
 
 interface Props {
-  selectedItems: string[]
   children: React.ReactNode
 }
 
-const ExplorerContextMenu: React.FC<Props> = ({ selectedItems, children }) => {
+const ExplorerContextMenu: React.FC<Props> = ({ children }) => {
   const { json, setJson } = useJsonStore()
 
   const { currentItem, setCurrentItem } = useCurrentItemStore()
-  const { setSelectedItemIds } = useSelectedItemIdsStore()
+  const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
 
   const { setIsItemEditing } = useItemEditingStore()
   const { setRightNavTab } = useRightNavTabStore()
   const { setIsContextOpen } = useContextMenuOpenStore()
   const { execute } = useCommandStore()
+
+  const selectedItems = useMemo<string[]>(
+    () => Object.keys(selectedItemIds),
+    [selectedItemIds],
+  )
 
   const handleItemCopy = async (ids: string[]) => {
     const command = new CopyItemCommand(structuredClone(json), { ids })

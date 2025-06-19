@@ -1,5 +1,5 @@
-import DragSelection from '@/components/DragSelection'
-import GridCard from '@/components/dnd-grid/GridCard'
+import DragSelection from '@/components/dnd/DragSelection'
+import GridCard from '@/components/dnd/grid/GridCard'
 import { ITEM } from '@/constants/item'
 import { MOUSE_CLICK } from '@/constants/mouse'
 import { TAB } from '@/constants/tab'
@@ -12,6 +12,7 @@ import {
 } from '@/store/container'
 import { useContextMenuOpenStore } from '@/store/contextmenu'
 import {
+  useCurrentItemStore,
   useDraggingItemStore,
   useExtraItemIdsStore,
   useItemAreaStore,
@@ -32,43 +33,42 @@ import { AutoSizer, Grid, GridCellProps } from 'react-virtualized'
 
 interface Props {
   items: Data[]
-  currentItemId: string
 }
 
 const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   items,
-  currentItemId,
   ...props
 }) => {
-  const outerContainerRef = useRef<HTMLDivElement>(null)
-  const shiftIndex = useRef<number | null>(null)
+  const { isAppReady } = useInitialFocus()
+  const { treeRef } = useTreeRefStore()
+  const { setRightNavTab } = useRightNavTabStore()
+  const { isContextOpen } = useContextMenuOpenStore()
 
   const { isContainerReady, setIsContainerReady } = useContainerStore()
   const { container, setContainer } = useMainContainerStore()
   const { scrollContainer, setScrollContainer } = useScrollContainerStore()
+
+  const { json } = useJsonStore()
+  const { currentItem } = useCurrentItemStore()
+  const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
+  const { extraItemIds, setExtraItemIds } = useExtraItemIdsStore()
+  const { itemAreas, setItemAreas } = useItemAreaStore()
+  const draggingItemId = useDraggingItemStore((state) => state.draggingItemId)
+
+  const { focusedItemRef, onKeyDown, onKeyUp } = useKeyboardAction()
+  const { enterItem, moveItems } = useItemAction()
+
+  const outerContainerRef = useRef<HTMLDivElement>(null)
+  const shiftIndex = useRef<number | null>(null)
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
   const [enabled, setEnabled] = useState<boolean>(false)
 
   const [isFocusDone, setIsFocusDone] = useState<boolean>(false)
 
-  const { isAppReady } = useInitialFocus()
-  const { setRightNavTab } = useRightNavTabStore()
-  const { isContextOpen } = useContextMenuOpenStore()
-  const { treeRef } = useTreeRefStore()
-
-  const { json } = useJsonStore()
-  const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
-  const { extraItemIds, setExtraItemIds } = useExtraItemIdsStore()
-  const { itemAreas, setItemAreas } = useItemAreaStore()
-
-  const draggingItemId = useDraggingItemStore((state) => state.draggingItemId)
   const [draggingItems, setDraggingItems] = useState<Record<string, boolean>>(
     {},
   )
-
-  const { focusedItemRef, onKeyDown, onKeyUp } = useKeyboardAction()
-  const { enterItem, moveItems } = useItemAction()
 
   const onItemRelocation = useCallback(
     async (targetIndex: number) => {
@@ -121,8 +121,8 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
   const cellRenderer = useCallback(
     ({ columnIndex, rowIndex, style, parent }: GridCellProps) => {
-      const i =
-        MathUtil.countColumn(parent.props.width) * rowIndex + columnIndex
+      const width = parent.props.width
+      const i = MathUtil.countColumn(width) * rowIndex + columnIndex
       const item = items[i]
 
       return item ? (
@@ -165,7 +165,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   useEffect(() => {
     setSelectedItemIds({})
     setExtraItemIds({})
-  }, [currentItemId, setExtraItemIds, setSelectedItemIds])
+  }, [currentItem.id, setExtraItemIds, setSelectedItemIds])
 
   useEffect(() => {
     const areas: Record<string, DOMRect> = {}

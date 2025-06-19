@@ -5,7 +5,6 @@ import {
   MenubarContent,
   MenubarItem,
   MenubarMenu,
-  MenubarSeparator,
   MenubarShortcut,
   MenubarTrigger,
 } from '@/components/ui/menubar'
@@ -74,10 +73,6 @@ const ExplorerMenuBar: React.FC<Props> = ({ ...props }) => {
           <MenubarItem disabled={!redoList.length} onSelect={handleRedo}>
             Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
           </MenubarItem>
-          <MenubarSeparator />
-          <MenubarItem disabled>Cut</MenubarItem>
-          <MenubarItem disabled>Copy</MenubarItem>
-          <MenubarItem disabled>Paste</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
     </Menubar>

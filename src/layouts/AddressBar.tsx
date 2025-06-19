@@ -13,24 +13,19 @@ import {
   FaArrowUp,
 } from 'react-icons/fa6'
 
-interface Props {
-  currentPath: string
-}
-
-const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
-  currentPath,
+const AddressBar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
-  const [inputValue, setInputValue] = useState<string>('')
-
   const { currentItem } = useCurrentItemStore()
+  const { enterItem } = useItemAction()
   const { goBackward, goForward, goPrev } = useHistory()
   const { undoList, redoList } = useHistoryCommandStore()
-  const { enterItem } = useItemAction()
+
+  const [inputValue, setInputValue] = useState<string>('')
 
   useEffect(() => {
-    if (currentPath) setInputValue(currentPath)
-  }, [currentPath])
+    if (currentItem.id) setInputValue(currentItem.id)
+  }, [currentItem.id])
 
   return (
     <div {...props} tabIndex={-1}>
@@ -80,4 +75,4 @@ const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
   )
 }
 
-export default MenuBar
+export default AddressBar

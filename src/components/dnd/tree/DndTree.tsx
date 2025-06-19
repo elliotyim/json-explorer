@@ -1,5 +1,5 @@
-import TreeNode from '@/components/dnd-tree/TreeNode'
-import ExplorerContextMenu from '@/components/ExplorerContextMenu'
+import TreeNode from '@/components/dnd/tree/TreeNode'
+import ExplorerContextMenu from '@/components/common/ExplorerContextMenu'
 import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
 import { useItemAction } from '@/hooks/useItemAction'
@@ -24,7 +24,7 @@ const DndTree = () => {
   const { term } = useSearchKeywordState()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setRightNavTab } = useRightNavTabStore()
-  const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
+  const { setSelectedItemIds } = useSelectedItemIdsStore()
 
   const { enterItem, moveItems } = useItemAction()
 
@@ -165,8 +165,6 @@ const DndTree = () => {
   useEffect(() => treeRef.current?.open('root'), [treeRef])
   useEffect(() => setData(JSONUtil.compile({ input: json })), [json])
 
-  const items = Object.keys(selectedItemIds)
-
   return (
     <div
       className="h-full w-full"
@@ -176,7 +174,7 @@ const DndTree = () => {
       <AutoSizer>
         {({ width, height }) => (
           <div className="overflow-auto" style={{ width, height }}>
-            <ExplorerContextMenu selectedItems={items}>
+            <ExplorerContextMenu>
               <Tree<Data>
                 ref={ref}
                 data={data}

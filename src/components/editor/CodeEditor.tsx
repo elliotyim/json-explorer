@@ -1,35 +1,47 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { JSONUtil } from '@/utils/json'
-import { useEffect, useState } from 'react'
-
 import Editor from '@monaco-editor/react'
+import { editor } from 'monaco-editor'
+import { useCallback, useEffect, useState } from 'react'
 
 interface Props {
   jsonString: string
+  editorRef?: React.RefObject<editor.IStandaloneCodeEditor | null>
   readOnly?: boolean
   withButtons?: boolean
   onValueChange?: (value: string) => void
 }
 
 const CodeEditor: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
+  editorRef,
   jsonString,
   readOnly,
-  onValueChange,
   withButtons,
+  onValueChange,
   ...props
 }) => {
   const [code, setCode] = useState<string>(jsonString)
 
-  const handleConfirm = () => {
+  const handleApplying = useCallback(() => {
     if (onValueChange) onValueChange(code)
-  }
+  }, [code, onValueChange])
 
-  const handleValueChange = (value?: string) => {
-    if (value == null) value = ''
-    setCode(value)
-    if (!withButtons && onValueChange) onValueChange(value)
-  }
+  const handleValueChange = useCallback(
+    (value?: string) => {
+      value = value ?? ''
+      setCode(value)
+      if (!withButtons && onValueChange) onValueChange(value)
+    },
+    [onValueChange, withButtons],
+  )
+
+  const handleEditorDidMount = useCallback(
+    (editor: editor.IStandaloneCodeEditor) => {
+      if (editorRef) editorRef.current = editor
+    },
+    [editorRef],
+  )
 
   useEffect(() => setCode(jsonString), [jsonString])
 
@@ -52,6 +64,7 @@ const CodeEditor: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
               overviewRulerBorder: false,
             }}
             onChange={handleValueChange}
+            onMount={handleEditorDidMount}
           />
         </Card>
 
@@ -60,7 +73,7 @@ const CodeEditor: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             <Button
               className="flex-1 cursor-pointer"
               disabled={!JSONUtil.isJsonValid(code)}
-              onClick={handleConfirm}
+              onClick={handleApplying}
             >
               Apply
             </Button>

@@ -1,4 +1,18 @@
+import { TypeIcon } from '@/components/common/TypeIcon'
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { DRAG_ITEM, ITEM } from '@/constants/item'
+import { useDraggingItemStore, useItemAreaStore } from '@/store/item'
+import { useJsonStore } from '@/store/json'
+import { DOMUtil } from '@/utils/dom'
+import { JSONUtil } from '@/utils/json'
+import { Identifier } from 'dnd-core'
+import React, {
   forwardRef,
   useEffect,
   useImperativeHandle,
@@ -7,22 +21,6 @@ import {
   useState,
 } from 'react'
 import { useDrag, useDrop, XYCoord } from 'react-dnd'
-import { TypeIcon } from '../dnd-tree/TypeIcon'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../ui/card'
-
-import { DRAG_ITEM, ITEM } from '@/constants/item'
-import { useDraggingItemStore, useItemAreaStore } from '@/store/item'
-import { useJsonStore } from '@/store/json'
-import { DOMUtil } from '@/utils/dom'
-import { JSONUtil } from '@/utils/json'
-import { Identifier } from 'dnd-core'
-import React from 'react'
 
 interface Props {
   item: Data

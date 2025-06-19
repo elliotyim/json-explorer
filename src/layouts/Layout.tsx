@@ -1,9 +1,4 @@
-import LeftNav from '@/layouts/LeftNav'
-import MainContent from '@/layouts/MainContent'
-import RightNav from '@/layouts/RightNav'
-import { useEffect } from 'react'
-
-import ExplorerDialog from '@/components/ExplorerDialog'
+import ExplorerDialog from '@/components/common/ExplorerDialog'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -11,9 +6,13 @@ import {
 } from '@/components/ui/resizable'
 import { useKeyboardAction } from '@/hooks/useKeyboardAction'
 import AddressBar from '@/layouts/AddressBar'
-import TopNavigationBar from '@/layouts/TopNavigationBar'
+import LeftNav from '@/layouts/LeftNav'
+import MainContent from '@/layouts/MainContent'
+import MenuBar from '@/layouts/MenuBar'
+import RightNav from '@/layouts/RightNav'
 import { useCurrentItemStore } from '@/store/item'
 import { useJsonStore } from '@/store/json'
+import { useEffect } from 'react'
 
 const Layout = () => {
   const { json } = useJsonStore()
@@ -51,29 +50,19 @@ const Layout = () => {
         }}
         onKeyUp={onKeyUp}
       >
-        <TopNavigationBar className="rounded-t-xl bg-slate-100 px-4 py-1" />
-        <AddressBar
-          className="flex items-center gap-4 border-b-2 px-4 py-2"
-          currentPath={currentItem.id}
-        />
+        <MenuBar className="rounded-t-xl bg-slate-100 px-4 py-1" />
+        <AddressBar className="flex items-center gap-4 border-b-2 px-4 py-2" />
         <ResizablePanelGroup direction="horizontal" className="w-full">
           <ResizablePanel defaultSize={15} minSize={10}>
             <LeftNav className="h-full w-full overflow-hidden rounded-bl-xl" />
           </ResizablePanel>
           <ResizableHandle />
           <ResizablePanel defaultSize={60} minSize={30}>
-            <MainContent
-              className="h-full w-full overflow-auto border-x-2"
-              json={json}
-              currentItem={currentItem}
-            />
+            <MainContent className="h-full w-full overflow-auto border-x-2" />
           </ResizablePanel>
           <ResizableHandle />
           <ResizablePanel defaultSize={25} minSize={10}>
-            <RightNav
-              className="flex h-full w-full flex-col overflow-auto rounded-br-xl"
-              json={json}
-            />
+            <RightNav className="flex h-full w-full flex-col overflow-auto rounded-br-xl" />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
