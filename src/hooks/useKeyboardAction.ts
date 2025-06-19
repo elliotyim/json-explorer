@@ -354,7 +354,13 @@ export const useKeyboardAction = (): ReturnProps => {
   useEffect(() => {
     const itemIds = Object.keys(selectedItemIds)
     const isAreaDragging = isAreaDraggingRef.current
-    if (itemIds.length === 1 && !isAreaDragging && shiftIndex.current == null) {
+    if (
+      itemIds.length === 1 &&
+      !isAreaDragging &&
+      !pushedKeysRef.current['Control'] &&
+      !pushedKeysRef.current['Meta'] &&
+      shiftIndex.current == null
+    ) {
       const id = itemIds[0]
       focusedItemRef.current = id
       setItemIndex(getItemIndex(id))
