@@ -1,5 +1,5 @@
-import TreeNode from '@/components/dnd/tree/TreeNode'
 import ExplorerContextMenu from '@/components/common/ExplorerContextMenu'
+import TreeNode from '@/components/dnd/tree/TreeNode'
 import { TAB } from '@/constants/tab'
 import { TREE_NODE } from '@/constants/tree'
 import { useItemAction } from '@/hooks/useItemAction'
@@ -10,29 +10,37 @@ import { useRightNavTabStore } from '@/store/tab'
 import { useTreeRefStore } from '@/store/tree'
 import { JSONUtil } from '@/utils/json'
 import React, { useEffect, useRef, useState } from 'react'
-import { MoveHandler, NodeApi, Tree, TreeApi } from 'react-arborist'
+import { MoveHandler, NodeApi, Tree } from 'react-arborist'
 import { AutoSizer } from 'react-virtualized'
 
 const DndTree = () => {
-  const ref = useRef<TreeApi<Data> | null>(null)
-  const pushedKeys = useRef<Record<string, boolean>>({})
-
-  const [data, setData] = useState<Data[]>()
-  const { treeRef, setTreeRef } = useTreeRefStore()
-
   const { json } = useJsonStore()
   const { term } = useSearchKeywordState()
   const { currentItem, setCurrentItem } = useCurrentItemStore()
   const { setRightNavTab } = useRightNavTabStore()
-  const { setSelectedItemIds } = useSelectedItemIdsStore()
+  const { selectedItemIds, setSelectedItemIds } = useSelectedItemIdsStore()
+  const { treeRef } = useTreeRefStore()
 
   const { enterItem, moveItems } = useItemAction()
 
+  const pushedKeys = useRef<Record<string, boolean>>({})
+
+  const [data, setData] = useState<Data[]>()
+
+  const shouldRefocus = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.ctrlKey && e.key === 'x') return true
+    if (e.ctrlKey && e.key === 'd') return true
+    if (e.key === 'Delete') return true
+    return false
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') treeRef?.current?.deselectAll()
+    if (!treeRef.current) return
+
+    if (e.key === 'Escape') treeRef.current.deselectAll()
 
     if (e.key === 'Enter') {
-      const node = treeRef.current?.focusedNode
+      const node = treeRef.current.focusedNode
       if (node != null && node.parent != null) {
         const parentId = node.parent.id
         if (node.data.type === 'value') {
@@ -48,6 +56,20 @@ const DndTree = () => {
         })
       }
     }
+
+    if (e.ctrlKey && e.key === ' ') {
+      const currentId = treeRef.current.focusedNode?.id ?? ''
+      const newItem = { ...selectedItemIds, [currentId]: true }
+      if (selectedItemIds[currentId]) delete newItem[currentId]
+      setSelectedItemIds(newItem)
+    }
+
+    if (shouldRefocus(e)) {
+      let parentId = treeRef.current.focusedNode?.parent?.id ?? 'root'
+      if (selectedItemIds[parentId]) parentId = 'root'
+      treeRef.current.focus(parentId)
+    }
+
     pushedKeys.current[e.key] = true
   }
 
@@ -159,9 +181,6 @@ const DndTree = () => {
     }
   }
 
-  useEffect(() => {
-    if (!treeRef?.current) setTreeRef(ref)
-  }, [setTreeRef, treeRef])
   useEffect(() => treeRef.current?.open('root'), [treeRef])
   useEffect(() => setData(JSONUtil.compile({ input: json })), [json])
 
@@ -176,7 +195,7 @@ const DndTree = () => {
           <div className="overflow-auto" style={{ width, height }}>
             <ExplorerContextMenu>
               <Tree<Data>
-                ref={ref}
+                ref={treeRef}
                 data={data}
                 width="100%"
                 height={height}
