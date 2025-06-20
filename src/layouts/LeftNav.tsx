@@ -1,4 +1,4 @@
-import DndTree from '@/components/dnd-tree/DndTree'
+import DndTree from '@/components/dnd/tree/DndTree'
 import TreeSearchInput from '@/components/left-nav/TreeSearchInput'
 
 const LeftNav: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({

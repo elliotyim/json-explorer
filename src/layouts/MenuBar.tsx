@@ -1,7 +1,7 @@
-import ExplorerMenuBar from '@/components/menu-bar/ExplorerMenuBar'
+import ExplorerMenuBar from '@/components/common/ExplorerMenuBar'
 import { FaGithub } from 'react-icons/fa6'
 
-const TopNavigationBar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+const MenuBar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
   return (
@@ -16,4 +16,4 @@ const TopNavigationBar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   )
 }
 
-export default TopNavigationBar
+export default MenuBar

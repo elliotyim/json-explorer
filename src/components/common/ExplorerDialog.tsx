@@ -10,12 +10,12 @@ import {
 import { useDialogStore } from '@/store/dialog'
 import { AlertDialogProps } from '@radix-ui/react-alert-dialog'
 import React, { useEffect, useRef } from 'react'
-import { AlertDialogFooter, AlertDialogHeader } from './ui/alert-dialog'
+import { AlertDialogFooter, AlertDialogHeader } from '../ui/alert-dialog'
 
 const ExplorerDialog: React.FC<AlertDialogProps> = ({ ...props }) => {
-  const ref = useRef<HTMLDivElement>(null)
-
   const { dialog, setDialog } = useDialogStore()
+
+  const ref = useRef<HTMLDivElement>(null)
 
   const handleOpenChange = (open: boolean) => {
     if (!open) setDialog({ open })
@@ -45,7 +45,7 @@ const ExplorerDialog: React.FC<AlertDialogProps> = ({ ...props }) => {
           {dialog.cancelButton ? (
             <AlertDialogCancel>Cancel</AlertDialogCancel>
           ) : null}
-          <AlertDialogAction onSelect={() => {}}>Confirm</AlertDialogAction>
+          <AlertDialogAction>Confirm</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

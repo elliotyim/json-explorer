@@ -1,20 +1,15 @@
-import GridContainer from '@/components/dnd-grid/GridContainer'
-import ExplorerContextMenu from '@/components/ExplorerContextMenu'
-import { useDisplayItemsStore, useSelectedItemIdsStore } from '@/store/item'
+import GridContainer from '@/components/dnd/grid/GridContainer'
+import ExplorerContextMenu from '@/components/common/ExplorerContextMenu'
+import { useCurrentItemStore, useDisplayItemsStore } from '@/store/item'
+import { useJsonStore } from '@/store/json'
 import { JSONUtil } from '@/utils/json'
 import { useEffect } from 'react'
 
-interface Props {
-  json: Record<string, unknown> | unknown[]
-  currentItem: CurrentItem
-}
-
-const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
-  json,
-  currentItem,
+const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
-  const { selectedItemIds } = useSelectedItemIdsStore()
+  const { json } = useJsonStore()
+  const { currentItem } = useCurrentItemStore()
   const { displayItems, setDisplayItems } = useDisplayItemsStore()
 
   useEffect(() => {
@@ -30,12 +25,10 @@ const MainContent: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
     setDisplayItems(data)
   }, [json, currentItem.id, currentItem.data, setDisplayItems])
 
-  const items = Object.keys(selectedItemIds)
-
   return (
     <div {...props}>
-      <ExplorerContextMenu selectedItems={items}>
-        <GridContainer items={displayItems} currentItemId={currentItem.id} />
+      <ExplorerContextMenu>
+        <GridContainer items={displayItems} />
       </ExplorerContextMenu>
     </div>
   )

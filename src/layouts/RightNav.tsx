@@ -1,23 +1,18 @@
 import { ReplaceJSONCommand } from '@/commands/json/ReplaceJSONCommand'
-import CodeEditor from '@/components/code-editor/CodeEditor'
-import Properties from '@/components/right-nav/Properties'
+import CodeEditor from '@/components/editor/CodeEditor'
+import Properties from '@/components/properties/Properties'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TAB } from '@/constants/tab'
 import { useCommandStore } from '@/store/command'
 import { useJsonStore } from '@/store/json'
 import { useRightNavTabStore } from '@/store/tab'
 
-interface Props {
-  json: Record<string, unknown> | unknown[]
-}
-
-const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
-  json,
+const RightNav: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
   const { rightNavTab, setRightNavTab } = useRightNavTabStore()
 
-  const { setJson } = useJsonStore()
+  const { json, setJson } = useJsonStore()
   const { execute } = useCommandStore()
 
   const handleJSONChange = async (code: string) => {

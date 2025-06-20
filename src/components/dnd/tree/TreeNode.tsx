@@ -1,4 +1,4 @@
-import { TypeIcon } from '@/components/dnd-tree/TypeIcon'
+import { TypeIcon } from '@/components/common/TypeIcon'
 import { cn } from '@/lib/utils'
 import { useCurrentItemStore, useSelectedItemIdsStore } from '@/store/item'
 import React from 'react'

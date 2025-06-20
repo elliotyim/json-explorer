@@ -1,8 +1,8 @@
+import Layout from '@/layouts/Layout'
+import NotSupported from '@/layouts/NotSupported'
+import { useSearchTriggerStore } from '@/store/search'
+import { useInitialFocus } from '@/store/settings'
 import { useCallback, useEffect, useState } from 'react'
-import Layout from './layouts/Layout'
-import NotSupported from './layouts/NotSupported'
-import { useSearchTriggerStore } from './store/search'
-import { useInitialFocus } from './store/settings'
 
 const getWindowRect = () => {
   const { innerWidth, innerHeight } = window
@@ -18,7 +18,7 @@ function App() {
 
   const handleSearchTrigger = useCallback(
     (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
         setIsSearchTriggered(true)
       }
