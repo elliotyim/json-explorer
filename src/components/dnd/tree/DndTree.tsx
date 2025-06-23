@@ -37,7 +37,10 @@ const DndTree = () => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!treeRef.current) return
 
-    if (e.key === 'Escape') treeRef.current.deselectAll()
+    if (e.key === 'Escape') {
+      e.stopPropagation()
+      treeRef.current.deselectAll()
+    }
 
     if (e.key === 'Enter') {
       const node = treeRef.current.focusedNode
