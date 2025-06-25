@@ -21,7 +21,7 @@ export class PasteItemCommand implements Command<JSONObj['type']> {
 
     const json = structuredClone(this.prev)
     const { currentItemId } = this.value
-    const result = JSONUtil.pastItems(json, currentItemId)
+    const result = JSONUtil.pasteItems(json, currentItemId)
     return new Promise((res) => res(result))
   }
 

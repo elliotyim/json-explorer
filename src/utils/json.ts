@@ -29,14 +29,9 @@ interface CopyProps extends MoveProps {
 }
 
 interface SetProps {
-  obj: Record<string, unknown> | unknown[]
+  obj: JSONObj['type']
   keyPath: string
   value: unknown
-}
-
-interface InspectProps {
-  obj: Record<string, unknown> | unknown[]
-  path: string
 }
 
 export class JSONUtil {
@@ -117,15 +112,9 @@ export class JSONUtil {
     targetIndex: number = -1,
   ) {
     if (Array.isArray(destination)) {
-      if (targetIndex === -1) {
-        const parentType = this.getType(parent)
-        if (parentType === 'object') destination.push({ [key]: value })
-        else destination.push(value)
-      } else if (this.getType(parent) === 'object') {
-        destination.splice(targetIndex, 0, { [key]: value })
-      } else {
-        destination.splice(targetIndex, 0, value)
-      }
+      const val = this.getType(parent) === 'object' ? value : { [key]: value }
+      if (targetIndex === -1) destination.push(val)
+      else destination.splice(targetIndex, 0, val)
     } else {
       const target = destination as Record<string, unknown>
       if (target[key] === undefined) target[key] = value
@@ -363,14 +352,10 @@ export class JSONUtil {
     this.copy({ obj, from, to, targetIndex, removeOriginal: true })
   }
 
-  static set({
-    obj,
-    keyPath,
-    value,
-  }: SetProps): Record<string, unknown> | unknown[] {
+  static set({ obj, keyPath, value }: SetProps): JSONObj['type'] {
     const keyPaths = this.getSplitPaths({ path: keyPath })
     if (keyPaths.length === 1 && keyPaths[0] === 'root') {
-      obj = value as Record<string, unknown>
+      obj = value as JSONObj['type']
       return structuredClone(obj)
     }
 
@@ -385,7 +370,7 @@ export class JSONUtil {
     return structuredClone(obj)
   }
 
-  static inspect({ obj, path }: InspectProps): Data {
+  static inspect(obj: JSONObj['type'], path: string): Data {
     const parentPath = this.getParentPath(path)
     const parent = this.getByPath(obj, parentPath) as Record<string, unknown>
 
@@ -409,24 +394,21 @@ export class JSONUtil {
     return paths.sort((a, b) => this.getLastIndex(a) - this.getLastIndex(b))
   }
 
-  static copyItems(
-    obj: Record<string, unknown> | unknown[],
-    ids: string[],
-  ): void {
+  static copyItems(obj: JSONObj['type'], ids: string[]): void {
     if (!ids.length) throw Error('ids should not be empty!')
 
     const result = ids.map((id) => {
-      const target = this.inspect({ obj, path: id })
+      const target = this.inspect(obj, id)
       return { [target.name]: target.value }
     })
 
     sessionStorage.setItem('copyPaste', JSON.stringify(result))
   }
 
-  static pastItems(
-    obj: Record<string, unknown> | unknown[],
+  static pasteItems(
+    obj: JSONObj['type'],
     currentPath: string,
-  ): Record<string, unknown> | unknown[] {
+  ): JSONObj['type'] {
     const jsonString = sessionStorage.getItem('copyPaste')
     const newJSON = structuredClone(obj)
 
@@ -453,10 +435,7 @@ export class JSONUtil {
     return newJSON
   }
 
-  static deleteItems(
-    obj: Record<string, unknown> | unknown[],
-    ids: string[],
-  ): Record<string, unknown> | unknown[] {
+  static deleteItems(obj: JSONObj['type'], ids: string[]): JSONObj['type'] {
     if (!ids.length) throw Error('ids should not be empty!')
     const newJSON = structuredClone(obj)
 
@@ -467,10 +446,7 @@ export class JSONUtil {
     return newJSON
   }
 
-  static cutItems(
-    obj: Record<string, unknown> | unknown[],
-    ids: string[],
-  ): Record<string, unknown> | unknown[] {
+  static cutItems(obj: JSONObj['type'], ids: string[]): JSONObj['type'] {
     if (!ids.length) throw Error('ids should not be empty!')
 
     this.copyItems(obj, ids)
@@ -487,10 +463,10 @@ export class JSONUtil {
   }
 
   static relocate(
-    obj: Record<string, unknown> | unknown[],
+    obj: JSONObj['type'],
     targetIndex: number,
     selectedNodes: { index: number; data: Data }[],
-  ): Record<string, unknown> | unknown[] | null {
+  ): JSONObj['type'] | null {
     if (!selectedNodes.length) return null
 
     const parentPath = selectedNodes[0].data.parentPath
@@ -543,14 +519,14 @@ export class JSONUtil {
     for (const [i, _from] of splitFrom.entries()) {
       if (i >= splitTo.length) break
 
-      const _to = splitTo[Number(i)]
+      const _to = splitTo[i]
 
       if (_from !== to) {
         if (_from.startsWith('[') && _to.startsWith('[')) {
-          const fromKey = Number(_from.substring(1, _from.length - 1))
-          const toKey = Number(_to.substring(1, _from.length - 1))
+          const fromKey = Number(_from.slice(1, -1))
+          const toKey = Number(_to.slice(1, -1))
 
-          if (fromKey < toKey) splitTo[Number(i)] = `[${toKey - 1}]`
+          if (fromKey < toKey) splitTo[i] = `[${toKey - 1}]`
         }
       }
     }

@@ -92,7 +92,7 @@ const ExplorerContextMenu: React.FC<Props> = ({ children }) => {
     })
     const result = await execute(command)
 
-    const itemSpec = JSONUtil.inspect({ obj: result, path: currentItem.id })
+    const itemSpec = JSONUtil.inspect(result, currentItem.id)
     const newData = JSONUtil.getByPath(result, itemSpec.id) as JSONObj['type']
 
     let newItemPath

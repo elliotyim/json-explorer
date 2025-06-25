@@ -81,10 +81,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
       if (!selectedNodes.length) return
 
-      const targetNode = JSONUtil.inspect({
-        obj: json,
-        path: selectedNodes[0].parentPath,
-      })
+      const targetNode = JSONUtil.inspect(json, selectedNodes[0].parentPath)
       await moveItems(selectedNodes, targetNode, targetIndex)
     },
     [draggingItems, extraItemIds, moveItems, items, json, selectedItemIds],
@@ -110,7 +107,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
 
       if (wrongTarget || sourceId == null || targetId == null) return
 
-      const targetNode = JSONUtil.inspect({ obj: json, path: targetId })
+      const targetNode = JSONUtil.inspect(json, targetId)
 
       await moveItems(selectedNodes, targetNode, targetIndex)
     },
@@ -195,7 +192,7 @@ const GridContainer: React.FC<React.HTMLAttributes<HTMLDivElement> & Props> = ({
             if (itemIds.length === 1) {
               const paths = JSONUtil.getTrailingPaths(itemIds[0])
               paths.forEach((path) => treeRef.current?.open(path))
-              const item = JSONUtil.inspect({ obj: json, path: itemIds[0] })
+              const item = JSONUtil.inspect(json, itemIds[0])
               if (item.type === 'value') setRightNavTab(TAB.PROPERTIES)
               else enterItem(itemIds[0])
             }

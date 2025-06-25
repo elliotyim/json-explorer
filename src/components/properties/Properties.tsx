@@ -32,10 +32,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   const [editedValue, setEditedValue] = useState<string>('')
 
   const selectedItems = useMemo<Data[]>(
-    () =>
-      Object.keys(selectedItemIds).map((id) =>
-        JSONUtil.inspect({ obj: json, path: id }),
-      ),
+    () => Object.keys(selectedItemIds).map((id) => JSONUtil.inspect(json, id)),
     [json, selectedItemIds],
   )
   const singleItem = useMemo<Data | null>(
@@ -56,9 +53,7 @@ const Properties: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
       const sortedIds = Array.isArray(parent)
         ? JSONUtil.sortIndexPaths(selectedIds)
         : selectedIds
-      const result = sortedIds.map(
-        (id) => JSONUtil.inspect({ obj: json, path: id }).value,
-      )
+      const result = sortedIds.map((id) => JSONUtil.inspect(json, id).value)
 
       return JSON.stringify(result, null, 2)
     }
