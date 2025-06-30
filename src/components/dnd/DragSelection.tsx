@@ -117,10 +117,10 @@ const DragSelection: React.FC<Props> = ({
   )
 
   const onPointerUp = useCallback(
-    (e: PointerEvent) => {
+    (event: PointerEvent) => {
       if (!container || !scrollContainer || !enabled) return
 
-      const { x, y } = DOMUtil.getCurrentPoint(container, e)
+      const { x, y } = DOMUtil.getCurrentPoint(container, event)
       const scrollX = scrollContainer.scrollLeft
       const scrollY = scrollContainer.scrollTop
 
@@ -133,7 +133,7 @@ const DragSelection: React.FC<Props> = ({
 
       clearAll()
 
-      if (onSelectionEnd) onSelectionEnd({ event: e, selectionArea })
+      if (onSelectionEnd) onSelectionEnd({ event, selectionArea })
     },
     [
       clearAll,
@@ -147,9 +147,9 @@ const DragSelection: React.FC<Props> = ({
   )
 
   const onPointerDown = useCallback(
-    (e: PointerEvent) => {
+    (event: PointerEvent) => {
       if (
-        e.button !== MOUSE_CLICK.LEFT ||
+        event.button !== MOUSE_CLICK.LEFT ||
         !container ||
         !scrollContainer ||
         !enabled
@@ -157,30 +157,22 @@ const DragSelection: React.FC<Props> = ({
         return
       }
 
-      const { x, y } = DOMUtil.getCurrentPoint(container, e)
+      const { x, y } = DOMUtil.getCurrentPoint(container, event)
       const scrollX = scrollContainer.scrollLeft
       const scrollY = scrollContainer.scrollTop
 
       if (onSelectionStart) {
-        const shouldStop = onSelectionStart({
-          event: e,
-          x,
-          y,
-          scrollX,
-          scrollY,
-        })
+        const shouldStop = onSelectionStart({ event, x, y, scrollX, scrollY })
         if (shouldStop) return clearAll()
       }
 
       const nextDragVector = new DOMVector(x, y, 0, 0)
       const nextScrollVector = new DOMVector(scrollX, scrollY, 0, 0)
+      const selectionArea = nextDragVector.add(nextScrollVector).toDOMRect()
 
       setDragVector(nextDragVector)
       setScrollVector(nextScrollVector)
-
-      selectionAreaRef.current = nextDragVector
-        .add(nextScrollVector)
-        .toDOMRect()
+      selectionAreaRef.current = selectionArea
 
       document.body.style.userSelect = 'none'
     },
