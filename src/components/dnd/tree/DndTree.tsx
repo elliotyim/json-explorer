@@ -140,7 +140,7 @@ const DndTree = () => {
     const selectedNodes = dragNodes.map((node) => node.data)
     const newJSON = await moveItems(selectedNodes, parentNode.data, targetIndex)
 
-    const nodeParentId = dragNodes.at(0)?.parent?.data.id
+    const nodeParentId = dragNodes[0].parent?.data.id
     if (dragNodes.length && nodeParentId !== parentId) {
       const id = JSONUtil.adjustedTargetId(selectedNodes, parentNode.data)
       enterItem(id, newJSON)
