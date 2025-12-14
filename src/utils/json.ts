@@ -88,7 +88,8 @@ export class JSONUtil {
   }
 
   static getLastKey(path: string): string {
-    const lastKey = this.getSplitPaths({ path }).at(-1)
+    const paths = this.getSplitPaths({ path })
+    const lastKey = paths[paths.length - 1]
     if (!lastKey) throw Error(`Invalid path provided: ${path}`)
     return lastKey
   }
@@ -457,7 +458,7 @@ export class JSONUtil {
 
   static replaceLastKey(path: string, replacer: string): string {
     const splitPaths = this.getSplitPaths({ path, removeArrayBracket: false })
-    const lastIndex = path.lastIndexOf(splitPaths.at(-1)!)
+    const lastIndex = path.lastIndexOf(splitPaths[splitPaths.length - 1])
     const newPath = path.substring(0, lastIndex)
     return `${newPath}${replacer}`
   }
