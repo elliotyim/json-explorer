@@ -3,6 +3,7 @@ name: AWS Prod Deployment
 on:
   push:
     branches: ['main']
+  workflow_dispatch: # This is required for manually triggering the workflow
 
 permissions:
   id-token: write # This is required for requesting the JWT
